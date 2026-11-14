@@ -46,17 +46,60 @@ Both give one record per site:
 
 All values are real NASA LOLA figures; sources are in `data/a3_region_visibility_stats.json`.
 
+## Date-specific conditions (new)
+
+Everything is precomputed once into a lookup table, so changing the date is a table lookup and stays fast enough for sliders and animation.
+
+```python
+import datetime as dt
+import streamlit as st
+import planner
+
+@st.cache_resource            # build once per app start (about 1.4 s for four years)
+def get_lookup():
+    return planner.build_lookup(dt.date(2027, 1, 1), dt.date(2030, 12, 31))
+
+lookup = get_lookup()
+landing = dt.datetime(2028, 1, 1, 0, 0)          # UTC
+
+ranked = planner.rank_for_date(lookup, landing, window_days=14)       # about 9 ms
+curve  = planner.timeline(lookup, "Malapert Massif", landing, 14)     # under 1 ms
+scan   = planner.date_scan(lookup, window_days=14)                    # about 0.1 s, every site x every date
+```
+
+`rank_for_date` returns the fields of the table above plus:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `sun_window`, `earth_window` | 0–1 | Share of the mission window with the Sun / Earth above the flat horizon |
+| `longest_dark_h`, `longest_blackout_h` | hours | Longest unbroken period in the window without Sun / without Earth |
+| `hours_to_sunset`, `hours_to_earthset` | hours | Time from landing until the Sun / Earth next sets. 0 means it is already down |
+| `sun_el_at_landing`, `earth_el_at_landing` | degrees | Elevation above the flat horizon at landing (centre of the disc) |
+| `sun_az_at_landing`, `earth_az_at_landing` | degrees | Direction, clockwise from lunar north |
+| `sun_up_at_landing`, `earth_up_at_landing` | true/false | Visible at landing |
+| `max_sun_el_window` | degrees | Highest Sun elevation during the window |
+| `passes` | true/false | Meets all four limits (two long-term, two mission-window) |
+| `fail_reasons` | text | Which limits failed; empty when the site passes |
+| `score` | 0–1 | Provisional: average of the two window ratios and the two long-term ratios |
+
+`timeline` returns hourly rows: `time_utc`, `sun_el`, `sun_az`, `earth_el`, `earth_az`, `sun_up`, `earth_up`. Use it for the elevation chart and the horizon panorama.
+
+`date_scan` returns `date`, `site`, `sun_window`, `earth_window` for a site-by-date heat map.
+
+Limits are arguments of `rank_for_date`: `min_sun_long_term`, `min_earth_long_term` (default 0.5) and `min_sun_window`, `min_earth_window` (default 0.95).
+
+### Must be shown with these values
+
+- **"Flat-horizon estimate."** The date-specific values treat the Moon as a smooth sphere. Real terrain hides the Sun and Earth more often, so the true window ratios are lower and sunset can come earlier. The long-term values do include terrain.
+- Sun positions were checked against NASA JPL Horizons and agree within 0.01°.
+
 ## What is not available yet
 
 Do not display numbers for these until the logic supplies them. Show "not available yet" instead.
 
-- Sun and Earth elevation and direction at a site for the chosen date
-- Time remaining until sunset and Earthset
-- Sunlight and Earth-contact ratios over the mission window
-- Terrain horizon profile for the panorama view
+- Terrain horizon profile (the skyline for the panorama view) and terrain-corrected visibility
 - Slope
-
-The chosen date and mission length are collected now but do not change the ranking yet.
+- Custom coordinates (the logic supports any latitude/longitude through `ephemeris.sky_positions`, but it is not wired into the ranking)
 
 ## Rules for the visual interface
 

@@ -61,10 +61,10 @@ Use NASA data as the core of every calculation; the judging criteria require it.
 
 | Need | Source | Verified? |
 |---|---|---|
-| Sun and Earth positions over time | JPL Horizons, https://ssd.jpl.nasa.gov/horizons/ | Not tested yet |
+| Sun and Earth positions over time | Computed offline in `src/ephemeris.py`; validated against JPL Horizons (https://ssd.jpl.nasa.gov/api/horizons.api) | Tested: agrees within 0.002° elevation at 10 reference points |
 | South-pole elevation, 100 m/px | Moon Trek ImageServer `LRO_LOLA_DEM_SPole45_100mp_v04` | Point query tested; GeoTIFF export returns a link, file not opened |
 | Candidate sites | Moon Trek `CLPS_sites` and `A3_Named_regions` services | Tested |
-| Long-term average Sun and Earth visibility | LOLA illumination products on PDS Geosciences (linked from QuickMap) | Download not tested |
+| Long-term average Sun and Earth visibility | LOLA illumination products on PDS Geosciences (linked from QuickMap) | Tested: analysed into `data/a3_region_visibility_stats.json` |
 | Slope, roughness, shadowed regions | QuickMap layers (view only so far) | Not tested |
 
 Exact URLs and request formats are in `docs/space-apps-2026-reference.md`, sections 5 and 6. The Moon Trek services are not a documented public API: fetch each dataset once, save it under `data/`, and work from the local copy.
