@@ -69,6 +69,7 @@ List everything here as you use it. The submission form asks for all of it.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### AI tools used and for what
+- Claude (Anthropic): rewrote `README.md` to describe the built tool, its data, validation and limits.
 - Claude (Anthropic): added slip stability, nearest/best dates, custom coordinates and eclipse detection to `src/planner.py`, and wrote `tests/test_planner.py`.
 - Claude (Anthropic): reviewed `docs/physics-and-coordinates.md` against the code, checked its direction vectors numerically against `src/ephemeris.py`, and added its section 10.
 - Claude (Anthropic): computed site slopes (`data/site_slopes.json`) from LDEM_85S_40M and added the slope limit and weighted score to `src/planner.py`.

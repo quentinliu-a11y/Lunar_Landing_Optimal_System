@@ -1,39 +1,74 @@
 # Lunar Landing Optimal System
 
-Team project for the **2026 NASA Space Apps Challenge** (14–15 November 2026), challenge: [Lunar Landing Site Navigator](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/).
+A planning tool that answers one question for lunar south-pole missions: **if we land on this date, which sites have sunlight and a link to Earth, and what happens if the date slips?**
 
-**Submission deadline: Sunday 15 November, 23:59 (local time of our Local Event).**
+Team entry for the 2026 NASA Space Apps Challenge, challenge [Lunar Landing Site Navigator](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/).
+
+> Status, 14 November 2026: the calculation engine is complete and tested. The interface in `src/app.py` is an early reference version that does not yet show the date-specific results.
 
 ## The problem
 
-Missions to the Moon's south pole depend on two things at the landing site:
+A lander at the Moon's south pole needs the Sun above the horizon for power and the Earth above the horizon to talk home without a relay satellite. Near the pole both sit within a few degrees of the horizon, so a ridge a few kilometres away can hide either one for days. Whether a site works depends on the exact place and the exact date, and launch dates slip.
 
-- **Sun above the horizon** → solar power and thermal conditions
-- **Earth above the horizon** → direct communication without a relay satellite
+NASA's own tools hold the data, but comparing several sites across several dates means working through them one case at a time.
 
-Near the pole both change a lot with a small shift in location or landing date, and launch dates slip. The data exists (Quickmap, Moon Trek, JPL Horizons), but comparing several site-and-date scenarios quickly is hard.
+## What the tool does
 
-## Our concept (draft, to be agreed by the team)
+1. **Pick a landing date** and a mission length.
+2. **See every candidate site ranked for that date**, with the reason any site is ruled out.
+3. **Open a site** to see where the Sun and Earth are relative to its real terrain skyline, how long until sunset and Earthset, and how the site holds up if the landing moves.
 
-A trade-off explorer for landing sites and dates, in three layers:
+For each of the 13 Artemis III candidate regions it reports:
 
-1. **Visibility engine.** Input: site coordinates and a date range. Output: Sun and Earth elevation over time compared with the terrain horizon, giving "sunlit" and "Earth visible" timelines.
-2. **Multi-factor score.** Turns the timelines into metrics per scenario, combines them with user-set weights, and shows a ranking together with the Pareto set (scenarios no other scenario beats on every factor).
-3. **Robustness to delay.** A site × landing-date heatmap of the score, to find sites that stay good when the launch slips.
-
-Candidate factors: percent of time sunlit, longest continuous darkness, mean solar elevation, percent of time Earth is visible, longest communication blackout, local slope.
-
-## Repository layout
-
-| Path | Contents |
+| Result | Meaning |
 |---|---|
-| `docs/space-apps-2026-reference.md` | Challenge statement, resources, judging criteria, submission rules |
-| `docs/design-principles.md` | Design decisions, hard limits and the measured visibility figures |
-| `docs/ui-interface.md` | Contract between the logic code and the visual interface |
-| `AGENTS.md` | Instructions for AI agents working in this repo: decisions, open questions, rules |
-| `PROGRESS.md` | Task board: who is doing what, and status |
-| `src/` | Code |
-| `data/` | Small processed data files (keep large raw files out of git) |
+| Sunlight ratio | Share of the mission with the Sun visible above the terrain |
+| Earth contact ratio | Share of the mission with Earth visible above the terrain |
+| Flatness | Mean slope within 120 m of the site |
+| Longest darkness and longest blackout | The worst single gap in power and in contact |
+| Time to sunset and Earthset | Counted from landing |
+| Worst case if the date slips | Lowest sunlight and contact ratios if landing moves up to 14 days either way |
+| Nearest workable date | The closest landing date on which the site passes every limit |
+| Eclipse hours | Hours when Earth blocks the Sun |
+
+Sites must pass limits the user can change (defaults: long-term sunlight and Earth visibility at least 50%, mission sunlight and contact at least 95%, slope at most 10°). Passing sites are ranked by a weighted score of sunlight, Earth contact and flatness, with the weights shown and adjustable. Any latitude and longitude can also be entered, as a rougher estimate without terrain.
+
+Changing the date is instant: all Sun and Earth positions for 2027–2030 are computed once at start-up (about 1.5 seconds) and looked up afterwards.
+
+## What we found
+
+- **No place at the south pole is sunlit 95% of the time in the long run.** The best spot, on the Connecting Ridge, reaches 88.4%. Nowhere has both sunlight and Earth visibility above 80%.
+- **Over a two-week mission the picture changes.** With the right landing date a site can have both for the whole mission. Across 2027–2030, 5% of site-and-date combinations reach 95% for both.
+- **A perfect date can be fragile.** Landing on 1 January 2028, Nobile Rim 1 has 100% sunlight and 100% Earth contact for 14 days. Move the landing by up to two weeks and its sunlight can fall to 41%.
+- **The best-lit site is the steepest.** The Connecting Ridge site averages 7.9° of slope and reaches 16.5° nearby.
+
+## NASA data used
+
+| Data | Used for |
+|---|---|
+| LOLA average Sun and Earth visibility maps, 60 m/pixel (LRO, PDS Geosciences Node) | Choosing the best point in each region; long-term limits; calibration |
+| LOLA elevation models LDEM_85S_40M and LDEM_75S_120M (LRO, PDS Geosciences Node) | Terrain skyline around each site; slope |
+| Artemis III candidate region outlines (Moon Trek) | The list of candidate sites |
+| JPL Horizons (DE441) | Checking our Sun and Earth positions |
+
+Exact files, links and other references are listed in `PROGRESS.md`.
+
+## How we know it is right
+
+- **Sun and Earth positions** agree with JPL Horizons to within 0.002° in elevation and 0.008° in azimuth at 10 test points (`tests/test_ephemeris.py`).
+- **Earth visibility**, averaged over 18.6 years with our terrain skylines, is within 0.5 percentage points of NASA's long-term map at 9 of the 13 sites; the largest difference is 12.9 points.
+- **Sun visibility** differs from NASA's map by 6.5 points on average and 17 at worst. Near the pole the Sun grazes the skyline, so tens of metres of position or terrain change the answer. We therefore shift each site's skyline by one constant so that our long-term average equals NASA's figure, and use that calibrated skyline for specific dates.
+- **Lunar eclipses** found by the tool in 2027–2030 fall on the dates of the known eclipses in that period.
+- The ranking rules are covered by `tests/test_planner.py`.
+
+## Limits of the tool
+
+- Results for a specific date are estimates anchored to NASA's long-term data, not mission-grade predictions.
+- "Earth visible" means some part of Earth's disc is above the terrain. A particular ground station can still be out of view.
+- Sunlight is counted as yes or no; received power is not computed, and eclipse hours are reported but not subtracted.
+- Slope comes from a 40 m elevation model and says nothing about boulders or lander-leg-scale hazards.
+- Custom coordinates have no terrain and no slope.
+- Each region is represented by a single point, its best 60 m pixel for combined sunlight and Earth visibility.
 
 ## Run it
 
@@ -42,15 +77,30 @@ Needs Python 3.10 or newer.
 ```
 pip install -r requirements.txt
 streamlit run src/app.py
+python tests/test_ephemeris.py
+python tests/test_planner.py
 ```
 
-The app opens in your browser. `src/app.py` is a reference interface; see `docs/ui-interface.md` for how a different interface should call the logic.
+## Repository layout
 
-## How we work
+| Path | Contents |
+|---|---|
+| `src/ephemeris.py` | Sun and Earth direction at any point on the Moon |
+| `src/sites.py` | Candidate sites with long-term visibility, skyline and slope |
+| `src/planner.py` | Date-specific conditions, limits, ranking, stability, nearest dates, custom coordinates |
+| `src/app.py` | Reference interface |
+| `data/` | Processed NASA data: skylines, calibration, slopes, visibility statistics |
+| `tests/` | Checks against JPL Horizons and of the ranking rules |
+| `docs/design-principles.md` | Design decisions, limits and measured figures |
+| `docs/physics-and-coordinates.md` | Derivation of the geometry and how it maps to the code |
+| `docs/ui-interface.md` | Contract between the calculation engine and the interface |
+| `docs/space-apps-2026-reference.md` | Challenge statement, judging criteria and submission rules |
+| `AGENTS.md` | Instructions for AI agents working in this repository |
+| `PROGRESS.md` | Task board, decisions, references and AI-use log |
 
-- Update `PROGRESS.md` when you start or finish a task.
-- Small, frequent commits; pull before you push.
-- Record every dataset, tool, library, image and piece of AI-assisted work in `PROGRESS.md` under "References and AI use". The submission form requires all of them.
+## Use of AI
+
+AI tools were used to write code and documents and to process the NASA data, under the team's direction. The concept, the date-first flow, the choice of factors and the limits are the team's. Every AI-assisted file says so at the top, and `PROGRESS.md` lists which tool did what.
 
 ## Team
 
