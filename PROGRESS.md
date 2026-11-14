@@ -1,4 +1,4 @@
-<!-- AI-assisted update by OpenAI Codex, 2026-11-14; physics derivation entries merged with current GitHub progress. -->
+<!-- AI-generated updates by OpenAI Codex, 2026-11-15; existing Claude and team progress preserved. -->
 # Progress
 
 Deadline: **Sunday 15 November, 23:59** (local time of our Local Event). Aim to submit a first version early; the project can be edited and resubmitted until the deadline.
@@ -24,6 +24,8 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 
 | 13 | Derive physical geometry and coordinate transformations | OpenAI Codex | done | `docs/physics-and-coordinates.md`: 24 projection round trips, cardinal directions, ENU bases, curvature and pixel-centre checks passed; no date-specific NASA-tool comparison. |
 | 14 | Audit raw-raster pixel registration and recompute site coordinates if needed | Claude (for Qiming) | done | Confirmed: the first analysis used a half-pixel-shifted transform (+30 m in x, -30 m in y). Site coordinates were recomputed from the raw rasters with NASA's pixel-centre convention, x=(c-2528.5)*60, y=(2528.5-r)*60, and are stored in `data/terrain_horizons.txt`, which the code uses. `data/a3_region_visibility_stats.json` keeps the earlier coordinates (about 42 m off) and is marked as superseded for positions; its visibility values are unaffected. |
+
+| 15 | Interactive polar atlas visual redesign | OpenAI Codex | done | Based on main f778f41; authentic NASA LROC mosaic, true-position clickable map, zoom/pan, hourly horizon explorer, lazy views and cached planner calls. 8 UI checks, 11 planner checks and Horizons checks passed; desktop and 390px browser layouts inspected. Not deployed. |
 
 ## Proposed split for three people
 
@@ -55,6 +57,7 @@ Tasks 1, 11 and 12 are shared. First step for everyone: agree the file formats a
 List everything here as you use it. The submission form asks for all of it.
 
 ### NASA data and resources
+- Interface basemap: NASA/GSFC/Arizona State University LROC WAC south-pole mosaic, served by NASA Moon Trek: https://trek.nasa.gov/moon/trekarcgis/rest/services/LRO_WAC_Mosaic_SPole60_100m_v02/ImageServer . Retrieved once as `data/lroc-south-pole.jpg` (245,467 bytes, 1200 x 1200 pixels); exact export URL and projection in `data/lroc-south-pole.source.json`. Display bounds +/-210 km in south polar stereographic coordinates; radius 1,737,400 m, central meridian 0, standard parallel -90. Export is 350 m/display pixel from a native 100 m/pixel service. Archival shadows are not selected-date illumination. Projection metadata checked; no independent landmark-registration audit performed.
 - NASA PDS LOLA solar visibility metadata: https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/avgvisib_85s_060m_201608.lbl ; polar projection catalog: https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/catalog/dsmap_polar.cat . Inspected for task 13; raw imagery not downloaded in that task. Earth label fetch unsuccessful; its disc definition remains unverified in this audit.
 - NASA PDS LOLA scaling FAQ: https://pds-geosciences.wustl.edu/missions/lro/lola_faq.htm ; JPL Horizons manual: https://ssd.jpl.nasa.gov/horizons/manual.html ; NASA NAIF lunar frame tutorial: https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/Tutorials/pdf/individual_docs/23_lunar-earth_pck-fk.pdf . Consulted for physical and frame conventions; no Horizons ephemeris request executed.
 - NASA Cross-Program Design Specification for Natural Environments, revision H, section 3.4.9: https://ntrs.nasa.gov/api/citations/20205007447/downloads/SLS-SPEC-159%20Cross-Program%20Design%20Specification%20for%20Natural%20Environments%20%28DSNE%29%20REVISION%20H.pdf . Physical background on lunar solar day and obliquity, not an adopted project requirement.
@@ -64,11 +67,13 @@ List everything here as you use it. The submission form asks for all of it.
 - Moon Trek `A3_Named_regions` service (Artemis III region outlines): https://trek.nasa.gov/moon/trekarcgis2/rest/services/A3_Named_regions/MapServer/0
 
 ### Partner agency data and other references (data, tools, libraries, images)
+- Visual workflow: https://github.com/houxin0010/distinctive-ai-design and https://github.com/emilkowalski/skills (`emil-design-eng`, `animation-performance`). Existing Streamlit/Plotly stack; no new application dependencies. Playwright with local Edge and Streamlit AppTest used for validation. Real orbital imagery only; no generated media or NASA branding.
 - Task 13: existing Python interpreter and standard-library `math`, `ast`, and `pathlib` for analytical checks; OpenAI Codex web search for primary-source documentation. No new runtime dependencies. USGS projection reference and NASA Earth-label retrieval were attempted but unavailable; neither supports a new verified result.
 - Python libraries: Streamlit, Plotly, pandas, NumPy, PyERFA (see `requirements.txt`). PyERFA supplies the Earth and Moon position routines `epv00` and `moon98`.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### AI tools used and for what
+- OpenAI Codex: redesigned `src/app.py` as an ivory/forest polar atlas; added map selection, zoom/pan, an hourly horizon explorer, cached planner queries and on-demand workspace views. Preserved Claude's slope/weight/slip/date/custom-coordinate results. Added the visual theme, UI regression tests and image provenance. Reviewed actual desktop/mobile screenshots; offset crowded map labels without moving site coordinates and corrected axis spacing. Three logic modules are byte-for-byte unchanged from main f778f41. Tested 8 UI regressions, 11 planner checks, JPL Horizons comparisons, real map click/zoom/reset and timeline keyboard interaction. One local timeline update measured 384 ms; no real-device frame-rate claim. Independent code review was interrupted by a reviewer usage limit; the observed cross-view state issue was fixed and regression-tested.
 - Claude (Anthropic): reviewed `src/planner.py`; vectorised the date scan (about 20 times faster), accepted late times on the last landing day, and counted eclipses only while the Sun is visible. Three tests added; Astra's `tests/test_interface.py` passes against it.
 - Claude (Anthropic): rewrote `src/app.py` as the working interface on top of `src/planner.py`, added `.streamlit/config.toml`, and made the date calendar use the chosen landing hour.
 - Claude (Anthropic): rewrote `README.md` to describe the built tool, its data, validation and limits.

@@ -1,0 +1,15 @@
+{
+  "_comment": "AI-generated provenance record by OpenAI Codex, 2026-11-15. The accompanying JPEG is a NASA service export, not AI-generated imagery.",
+  "product": "LRO_WAC_Mosaic_SPole60_100m_v02",
+  "credit": "NASA/GSFC/Arizona State University, LROC WAC; served by NASA Moon Trek",
+  "source": "https://trek.nasa.gov/moon/trekarcgis/rest/services/LRO_WAC_Mosaic_SPole60_100m_v02/ImageServer",
+  "export": "https://trek.nasa.gov/moon/trekarcgis/rest/services/LRO_WAC_Mosaic_SPole60_100m_v02/ImageServer/exportImage?bbox=-210000,-210000,210000,210000&size=1200,1200&format=jpg&interpolation=RSP_BilinearInterpolation&f=image",
+  "retrieved_utc": "2026-11-14",
+  "projection": "South polar stereographic; spherical Moon radius 1737400 m; central meridian 0 degrees; standard parallel -90 degrees; zero false easting/northing",
+  "extent_m": [-210000, -210000, 210000, 210000],
+  "image_dimensions_px": [1200, 1200],
+  "display_pixel_size_m": 350,
+  "native_service_pixel_size_m": 100,
+  "orientation": "+x = 90 degrees E, +y = 0 degrees longitude; top-left image edge maps to (-210 km, +210 km)",
+  "use": "Visual basemap only. No measurements or illumination calculations use this image. Archival illumination is not the selected landing date."
+}

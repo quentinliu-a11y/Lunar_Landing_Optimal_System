@@ -1,4 +1,5 @@
-"""Lunar Landing Optimal System - working interface.
+# AI-generated interface redesign by OpenAI Codex, based on Claude's working interface.
+"""Lunar Landing Optimal System - polar atlas interface.
 
 AI-assisted: written by Claude (Anthropic), 2026-11-14.
 
@@ -14,6 +15,8 @@ from __future__ import annotations
 
 import datetime as dt
 import math
+import base64
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -21,18 +24,116 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import planner
-from sites import MOON_RADIUS_M
+from sites import MOON_RADIUS_M, load_sites, rank_sites
 
-st.set_page_config(page_title="Lunar Landing Optimal System", layout="wide")
+st.set_page_config(page_title="Lunar Landing | South Pole Atlas", layout="wide",
+                   initial_sidebar_state="collapsed")
 
 FIRST_DAY, LAST_DAY = dt.date(2027, 1, 1), dt.date(2030, 12, 31)
-PASS, FAIL, PICK = "#2a9d8f", "#8d99ae", "#e76f51"
-SUN, EARTH, GROUND = "#f4a261", "#4ea8de", "#3d4a5c"
-BG = "#0f1722"
+PASS, FAIL, PICK = "#79bcaa", "#7d8a91", "#db8757"
+SUN, EARTH, GROUND = "#a3581c", "#22758c", "#dde2dc"
+BG = "#faf9f5"
+IMAGERY_CREDIT = "NASA/GSFC/Arizona State University · LROC WAC mosaic via NASA Moon Trek"
+IMAGERY_URL = "https://trek.nasa.gov/moon/trekarcgis/rest/services/LRO_WAC_Mosaic_SPole60_100m_v02/ImageServer"
 ESTIMATE_NOTE = (
-    "Date results are estimates: real terrain skylines from NASA LOLA elevation data, "
-    "calibrated so the long-term average matches NASA's visibility maps."
+    "Estimate anchored to NASA long-term data. "
+    "LOLA terrain skylines are calibrated to NASA's 18.6-year visibility averages."
 )
+
+
+def styles() -> None:
+    st.markdown("""<style>
+    :root {color-scheme:light; --ink:#203631; --muted:#5b6c65; --rule:#d6dcd3;}
+    .stApp {background:#faf9f5; color:var(--ink);}
+    [data-testid="stHeader"] {background:rgba(250,249,245,.96);}
+    [data-testid="stMainBlockContainer"], .main .block-container {
+        max-width:1480px; padding:2.3rem 3.5rem 3rem;}
+    [data-testid="stSidebar"] {background:#edf0e8; border-right:1px solid var(--rule);}
+    h1,h2,h3,p,label,[data-testid="stMetricValue"] {color:var(--ink);}
+    h1 {font-family:Georgia,serif; font-weight:400!important; letter-spacing:-.045em;
+        font-size:clamp(2.6rem,5.2vw,4.9rem)!important; line-height:1.04!important;}
+    h2 {font-family:Georgia,serif; font-size:2.1rem!important; font-weight:400!important; letter-spacing:-.025em;}
+    h3 {font-size:1.25rem!important; font-weight:600!important;}
+    [data-testid="stCaptionContainer"] p {color:var(--muted); font-size:.82rem; line-height:1.5;}
+    .masthead {display:flex; justify-content:space-between; align-items:center; gap:1rem;
+        padding:0 0 1.1rem; margin-bottom:1.6rem; border-bottom:1px solid var(--rule);}
+    .wordmark {font-weight:750; letter-spacing:.15em; font-size:.86rem;}
+    .masthead small,.eyebrow {font-family:Consolas,monospace; text-transform:uppercase;
+        font-size:.72rem; letter-spacing:.13em; color:var(--muted);}
+    .eyebrow {margin:0 0 .8rem;}
+    .deck {max-width:32rem; font-size:1.03rem; line-height:1.65; color:var(--muted); margin:1rem 0 1.6rem;}
+    .atlas-heading {display:flex; justify-content:space-between; border-top:1px solid var(--rule);
+        padding-top:.8rem; margin:.5rem 0 .5rem; font-size:.75rem; letter-spacing:.1em; color:var(--muted);}
+    .legend {display:flex; flex-wrap:wrap; gap:1.2rem; font-size:.8rem; color:var(--muted); margin:.6rem 0;}
+    .legend b {font-size:1rem; margin-right:.3rem;}
+    .result-line {padding:.7rem 0; border-bottom:1px solid var(--rule); color:var(--muted);}
+    .result-line strong {color:var(--ink);}
+    [data-testid="stForm"] {border:1px solid var(--rule); border-radius:3px; padding:1.25rem; background:#fffefa;}
+    [data-baseweb="input"], [data-baseweb="select"]>div {background:#eef1e9!important; color:var(--ink)!important; border-radius:3px!important;}
+    input {color:var(--ink)!important;}
+    [data-testid="stMetric"] {border-top:1px solid var(--rule); padding:.8rem 0 .2rem;}
+    [data-testid="stMetricLabel"] p {font-size:.76rem; color:var(--muted);}
+    [data-testid="stMetricValue"] {font-family:Georgia,serif; font-size:2.05rem; letter-spacing:-.025em;}
+    [data-testid="stButton"] button,[data-testid="stFormSubmitButton"] button {
+        border-radius:3px; min-height:2.8rem; transition:transform 140ms ease-out,opacity 140ms ease-out;}
+    button[kind^="primary"] {background:#284b3f!important; border-color:#284b3f!important;}
+    button[kind^="primary"] p {color:#fff!important;}
+    [data-testid="stSlider"] [role="slider"] {background:#346b5b!important;}
+    [data-testid="stSlider"] [data-testid="stThumbValue"] {color:#346b5b!important;}
+    button[kind="secondary"] {background:#faf9f5; color:var(--ink); border-color:#aab7ac;}
+    button:active {transform:scale(.985);}
+    button:focus-visible,input:focus-visible {outline:2px solid #346b5b!important; outline-offset:3px;}
+    [data-testid="stRadio"] [role="radiogroup"] {gap:.3rem; padding:.3rem 0 .8rem; border-bottom:1px solid var(--rule);}
+    [data-testid="stRadio"] label {padding:.45rem .7rem; border-radius:3px;}
+    [data-testid="stRadio"] label:has(input:checked) {background:#e1e9de;}
+    [data-testid="stAlert"] {border-radius:3px;}
+    [data-testid="stExpander"] {border-radius:3px; border-color:var(--rule);}
+    @media (hover:hover) and (pointer:fine) {button:hover {opacity:.86;}}
+    @media (prefers-reduced-motion:reduce) {*,*::before,*::after {
+        animation:none!important; transition:none!important; scroll-behavior:auto!important;}}
+    @media (max-width:760px) {
+        [data-testid="stMainBlockContainer"],.main .block-container {padding:4rem 1rem 2rem;}
+        .masthead {align-items:flex-start;} .masthead small {max-width:9rem;text-align:right;}
+        h1 {font-size:3rem!important;} h2 {font-size:1.75rem!important;}
+        [data-testid="stMetricValue"] {font-size:1.7rem;}
+    }
+    </style>""", unsafe_allow_html=True)
+
+
+def masthead() -> None:
+    st.markdown('<div class="masthead"><span class="wordmark">LUNAR / LANDING</span>'
+                '<small>South pole atlas · Space Apps 2026</small></div>', unsafe_allow_html=True)
+
+
+@st.cache_data(show_spinner=False)
+def overview_sites() -> pd.DataFrame:
+    return rank_sites(load_sites(), min_sun=0.5, min_earth=0.5)
+
+
+@st.cache_data(show_spinner=False)
+def lunar_imagery() -> str | None:
+    """Display-only image: no runtime downloads or image-derived science.
+
+    Moon Trek export extent: x/y +/-210000 m, south polar stereographic,
+    radius 1737400 m, central meridian 0, standard parallel -90.
+    Matches sites.py's +y toward 0 longitude and +x toward 90 E.
+    Pixel edges, not pixel centres, define Plotly image bounds.
+    """
+    image_path = Path(__file__).resolve().parents[1] / "data/lroc-south-pole.jpg"
+    if not image_path.is_file():
+        return None
+    return "data:image/jpeg;base64," + base64.b64encode(image_path.read_bytes()).decode("ascii")
+
+
+@st.cache_data(show_spinner=False, max_entries=96)
+def query(method: str, *args, **kwargs):
+    """Cache planner results by their full input settings; never reimplement science here."""
+    return getattr(planner, method)(get_lookup(), *args, **kwargs)
+
+
+@st.cache_data(show_spinner=False, max_entries=32)
+def custom_conditions(lat: float, lon: float, landing: dt.datetime, window: int):
+    return planner.custom_site(lat, lon, landing, window)
 
 
 @st.cache_resource(show_spinner="Computing Sun and Earth positions for 2027-2030...")
@@ -46,6 +147,10 @@ def init_state() -> None:
     st.session_state.setdefault("landing_time", dt.time(0, 0))
     st.session_state.setdefault("window_days", 14)
     st.session_state.setdefault("selected_site", None)
+    # Retain these widget values when a different page/section is mounted.
+    for key in list(st.session_state):
+        if key.startswith(("criterion_", "custom_", "hour_")):
+            st.session_state[key] = st.session_state[key]
 
 
 def landing_dt() -> dt.datetime:
@@ -64,8 +169,11 @@ def fmt_hours(hours, up_now: bool, what: str) -> str:
 
 def dark_layout(fig: go.Figure, height: int) -> go.Figure:
     fig.update_layout(
-        height=height, margin=dict(l=10, r=10, t=30, b=10), paper_bgcolor=BG, plot_bgcolor=BG,
-        font=dict(color="#cbd5e1"), legend=dict(orientation="h", y=1.08, x=0),
+        height=height, margin=dict(l=75, r=20, t=55, b=55), paper_bgcolor=BG, plot_bgcolor=BG,
+        font=dict(color="#385249", family="Arial, sans-serif", size=12),
+        legend=dict(orientation="h", y=1.16, x=0),
+        hoverlabel=dict(bgcolor="#fffefa", font_color="#203631"),
+        transition=dict(duration=0),
     )
     return fig
 
@@ -74,85 +182,122 @@ def dark_layout(fig: go.Figure, height: int) -> go.Figure:
 
 
 def page_date() -> None:
-    st.title("Lunar Landing Optimal System")
-    st.caption("Choose when to land at the Moon's south pole, then see which sites work on that date.")
-
-    left, _ = st.columns([2, 1])
+    left, right = st.columns([1, 1.12], gap="large")
     with left:
-        st.header("Step 1 of 2: When do you plan to land?")
-        c1, c2 = st.columns(2)
-        st.session_state.landing_date = c1.date_input(
-            "Planned landing date (UTC)", value=st.session_state.landing_date,
-            min_value=FIRST_DAY, max_value=LAST_DAY,
-        )
-        st.session_state.landing_time = c2.time_input(
-            "Landing time (UTC)", value=st.session_state.landing_time, step=3600
-        )
-        st.session_state.window_days = st.slider(
-            "Mission length on the surface (days)", 1, 60, st.session_state.window_days,
-            help="Sunlight and Earth contact are assessed over this period after landing.",
-        )
-        st.write(
-            f"Landing **{landing_dt():%d %b %Y, %H:%M} UTC**, "
-            f"operating for **{st.session_state.window_days} days**."
-        )
-        if st.button("Find landing sites", type="primary"):
-            st.session_state.step = 2
-            st.rerun()
-
-    with st.expander("Why does the date matter so much?"):
-        st.write(
-            "At the Moon's south pole the Sun and the Earth both stay within a few degrees of the "
-            "horizon. A ridge a few kilometres away can hide either of them for days. Whether a site "
-            "has power (Sun) and a radio link (Earth) therefore depends strongly on the date."
-        )
+        st.markdown('<p class="eyebrow">01 / Mission window</p>', unsafe_allow_html=True)
+        st.title("Choose your landing window.")
+        st.markdown('<p class="deck">At the lunar south pole, a small shift in date changes '
+                    'the picture. Find a place with sunlight, Earth contact and suitable terrain '
+                    'for your mission.</p>', unsafe_allow_html=True)
+        with st.form("mission"):
+            c1, c2 = st.columns(2)
+            date = c1.date_input("Planned landing date (UTC)", value=st.session_state.landing_date,
+                                 min_value=FIRST_DAY, max_value=LAST_DAY)
+            time = c2.time_input("Landing time (UTC)", value=st.session_state.landing_time, step=3600)
+            window = st.slider("Mission length on the surface (days)", 1, 60, st.session_state.window_days,
+                               help="Visibility is assessed over this period after landing.")
+            st.caption("2027–2030 · UTC throughout · Hourly estimates")
+            submitted = st.form_submit_button("Find landing sites →", type="primary", use_container_width=True)
+            if submitted:
+                if date is None or time is None:
+                    st.error("Enter a landing date and time to continue.")
+                else:
+                    st.session_state.update(landing_date=date, landing_time=time, window_days=window, step=2)
+                    st.rerun()
+        with st.expander("Why the landing date matters"):
+            st.write("The Sun and Earth graze the polar horizon. A nearby ridge can hide either for days. "
+                     "We compare your mission window against each site's terrain skyline and visibility history.")
+    with right:
+        sites = overview_sites()
+        st.markdown(f'<div class="atlas-heading"><span>POLAR ATLAS</span><span>{len(sites)} CANDIDATE REGIONS</span></div>',
+                    unsafe_allow_html=True)
+        st.plotly_chart(polar_map(sites, "", overview=True), use_container_width=True,
+                        config={"displayModeBar": False, "scrollZoom": False}, theme=None)
+        st.caption("Artemis III candidate regions · NASA LOLA coordinates. Mission rankings follow your date selection.")
+        image_credit()
+        st.markdown('<div class="atlas-heading"><span>01 / SET A DATE</span><span>02 / EXPLORE SITES</span></div>',
+                    unsafe_allow_html=True)
 
 
 # ------------------------------------------------------------------ charts
 
 
-def polar_map(ranked: pd.DataFrame, selected: str) -> go.Figure:
+def polar_map(ranked: pd.DataFrame, selected: str, overview: bool = False) -> go.Figure:
     fig = go.Figure()
+    source = lunar_imagery()
+    if source:
+        fig.add_layout_image(source=source, xref="x", yref="y", x=-210, y=210, sizex=420, sizey=420,
+                             sizing="stretch", layer="below", opacity=1, xanchor="left", yanchor="top")
     max_r = 2 * MOON_RADIUS_M * math.tan(math.radians(6.0) / 2) / 1000.0  # 84 deg S
     for lat in (-89, -88, -87, -86, -85, -84):
         r = 2 * MOON_RADIUS_M * math.tan(math.radians(90 + lat) / 2) / 1000.0
         ang = np.radians(np.arange(0, 361, 3))
         fig.add_trace(go.Scatter(x=r * np.sin(ang), y=r * np.cos(ang), mode="lines",
-                                 line=dict(color="#2c3a4d", width=1), hoverinfo="skip", showlegend=False))
+                                 line=dict(color="rgba(211,225,219,.18)", width=1), hoverinfo="skip", showlegend=False))
         fig.add_annotation(x=0, y=-r, text=f"{-lat}°S", showarrow=False, yshift=-8,
                            font=dict(color="#7b8794", size=10))
     for lon in range(0, 360, 30):
         a = math.radians(lon)
         fig.add_trace(go.Scatter(x=[0, max_r * math.sin(a)], y=[0, max_r * math.cos(a)], mode="lines",
-                                 line=dict(color="#2c3a4d", width=1), hoverinfo="skip", showlegend=False))
+                                 line=dict(color="rgba(211,225,219,.18)", width=1), hoverinfo="skip", showlegend=False))
     for text, x, y, xs, ys in (("0° (towards Earth)", 0, max_r, 0, 12), ("90°E", max_r, 0, 22, 0),
                                ("90°W", -max_r, 0, -22, 0), ("180°", 0, -max_r, 0, -22)):
         fig.add_annotation(x=x, y=y, text=text, showarrow=False, xshift=xs, yshift=ys,
                            font=dict(color="#cbd5e1", size=11))
 
     colours = [PICK if r.site == selected else (PASS if r.passes else FAIL) for r in ranked.itertuples()]
+    if overview:
+        colours = ["#c2cdbd"] * len(ranked)
+    custom = ranked[["site"]].values if overview else np.stack(
+        [ranked["site"], ranked["sun_window"], ranked["earth_window"], ranked["slope_mean_deg"], ranked["score"]], axis=-1)
+    if selected:
+        chosen = ranked[ranked.site == selected]
+        fig.add_trace(go.Scatter(x=chosen.x_km, y=chosen.y_km, mode="markers", hoverinfo="skip",
+                                marker=dict(size=36, color="rgba(0,0,0,0)", line=dict(color=PICK, width=2)),
+                                showlegend=False))
     fig.add_trace(go.Scatter(
-        x=ranked["x_km"], y=ranked["y_km"], mode="markers+text",
-        text=[str(v) for v in ranked["rank"]], textfont=dict(color="white", size=11),
-        marker=dict(size=24, color=colours, line=dict(color="white", width=1)),
-        customdata=np.stack([ranked["site"], ranked["sun_window"], ranked["earth_window"],
-                             ranked["slope_mean_deg"], ranked["score"]], axis=-1),
-        hovertemplate=("<b>%{customdata[0]}</b><br>Sunlight in mission: %{customdata[1]:.0%}<br>"
+        x=ranked["x_km"], y=ranked["y_km"], mode="markers",
+        text=[str(v) for v in ranked["rank"]], textfont=dict(color="#0e211e", size=11),
+        marker=dict(size=8 if overview else 12, color=colours, line=dict(color="#faf9f5", width=1)),
+        customdata=custom,
+        hovertemplate="<b>%{customdata[0]}</b><extra></extra>" if overview else ("<b>%{customdata[0]}</b><br>Sunlight in mission: %{customdata[1]:.0%}<br>"
                        "Earth contact in mission: %{customdata[2]:.0%}<br>Mean slope: %{customdata[3]:.1f}°<br>"
                        "Score: %{customdata[4]:.2f}<extra></extra>"),
         showlegend=False,
     ))
+    if not overview:
+        # Offset only screen-space labels. Actual geographic points never move.
+        label_offsets = {
+            "de Gerlache Rim 2": (-42, 15), "de Gerlache Rim": (-18, -30),
+            "Connecting Ridge Extension": (-38, 30), "Connecting Ridge": (10, 42),
+            "Nobile Rim 1": (24, 0), "Leibnitz Beta Plateau": (-25, -18),
+        }
+        for row, colour in zip(ranked.itertuples(), colours):
+            ax, ay = label_offsets.get(row.site, (16, -16))
+            fig.add_annotation(x=row.x_km, y=row.y_km, text=str(row.rank), showarrow=True,
+                               ax=ax, ay=ay, arrowhead=0, arrowwidth=1, arrowcolor=colour,
+                               bgcolor="#11241f", bordercolor=colour, borderpad=3,
+                               font=dict(color="#f4f4e9", size=11), captureevents=False)
     pad = max_r * 1.15
-    dark_layout(fig, 600)
-    fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), dragmode=False,
+    dark_layout(fig, 520 if overview else 560)
+    fig.update_layout(paper_bgcolor="#102923", plot_bgcolor="#102923", font_color="#cfdbce",
+                      margin=dict(l=20, r=20, t=35, b=35), dragmode="pan", clickmode="event+select",
+                      uirevision="polar-atlas", selectionrevision=selected,
                       xaxis=dict(visible=False, range=[-pad, pad]),
                       yaxis=dict(visible=False, range=[-pad, pad], scaleanchor="x", scaleratio=1))
     return fig
 
 
-def panorama(lookup: planner.Lookup, site: str, tl: pd.DataFrame) -> go.Figure:
+def image_credit() -> None:
+    if lunar_imagery():
+        st.caption(f"Imagery: [{IMAGERY_CREDIT}]({IMAGERY_URL}). Archival mosaic; shadows are not for your selected date.")
+    else:
+        st.caption("Lunar imagery is unavailable. The coordinate grid and site selection remain usable.")
+
+
+def panorama(lookup: planner.Lookup, site: str, tl: pd.DataFrame, frame: int = 0) -> go.Figure:
     """Terrain skyline all around the site with the Sun's and Earth's paths over the mission."""
-    sk = planner.skyline(lookup, site)
+    sk = query("skyline", site)
     floor = min(sk["terrain_el_deg"].min(), tl["sun_el"].min(), tl["earth_el"].min()) - 1.0
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=sk["azimuth_deg"], y=[floor] * len(sk), mode="lines",
@@ -173,12 +318,46 @@ def panorama(lookup: planner.Lookup, site: str, tl: pd.DataFrame) -> go.Figure:
             x=[tl[f"{body}_az"].iloc[0]], y=[tl[f"{body}_el"].iloc[0]], mode="markers",
             marker=dict(color=colour, size=16, symbol="circle-open", line=dict(width=3, color=colour)),
             name=f"{label} at landing", hoverinfo="skip"))
+        if frame:
+            fig.add_trace(go.Scatter(x=[tl[f"{body}_az"].iloc[frame]], y=[tl[f"{body}_el"].iloc[frame]],
+                                     mode="markers", marker=dict(color=colour, size=14, symbol="diamond"),
+                                     name=f"{label} at selected hour", hoverinfo="skip"))
     dark_layout(fig, 380)
     fig.update_xaxes(title="Direction (azimuth, clockwise from lunar north)", range=[0, 360],
                      tickvals=[0, 90, 180, 270, 360], ticktext=["N 0°", "E 90°", "S 180°", "W 270°", "N 360°"],
-                     gridcolor="#1f2a3a")
-    fig.update_yaxes(title="Elevation (degrees)", gridcolor="#1f2a3a", zerolinecolor="#55647a")
+                     gridcolor="#dce1d8")
+    fig.update_yaxes(title="Elevation (degrees)", gridcolor="#dce1d8", zerolinecolor="#77877c")
     return fig
+
+
+@st.fragment
+def horizon_explorer(site: str, window: int, landing: dt.datetime) -> None:
+    """Scrubbing reruns only this view, not ranking, imagery or date calendars."""
+    tl = query("timeline", site, landing, window)
+    st.header("Read the horizon.")
+    st.caption(f"{site} · {window}-day mission · {ESTIMATE_NOTE}")
+    chart = st.radio("Horizon view", ["Sky panorama", "Visibility over time"], horizontal=True,
+                     label_visibility="collapsed")
+    frame = st.slider("Explore the mission (hours after landing)", 0, len(tl) - 1, 0,
+                       key=f"hour_{site}_{landing.isoformat()}_{window}")
+    current = tl.iloc[frame]
+    st.markdown(f"**{current.time_utc:%d %b %Y · %H:%M} UTC** · "
+                f"Sun {current.sun_el:+.2f}° ({'visible' if current.sun_up else 'hidden'}) · "
+                f"Earth {current.earth_el:+.2f}° ({'visible' if current.earth_up else 'hidden'})")
+    if chart == "Sky panorama":
+        fig = panorama(get_lookup(), site, tl, frame)
+        note = ("The shaded profile is the LOLA terrain skyline. Hourly dots show Sun and Earth centres; "
+                "faint dots are hidden. Rings mark landing; diamonds mark your selected hour. "
+                "Visibility uses calibrated terrain limits, which can differ from the raw profile.")
+    else:
+        fig = margin_chart(tl)
+        fig.add_vline(x=current.time_utc, line=dict(color=PICK, width=2))
+        note = "Above zero, the top edge of the body clears its calibrated terrain limit; below zero it is hidden."
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, theme=None)
+    st.caption(note)
+    st.caption("Earth visible means any part of its disc; it does not guarantee a link to a specific ground station. "
+               "Sun and Earth positions checked against NASA JPL Horizons: within 0.01°. "
+               "Eclipse hours are reported separately and are not subtracted from sunlight ratios.")
 
 
 def margin_chart(tl: pd.DataFrame) -> go.Figure:
@@ -187,14 +366,14 @@ def margin_chart(tl: pd.DataFrame) -> go.Figure:
         fig.add_trace(go.Scatter(x=tl["time_utc"], y=tl[f"{body}_margin"], mode="lines",
                                  line=dict(color=colour, width=2), name=label,
                                  hovertemplate=label + " %{x|%d %b %H:%M} UTC<br>%{y:.2f}° above skyline<extra></extra>"))
-    fig.add_hline(y=0, line=dict(color="#e2e8f0", width=1, dash="dash"))
+    fig.add_hline(y=0, line=dict(color="#6c7e72", width=1, dash="dash"))
     ecl = tl[tl["eclipse"] > 0]
     if len(ecl):
         fig.add_vrect(x0=ecl["time_utc"].iloc[0], x1=ecl["time_utc"].iloc[-1], fillcolor="#e63946",
                       opacity=0.25, line_width=0, annotation_text="eclipse", annotation_position="top left")
     dark_layout(fig, 300)
-    fig.update_xaxes(title="Time (UTC)", gridcolor="#1f2a3a")
-    fig.update_yaxes(title="Degrees above the terrain skyline", gridcolor="#1f2a3a")
+    fig.update_xaxes(title="Time (UTC)", gridcolor="#dce1d8")
+    fig.update_yaxes(title="Degrees above the terrain skyline", gridcolor="#dce1d8")
     return fig
 
 
@@ -202,13 +381,13 @@ def date_heatmap(scan: pd.DataFrame, order: list[str], landing_day: dt.date, col
     grid = scan.pivot(index="site", columns="date", values=column).loc[order]
     fig = go.Figure(go.Heatmap(
         z=grid.values, x=[pd.Timestamp(d) for d in grid.columns], y=grid.index, zmin=0, zmax=1,
-        colorscale=[[0, "#1b2433"], [0.5, "#3b6ea5"], [0.95, "#8fd3c8"], [1, "#f6f7b0"]],
+        colorscale=[[0, "#edf0e8"], [0.5, "#98b9a5"], [0.95, "#34765b"], [1, "#164435"]],
         colorbar=dict(title="share", tickformat=".0%"),
         hovertemplate="%{y}<br>Landing %{x|%d %b %Y}<br>" + title + ": %{z:.0%}<extra></extra>"))
     if grid.columns[0] <= landing_day <= grid.columns[-1]:
         fig.add_vline(x=pd.Timestamp(landing_day), line=dict(color=PICK, width=2))
     dark_layout(fig, 430)
-    fig.update_layout(title=dict(text=title, font=dict(color="#e2e8f0", size=15)), margin=dict(l=10, r=10, t=45, b=10))
+    fig.update_layout(title=dict(text=title, font=dict(color="#203631", size=15)), margin=dict(l=10, r=10, t=45, b=10))
     return fig
 
 
@@ -220,11 +399,27 @@ def limit_args(limits: dict) -> dict:
     return {k: v for k, v in limits.items() if k not in ("slip_days", "weights")}
 
 
+def choose_from_map() -> None:
+    """Use only the site identifier returned with a plotted data point."""
+    points = st.session_state.get("site_map", {}).get("selection", {}).get("points", [])
+    if points and points[0].get("customdata"):
+        site = points[0]["customdata"][0]
+        if site in list(overview_sites()["site"]):
+            st.session_state.selected_site = site
+            st.session_state.site_picker = site
+
+
+def choose_from_list() -> None:
+    st.session_state.selected_site = st.session_state.site_picker
+
+
 def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> None:
     names = list(ranked["site"])
     if st.session_state.selected_site not in names:
         st.session_state.selected_site = names[0]
-    site = st.selectbox("Site", names, index=names.index(st.session_state.selected_site))
+    if st.session_state.get("site_picker") != st.session_state.selected_site:
+        st.session_state.site_picker = st.session_state.selected_site
+    site = st.selectbox("Selected landing site", names, key="site_picker", on_change=choose_from_list)
     st.session_state.selected_site = site
     row = next(r for r in ranked.itertuples() if r.site == site)
     window = st.session_state.window_days
@@ -233,7 +428,7 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
     st.caption(f"{abs(row.lat):.3f}°S, {abs(row.lon):.3f}°{'E' if row.lon >= 0 else 'W'} · "
                f"surface height {row.height_m:,.0f} m")
     if row.passes:
-        st.success(f"Passes every limit. Score {row.score:.2f}.")
+        st.success(f"Passes all five limits · Provisional score {row.score:.2f}")
     else:
         st.warning("Not recommended on this date: " + row.fail_reasons + ".")
 
@@ -246,30 +441,32 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
     c2.metric("Earth contact", f"{row.earth_window:.0%}",
               help="Share of the mission with any part of Earth above the terrain skyline.")
     c3.metric("Mean slope", f"{row.slope_mean_deg:.1f}°", help=f"Within 120 m. Steepest point: {row.slope_max_deg:.1f}°.")
+    if row.eclipse_hours > 0:
+        st.warning(f"Lunar eclipse: {row.eclipse_hours:.0f} h. Not subtracted from the sunlight ratio.")
+    st.caption(ESTIMATE_NOTE)
+    c1, c2, c3 = st.columns(3)
     c1.metric("Sunset in", short(row.hours_to_sunset, row.sun_up_at_landing, "Sun"),
               help="Time from landing until the Sun next goes behind terrain. 'hidden' means it is already hidden at landing.")
     c2.metric("Earthset in", short(row.hours_to_earthset, row.earth_up_at_landing, "Earth"),
               help="Time from landing until Earth next goes behind terrain.")
     c3.metric("Sun height", f"{row.sun_el_at_landing:+.1f}°", help="Sun elevation at landing, relative to a level horizon.")
-    c1.metric("Longest dark", f"{row.longest_dark_h:.0f}h", help="Longest unbroken period without sunlight in the mission.")
-    c2.metric("Longest blackout", f"{row.longest_blackout_h:.0f}h", help="Longest unbroken period without Earth in view.")
-    c3.metric("Steepest", f"{row.slope_max_deg:.1f}°", help="Steepest slope within 120 m of the site.")
-    st.caption(f"Long-term averages (NASA LOLA, 18.6 years): sunlight {row.sun_long_term:.0%}, "
-               f"Earth visibility {row.earth_long_term:.0%}.")
+    with st.expander("Resilience, terrain & long-term record"):
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Longest dark", f"{row.longest_dark_h:.0f}h")
+        c2.metric("Longest blackout", f"{row.longest_blackout_h:.0f}h")
+        c3.metric("Steepest slope", f"{row.slope_max_deg:.1f}°", help="Within 120 m of the site.")
+        st.caption(f"Slope at the site: {row.slope_site_deg:.1f}°. Long-term averages (NASA LOLA, 18.6 years): "
+                   f"sunlight {row.sun_long_term:.0%}, Earth visibility {row.earth_long_term:.0%}.")
+        st.write(f"Earth elevation at landing: **{row.earth_el_at_landing:+.2f}°**. "
+                 f"Sun / Earth terrain margins: **{row.sun_margin_at_landing:+.2f}° / "
+                 f"{row.earth_margin_at_landing:+.2f}°**.")
+        slip = limits["slip_days"]
+        if slip:
+            st.markdown(f"**Landing slip ±{slip} days:** sunlight could fall to **{row.sun_window_worst:.0%}** "
+                        f"and Earth contact to **{row.earth_window_worst:.0%}**. "
+                        + ("Still meets the mission limits." if row.stable else "Would no longer meet the mission limits."))
 
-    slip = limits["slip_days"]
-    if slip:
-        st.markdown(
-            f"**If the landing slips by up to {slip} days:** sunlight could fall to "
-            f"**{row.sun_window_worst:.0%}** and Earth contact to **{row.earth_window_worst:.0%}**. "
-            + ("The site would still meet the mission limits." if row.stable
-               else "The site would no longer meet the mission limits.")
-        )
-    if row.eclipse_hours > 0:
-        st.markdown(f"**Lunar eclipse:** Earth blocks part or all of the Sun for about {row.eclipse_hours:.0f} h "
-                    "during the mission. This is not subtracted from the sunlight figure.")
-
-    near = planner.nearest_passing_dates(lookup, landing_dt(), window, **limit_args(limits))
+    near = query("nearest_passing_dates", landing_dt(), window, **limit_args(limits))
     near = near.set_index("site").loc[site]
     if not near["passes_on_date"]:
         options = [d for d in (near["previous_date"], near["next_date"]) if d is not None and not pd.isna(d)]
@@ -284,38 +481,46 @@ def page_sites() -> None:
     lookup = get_lookup()
     window = st.session_state.window_days
     left, right = st.columns([4, 1])
-    left.header("Step 2 of 2: Choose a landing site")
+    left.markdown('<p class="eyebrow">02 / Site selection</p>', unsafe_allow_html=True)
+    left.header("Find your foothold.")
     left.caption(f"Landing {landing_dt():%d %b %Y, %H:%M} UTC · {window} days on the surface")
     if right.button("Change date"):
         st.session_state.step = 1
         st.rerun()
 
     with st.sidebar:
-        st.subheader("Limits")
+        st.subheader("Mission criteria")
+        st.caption("Set your limits, then apply them together.")
+    with st.sidebar.form("criteria"):
+        st.markdown("**Visibility & terrain**")
         limits = dict(
-            min_sun_window=st.slider("Minimum sunlight in mission", 0, 100, 95, 5, format="%d%%") / 100,
-            min_earth_window=st.slider("Minimum Earth contact in mission", 0, 100, 95, 5, format="%d%%") / 100,
-            max_slope_deg=float(st.slider("Maximum mean slope", 1, 20, 10, format="%d°")),
-            min_sun_long_term=st.slider("Minimum long-term sunlight", 0, 85, 50, 5, format="%d%%") / 100,
-            min_earth_long_term=st.slider("Minimum long-term Earth visibility", 0, 100, 50, 5, format="%d%%") / 100,
-            slip_days=st.slider("Possible landing slip (days either way)", 0, 30, 14),
+            min_sun_window=st.slider("Minimum sunlight in mission", 0, 100, 95, 5, format="%d%%", key="criterion_sun") / 100,
+            min_earth_window=st.slider("Minimum Earth contact in mission", 0, 100, 95, 5, format="%d%%", key="criterion_earth") / 100,
+            max_slope_deg=float(st.slider("Maximum mean slope", 1, 20, 10, format="%d°", key="criterion_slope")),
+            min_sun_long_term=st.slider("Minimum long-term sunlight", 0, 85, 50, 5, format="%d%%", key="criterion_long_sun") / 100,
+            min_earth_long_term=st.slider("Minimum long-term Earth visibility", 0, 100, 50, 5, format="%d%%", key="criterion_long_earth") / 100,
+            slip_days=st.slider("Possible landing slip (days either way)", 0, 30, 14, key="criterion_slip"),
         )
-        st.subheader("Weights")
+        st.markdown("**Score weights**")
         limits["weights"] = {
-            "sunlight": st.slider("Sunlight", 0.0, 3.0, 1.0, 0.5),
-            "earth": st.slider("Earth contact", 0.0, 3.0, 1.0, 0.5),
-            "flatness": st.slider("Flatness", 0.0, 3.0, 1.0, 0.5),
+            "sunlight": st.slider("Sunlight", 0.0, 3.0, 1.0, 0.5, key="criterion_weight_sun"),
+            "earth": st.slider("Earth contact", 0.0, 3.0, 1.0, 0.5, key="criterion_weight_earth"),
+            "flatness": st.slider("Flatness", 0.0, 3.0, 1.0, 0.5, key="criterion_weight_flatness"),
         }
         if sum(limits["weights"].values()) == 0:
             st.warning("All weights are zero; using equal weights.")
             limits["weights"] = None
+        st.form_submit_button("Apply criteria", type="primary", use_container_width=True)
 
-    ranked = planner.rank_for_date(lookup, landing_dt(), window, **limits)
+    ranked = query("rank_for_date", landing_dt(), window, **limits)
+    if st.session_state.selected_site not in list(ranked.site):
+        st.session_state.selected_site = ranked.site.iloc[0]
     passing = int(ranked["passes"].sum())
     if passing:
-        st.write(f"**{passing} of {len(ranked)}** candidate sites pass every limit on this date.")
+        st.markdown(f'<div class="result-line"><strong>{passing} / {len(ranked)} sites meet your limits</strong>'
+                    ' · Select a numbered location to inspect it.</div>', unsafe_allow_html=True)
     else:
-        near = planner.nearest_passing_dates(lookup, landing_dt(), window, **limit_args(limits))
+        near = query("nearest_passing_dates", landing_dt(), window, **limit_args(limits))
         near = near.dropna(subset=["days_to_nearest"]).sort_values("days_to_nearest")
         if len(near):
             best = near.iloc[0]
@@ -326,36 +531,42 @@ def page_sites() -> None:
         else:
             st.error("No site passes these limits on any date in 2027-2030. Loosen a limit in the sidebar.")
 
-    tab_sites, tab_dates, tab_custom = st.tabs(["Sites", "Compare dates", "Custom coordinates"])
+    weights = limits["weights"] or dict(sunlight=1, earth=1, flatness=1)
+    st.caption(f"Score weights · Sunlight {weights['sunlight']:g} · Earth contact {weights['earth']:g} · "
+               f"Flatness {weights['flatness']:g}. Provisional weighted score. Edit in the criteria sidebar (top left).")
+    view = st.radio("Workspace", ["Sites", "Compare dates", "Custom coordinates"], horizontal=True,
+                    label_visibility="collapsed", key="workspace")
 
-    with tab_sites:
+    if view == "Sites":
         map_col, info_col = st.columns([5, 4])
         with info_col:
             site_panel(lookup, ranked, limits)
         with map_col:
-            st.plotly_chart(polar_map(ranked, st.session_state.selected_site), width="stretch",
-                            config={"displayModeBar": False, "scrollZoom": False})
-            st.caption("Lunar south pole, 84°S to the pole. Numbers are ranks; grey sites fail a limit; "
-                       "the selected site is orange.")
+            st.markdown('<div class="atlas-heading"><span>SOUTH POLAR STEREOGRAPHIC</span><span>84°S–90°S</span></div>',
+                        unsafe_allow_html=True)
+            st.plotly_chart(polar_map(ranked, st.session_state.selected_site), use_container_width=True,
+                            config={"displayModeBar": True, "displaylogo": False, "scrollZoom": True,
+                                    "modeBarButtonsToRemove": ["select2d", "lasso2d", "toImage", "autoScale2d"]}, theme=None,
+                            key="site_map", on_select=choose_from_map, selection_mode="points")
+            st.markdown(f'<div class="legend"><span><b style="color:{PASS}">●</b>Meets limits</span>'
+                        f'<span><b style="color:{FAIL}">●</b>Below a limit</span>'
+                        f'<span><b style="color:{PICK}">◉</b>Selected</span></div>', unsafe_allow_html=True)
+            st.caption("Click a site · Scroll to zoom · Drag to pan · Double-click to reset. Numbers are ranks; "
+                       "labels connect to the true NASA LOLA positions.")
+            image_credit()
 
         site = st.session_state.selected_site
-        tl = planner.timeline(lookup, site, landing_dt(), window)
-        st.subheader(f"Sky at {site} during the mission")
-        st.plotly_chart(panorama(lookup, site, tl), width="stretch", config={"displayModeBar": False})
-        st.caption("The grey shape is the terrain skyline in every direction. Each dot is the Sun or Earth "
-                   "one hour apart; faint dots are hidden behind terrain. Rings mark the moment of landing.")
-        st.plotly_chart(margin_chart(tl), width="stretch", config={"displayModeBar": False})
-        st.caption("Above the dashed line the body is visible; below it terrain hides it. " + ESTIMATE_NOTE)
+        horizon_explorer(site, window, landing_dt())
 
         st.subheader("All candidate sites")
         table = ranked[["rank", "site", "score", "sun_window", "earth_window", "slope_mean_deg",
-                        "sun_window_worst", "earth_window_worst", "passes", "fail_reasons"]].rename(columns={
+                        "sun_window_worst", "earth_window_worst", "eclipse_hours", "passes", "fail_reasons"]].rename(columns={
             "rank": "Rank", "site": "Site", "score": "Score", "sun_window": "Sunlight",
             "earth_window": "Earth contact", "slope_mean_deg": "Slope (°)",
             "sun_window_worst": "Sunlight if slipped", "earth_window_worst": "Contact if slipped",
-            "passes": "Passes", "fail_reasons": "Why not"})
+            "eclipse_hours": "Eclipse (h)", "passes": "Passes", "fail_reasons": "Why not"})
         bar = dict(format="percent", min_value=0, max_value=1)
-        st.dataframe(table, hide_index=True, width="stretch", column_config={
+        st.dataframe(table, hide_index=True, use_container_width=True, column_config={
             "Score": st.column_config.NumberColumn(format="%.2f"),
             "Sunlight": st.column_config.ProgressColumn(**bar),
             "Earth contact": st.column_config.ProgressColumn(**bar),
@@ -364,35 +575,41 @@ def page_sites() -> None:
             "Slope (°)": st.column_config.NumberColumn(format="%.1f"),
         })
 
-    with tab_dates:
+    elif view == "Compare dates":
+        st.header("A different date. A different outlook.")
         st.write("How each site would do for the same mission length on every landing date. "
                  "The orange line is the chosen date.")
         years = [2027, 2028, 2029, 2030]
         year = st.radio("Year", years, horizontal=True, index=years.index(landing_dt().year))
-        scan = planner.date_scan(lookup, window, hour_utc=landing_dt().hour)
+        scan = query("date_scan", window, hour_utc=landing_dt().hour)
         scan = scan[[d.year == year for d in scan["date"]]].copy()
         scan["both"] = scan[["sun_window", "earth_window"]].min(axis=1)
         order = list(ranked["site"])[::-1]
-        st.plotly_chart(date_heatmap(scan, order, landing_dt().date(), "both",
-                                     "Lower of sunlight and Earth contact"), width="stretch")
-        c1, c2 = st.columns(2)
-        c1.plotly_chart(date_heatmap(scan, order, landing_dt().date(), "sun_window", "Sunlight in mission"),
-                        width="stretch")
-        c2.plotly_chart(date_heatmap(scan, order, landing_dt().date(), "earth_window", "Earth contact in mission"),
-                        width="stretch")
-        best = planner.best_dates(lookup, st.session_state.selected_site, window)
+        metric = st.selectbox("Map layer", ["Lower of sunlight and Earth contact", "Sunlight in mission", "Earth contact in mission"])
+        column = {"Lower of sunlight and Earth contact": "both", "Sunlight in mission": "sun_window",
+                  "Earth contact in mission": "earth_window"}[metric]
+        st.plotly_chart(date_heatmap(scan, order, landing_dt().date(), column, metric),
+                        use_container_width=True, theme=None)
+        st.caption("Visibility only, not a pass/fail map. Sunlight ratios do not subtract lunar eclipse hours; "
+                   "inspect a mission in Sites for its eclipse duration. " + ESTIMATE_NOTE)
+        best = query("best_dates", st.session_state.selected_site, window)
         st.write(f"**Best landing dates for {st.session_state.selected_site}, 2027-2030:** "
                  + ", ".join(f"{d:%d %b %Y}" for d in best["date"]) + ".")
-        st.caption(ESTIMATE_NOTE)
+        st.caption("Best dates use the planner's 00:00 UTC reference, based on Sun and Earth visibility. "
+                   "They do not apply your slope or pass/fail limits. The heat map uses your selected UTC hour.")
 
-    with tab_custom:
+    else:
+        st.header("Explore another coordinate.")
         st.write("Check any point on the Moon for the same landing date and mission length.")
-        c1, c2 = st.columns(2)
-        lat = c1.number_input("Latitude (degrees, south is negative)", -90.0, 90.0, -89.5, 0.1, format="%.3f")
-        lon = c2.number_input("East longitude (degrees, west is negative)", -180.0, 360.0, 0.0, 0.5, format="%.3f")
-        summary, ctl = planner.custom_site(lat, lon, landing_dt(), window)
+        with st.form("custom_point"):
+            c1, c2 = st.columns(2)
+            lat = c1.number_input("Latitude (degrees, south is negative)", -90.0, 90.0, -89.5, 0.1, format="%.3f", key="custom_lat")
+            lon = c2.number_input("East longitude (degrees, west is negative)", -180.0, 360.0, 0.0, 0.5, format="%.3f", key="custom_lon")
+            st.form_submit_button("Evaluate coordinates", type="primary")
+        summary, ctl = custom_conditions(lat, lon, landing_dt(), window)
         st.warning("Flat-horizon estimate, terrain not included. Real terrain hides the Sun and Earth more "
-                   "often, so these figures are optimistic. Slope is not available for custom points.")
+                   "often, so these figures are optimistic. Terrain and slope: not available yet. "
+                   "Eclipse hours: not available yet for custom coordinates; sunlight ratios do not subtract eclipses.")
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Sunlight in mission", f"{summary['sun_window']:.0%}")
         m2.metric("Earth contact in mission", f"{summary['earth_window']:.0%}")
@@ -401,17 +618,19 @@ def page_sites() -> None:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=ctl["time_utc"], y=ctl["sun_el"], line=dict(color=SUN, width=2), name="Sun"))
         fig.add_trace(go.Scatter(x=ctl["time_utc"], y=ctl["earth_el"], line=dict(color=EARTH, width=2), name="Earth"))
-        fig.add_hline(y=0, line=dict(color="#e2e8f0", width=1, dash="dash"))
+        fig.add_hline(y=0, line=dict(color="#6c7e72", width=1, dash="dash"))
         dark_layout(fig, 320)
-        fig.update_xaxes(title="Time (UTC)", gridcolor="#1f2a3a")
-        fig.update_yaxes(title="Elevation above a level horizon (degrees)", gridcolor="#1f2a3a")
-        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+        fig.update_xaxes(title="Time (UTC)", gridcolor="#dce1d8")
+        fig.update_yaxes(title="Elevation above a level horizon (degrees)", gridcolor="#dce1d8")
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, theme=None)
 
     st.caption("Data: NASA LRO LOLA visibility maps and elevation models (PDS Geosciences Node), Artemis III "
                "candidate regions (Moon Trek). Sun and Earth positions checked against NASA JPL Horizons.")
 
 
 init_state()
+styles()
+masthead()
 if st.session_state.step == 1:
     page_date()
 else:

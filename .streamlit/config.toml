@@ -1,10 +1,10 @@
-# AI-assisted: written by Claude (Anthropic), 2026-11-14. Dark theme to match the charts.
+# AI-generated visual theme by OpenAI Codex, 2026-11-15.
 [theme]
-base = "dark"
-primaryColor = "#e76f51"
-backgroundColor = "#0b111a"
-secondaryBackgroundColor = "#141d2b"
-textColor = "#e2e8f0"
+base = "light"
+primaryColor = "#346b5b"
+backgroundColor = "#faf9f5"
+secondaryBackgroundColor = "#edf0e8"
+textColor = "#203631"
 
 [browser]
 gatherUsageStats = false
