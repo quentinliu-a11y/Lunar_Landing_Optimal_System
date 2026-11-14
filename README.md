@@ -28,6 +28,7 @@ Candidate factors: percent of time sunlit, longest continuous darkness, mean sol
 | Path | Contents |
 |---|---|
 | `docs/space-apps-2026-reference.md` | Challenge statement, resources, judging criteria, submission rules |
+| `AGENTS.md` | Instructions for AI agents working in this repo: decisions, open questions, rules |
 | `PROGRESS.md` | Task board: who is doing what, and status |
 | `src/` | Code |
 | `data/` | Small processed data files (keep large raw files out of git) |
