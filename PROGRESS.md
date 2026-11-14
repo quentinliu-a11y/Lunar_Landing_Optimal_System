@@ -40,6 +40,7 @@ Tasks 1, 11 and 12 are shared. First step for everyone: agree the file formats a
 | 14 Nov | Tool is date-first: pick a landing date, see conditions, go to a map of recommended sites | Team lead's concept |
 | 14 Nov | Rank a fixed list of named sites instead of scoring every pixel | Achievable by the deadline; scores are explainable |
 | 14 Nov | Top three factors: sunlight ratio, Earth communication availability, flatness | Team lead's choice |
+| 14 Nov | Logic code and visual interface are built separately; the interface only calls the logic (`docs/ui-interface.md`) | Team lead's choice |
 | 14 Nov | Some factors act as hard limits before scoring | Team lead's choice; default values in `docs/design-principles.md` |
 
 ## References and AI use
@@ -51,7 +52,8 @@ List everything here as you use it. The submission form asks for all of it.
 - Moon Trek `A3_Named_regions` service (Artemis III region outlines): https://trek.nasa.gov/moon/trekarcgis2/rest/services/A3_Named_regions/MapServer/0
 
 ### Partner agency data and other references (data, tools, libraries, images)
--
+- Python libraries: Streamlit, Plotly, pandas (see `requirements.txt`).
 
 ### AI tools used and for what
+- Claude (Anthropic): wrote the logic module `src/sites.py`, the reference interface `src/app.py` and `docs/ui-interface.md`. The reference interface was run headlessly (both steps, limit sliders, site selection); it has not been viewed in a browser.
 - Claude (Anthropic): collected challenge rules and data-source notes (`docs/space-apps-2026-reference.md`); wrote `README.md`, `AGENTS.md`, `PROGRESS.md` and `docs/design-principles.md` from team decisions; computed the visibility statistics in `data/a3_region_visibility_stats.json` from the NASA maps above.

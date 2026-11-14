@@ -8,6 +8,7 @@ Read this file before doing anything in this repository. It tells you what the p
 - **Hard deadline: Sunday 15 November 2026, 23:59 Singapore time (UTC+8).** Assume this until a human confirms the Local Event's time zone. Work that cannot be finished and demonstrated by then is out of scope.
 - The repository is **public**. Never commit secrets, tokens, personal data or private notes.
 - Full challenge text, judging criteria, submission rules and data-source notes are in `docs/space-apps-2026-reference.md`. Read it before proposing features or choosing data.
+- If you are building the visual interface, read `docs/ui-interface.md` first: it defines the flow, the data you receive from the logic and what you must not display yet. Do not put calculations in interface code.
 - Design decisions, hard limits, scoring approach and the measured visibility figures are in `docs/design-principles.md`. It marks each item as Decided, Proposed or Measured; treat Proposed items as open.
 
 ## 2. What we are building

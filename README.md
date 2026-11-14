@@ -28,10 +28,23 @@ Candidate factors: percent of time sunlit, longest continuous darkness, mean sol
 | Path | Contents |
 |---|---|
 | `docs/space-apps-2026-reference.md` | Challenge statement, resources, judging criteria, submission rules |
+| `docs/design-principles.md` | Design decisions, hard limits and the measured visibility figures |
+| `docs/ui-interface.md` | Contract between the logic code and the visual interface |
 | `AGENTS.md` | Instructions for AI agents working in this repo: decisions, open questions, rules |
 | `PROGRESS.md` | Task board: who is doing what, and status |
 | `src/` | Code |
 | `data/` | Small processed data files (keep large raw files out of git) |
+
+## Run it
+
+Needs Python 3.10 or newer.
+
+```
+pip install -r requirements.txt
+streamlit run src/app.py
+```
+
+The app opens in your browser. `src/app.py` is a reference interface; see `docs/ui-interface.md` for how a different interface should call the logic.
 
 ## How we work
 
