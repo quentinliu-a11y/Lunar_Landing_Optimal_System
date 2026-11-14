@@ -56,7 +56,7 @@ Best pixel in each Artemis III region:
 | Haworth | 70.5% | 82.2% | 67.2% / 69.6% |
 | Faustini Rim A | 65.9% | 52.4% | 51.8% / 51.5% |
 
-Amundsen Rim and Nobile Rim 2 lie outside this map and are not yet analysed. de Gerlache Rim and de Gerlache Rim 2 overlap, which is why they share a best spot.
+Amundsen Rim (57.1% / 62.8%) and Nobile Rim 2 (52.7% / 62.8%) were added later; they sit in the corners of the map beyond 85°S. de Gerlache Rim and de Gerlache Rim 2 overlap, so the tool uses the best spot of Rim 2 outside Rim (61.2% / 59.6%).
 
 What this means:
 
@@ -75,13 +75,13 @@ Two kinds of limit, because the data in section 3 rules out a single 95% rule:
 |---|---|---|---|
 | Long-term sunlight | 18.6-year average | ≥ 50% | Measured: 63 km² meets this together with the Earth limit below |
 | Long-term Earth visibility | 18.6-year average | ≥ 50% | Same |
-| Mission-window sunlight | Mission window after the chosen landing date | ≥ 95% | Team target; not yet checked against date-specific calculations |
-| Mission-window Earth visibility | Same window | ≥ 95% | Team target; not yet checked |
+| Mission-window sunlight | Mission window after the chosen landing date | ≥ 95% | Team target. Checked: with a 14-day window, 955 of 18,993 site-and-date combinations in 2027–2030 (5.0%) meet this together with the Earth limit |
+| Mission-window Earth visibility | Same window | ≥ 95% | Same check |
 | Slope | Fixed | ≤ lander limit, value not decided | – |
 
 - Default mission window: 14 days. **Proposed**
 - When no site passes on a date, the tool says so and points to the nearest date on which one does. **Proposed**
-- The mission-window defaults must be revisited once date-specific results exist. If almost no site and date reach 95%, lower the default and record why.
+- Date-specific check (terrain included, calibrated to the NASA long-term values): every one of the 13 sites reaches 95%/95% on some dates, from 14 dates (Faustini Rim A) to 155 (Nobile Rim 1) out of 1,461. Lowering both limits to 90% gives 1,436 combinations, 80% gives 2,644.
 
 ## 5. Scoring
 

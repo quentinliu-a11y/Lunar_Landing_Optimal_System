@@ -11,8 +11,8 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 1 | Agree on concept and scope (sites, date range, factors) | | todo | |
 | 2 | Choose 4–6 preset south-pole sites | | todo | |
 | 3 | Ephemeris pipeline: Sun and Earth elevation over time for one site (flat horizon) | Claude (for Qiming) | done | `src/ephemeris.py`; checked against JPL Horizons at 10 points, within 0.002° elevation |
-| 4 | Terrain horizon for preset sites, precomputed | | todo | LOLA topography |
-| 5 | Metrics per scenario (sunlit %, longest darkness, Earth visible %, longest blackout) | Claude (for Qiming) | done | `src/planner.py`, flat horizon only; ran for 2027–2030 |
+| 4 | Terrain horizon for preset sites, precomputed | Claude (for Qiming) | done | `data/terrain_horizons.txt` (13 sites), `data/horizon_calibration.json`. Before calibration: Earth visibility within 0.5 points of NASA at 9 of 13 sites; Sun differs 6.5 points on average, 17 at worst |
+| 5 | Metrics per scenario (sunlit %, longest darkness, Earth visible %, longest blackout) | Claude (for Qiming) | done | `src/planner.py`, terrain skyline included; ran for 2027–2030 |
 | 6 | Weighted score, ranking and Pareto set | | todo | |
 | 7 | App: scenario comparison view and timelines | | todo | |
 | 8 | Site × date heatmap (robustness to delay) | | todo | |
@@ -49,6 +49,7 @@ Tasks 1, 11 and 12 are shared. First step for everyone: agree the file formats a
 List everything here as you use it. The submission form asks for all of it.
 
 ### NASA data and resources
+- LOLA elevation models LDEM_85S_40M and LDEM_75S_120M (PDS Geosciences Node, https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/): terrain skylines in `data/terrain_horizons.txt`.
 - JPL Horizons API (https://ssd.jpl.nasa.gov/api/horizons.api), DE441: reference Sun and Earth azimuth/elevation for two south-pole sites, used to validate `src/ephemeris.py` (`tests/test_ephemeris.py`).
 - LOLA average Sun and Earth visibility maps, 60 m/px, south pole (`avgvisib_85s_060m_201608.img`, `..._earth.img`), PDS Geosciences Node: https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/ . Method: Mazarico et al. (2011), Icarus 211, 1066.
 - Moon Trek `A3_Named_regions` service (Artemis III region outlines): https://trek.nasa.gov/moon/trekarcgis2/rest/services/A3_Named_regions/MapServer/0
@@ -58,6 +59,7 @@ List everything here as you use it. The submission form asks for all of it.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### AI tools used and for what
+- Claude (Anthropic): computed the terrain skylines (`data/terrain_horizons.txt`) and calibration (`data/horizon_calibration.json`) from the LOLA elevation models, and added terrain to `src/planner.py` and `src/sites.py`.
 - Claude (Anthropic): wrote `src/ephemeris.py`, `src/planner.py` and `tests/test_ephemeris.py`. Ran the Horizons comparison and the planner for 2027–2030.
 - Claude (Anthropic): wrote the logic module `src/sites.py`, the reference interface `src/app.py` and `docs/ui-interface.md`. The reference interface was run headlessly (both steps, limit sliders, site selection); it has not been viewed in a browser.
 - Claude (Anthropic): collected challenge rules and data-source notes (`docs/space-apps-2026-reference.md`); wrote `README.md`, `AGENTS.md`, `PROGRESS.md` and `docs/design-principles.md` from team decisions; computed the visibility statistics in `data/a3_region_visibility_stats.json` from the NASA maps above.

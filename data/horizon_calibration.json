@@ -1,0 +1,109 @@
+{
+ "_note": "AI-assisted: computed by Claude (Anthropic), 2026-11-14. For each site, the constant (degrees) added to the terrain skyline so that the 18.6-year average visibility from src/ephemeris.py + data/terrain_horizons.txt equals the NASA LOLA long-term value. 'uncalibrated' is our result before the shift; 'nasa' is the LOLA value. Period 2009-01-01 + 18.6 years, 1-hour steps, visible = any part of the disc above the skyline.",
+ "sites": {
+  "Amundsen Rim": {
+   "sun_offset_deg": -0.045,
+   "earth_offset_deg": 0.061,
+   "sun_uncalibrated": 0.569,
+   "sun_nasa": 0.571,
+   "earth_uncalibrated": 0.631,
+   "earth_nasa": 0.628
+  },
+  "Nobile Rim 2": {
+   "sun_offset_deg": 0.057,
+   "earth_offset_deg": 0.348,
+   "sun_uncalibrated": 0.531,
+   "sun_nasa": 0.527,
+   "earth_uncalibrated": 0.646,
+   "earth_nasa": 0.628
+  },
+  "Haworth": {
+   "sun_offset_deg": 0.543,
+   "earth_offset_deg": 1.276,
+   "sun_uncalibrated": 0.747,
+   "sun_nasa": 0.672,
+   "earth_uncalibrated": 0.779,
+   "earth_nasa": 0.696
+  },
+  "Faustini Rim A": {
+   "sun_offset_deg": 0.343,
+   "earth_offset_deg": 0.003,
+   "sun_uncalibrated": 0.606,
+   "sun_nasa": 0.518,
+   "earth_uncalibrated": 0.515,
+   "earth_nasa": 0.515
+  },
+  "de Gerlache Rim 2": {
+   "sun_offset_deg": -0.092,
+   "earth_offset_deg": 0.02,
+   "sun_uncalibrated": 0.608,
+   "sun_nasa": 0.612,
+   "earth_uncalibrated": 0.597,
+   "earth_nasa": 0.596
+  },
+  "Connecting Ridge Extension": {
+   "sun_offset_deg": 0.6,
+   "earth_offset_deg": 0.029,
+   "sun_uncalibrated": 0.724,
+   "sun_nasa": 0.604,
+   "earth_uncalibrated": 0.595,
+   "earth_nasa": 0.594
+  },
+  "Connecting Ridge": {
+   "sun_offset_deg": -0.845,
+   "earth_offset_deg": 0.007,
+   "sun_uncalibrated": 0.547,
+   "sun_nasa": 0.719,
+   "earth_uncalibrated": 0.587,
+   "earth_nasa": 0.587
+  },
+  "Nobile Rim 1": {
+   "sun_offset_deg": 0.75,
+   "earth_offset_deg": 0.068,
+   "sun_uncalibrated": 0.77,
+   "sun_nasa": 0.675,
+   "earth_uncalibrated": 0.741,
+   "earth_nasa": 0.737
+  },
+  "Peak Near Shackleton": {
+   "sun_offset_deg": 0.494,
+   "earth_offset_deg": 0.036,
+   "sun_uncalibrated": 0.73,
+   "sun_nasa": 0.647,
+   "earth_uncalibrated": 0.608,
+   "earth_nasa": 0.606
+  },
+  "de Gerlache Rim": {
+   "sun_offset_deg": 0.599,
+   "earth_offset_deg": 0.008,
+   "sun_uncalibrated": 0.774,
+   "sun_nasa": 0.694,
+   "earth_uncalibrated": 0.618,
+   "earth_nasa": 0.618
+  },
+  "Leibnitz Beta Plateau": {
+   "sun_offset_deg": 0.066,
+   "earth_offset_deg": 0.748,
+   "sun_uncalibrated": 0.688,
+   "sun_nasa": 0.676,
+   "earth_uncalibrated": 0.887,
+   "earth_nasa": 0.806
+  },
+  "Malapert Massif": {
+   "sun_offset_deg": 0.638,
+   "earth_offset_deg": 1.71,
+   "sun_uncalibrated": 0.824,
+   "sun_nasa": 0.758,
+   "earth_uncalibrated": 0.846,
+   "earth_nasa": 0.717
+  },
+  "de Gerlache-Kocher Massif": {
+   "sun_offset_deg": 0.216,
+   "earth_offset_deg": 0.012,
+   "sun_uncalibrated": 0.672,
+   "sun_nasa": 0.63,
+   "earth_uncalibrated": 0.607,
+   "earth_nasa": 0.606
+  }
+ }
+}

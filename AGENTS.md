@@ -62,7 +62,8 @@ Use NASA data as the core of every calculation; the judging criteria require it.
 | Need | Source | Verified? |
 |---|---|---|
 | Sun and Earth positions over time | Computed offline in `src/ephemeris.py`; validated against JPL Horizons (https://ssd.jpl.nasa.gov/api/horizons.api) | Tested: agrees within 0.002° elevation at 10 reference points |
-| South-pole elevation, 100 m/px | Moon Trek ImageServer `LRO_LOLA_DEM_SPole45_100mp_v04` | Point query tested; GeoTIFF export returns a link, file not opened |
+| Terrain skyline per site | LOLA elevation models LDEM_85S_40M and LDEM_75S_120M (PDS Geosciences), processed into `data/terrain_horizons.txt` and calibrated in `data/horizon_calibration.json` | Tested against NASA long-term visibility; see `src/planner.py` docstring for the agreement |
+| South-pole elevation, 100 m/px (alternative) | Moon Trek ImageServer `LRO_LOLA_DEM_SPole45_100mp_v04` | Point query tested; not used |
 | Candidate sites | Moon Trek `CLPS_sites` and `A3_Named_regions` services | Tested |
 | Long-term average Sun and Earth visibility | LOLA illumination products on PDS Geosciences (linked from QuickMap) | Tested: analysed into `data/a3_region_visibility_stats.json` |
 | Slope, roughness, shadowed regions | QuickMap layers (view only so far) | Not tested |

@@ -9,15 +9,20 @@ Design for speed (so date sliders and animations stay smooth):
   hourly curve for a chart is a slice of an array. Nothing is recomputed
   when the user moves the date.
 
-IMPORTANT LIMITATION: visibility here uses a FLAT horizon (a smooth sphere).
-Real terrain hides the Sun and Earth more often, so the mission-window
-ratios are upper bounds. The long-term LOLA figures in sites.py do include
-terrain. Interfaces must label these values "flat-horizon estimate".
+Visibility uses the real terrain skyline of each site (NASA LOLA elevation
+models, 40 m and 120 m per pixel), seen from 2 m above the surface:
 
-Definitions:
-- Sun visible   : any part of the Sun's disc above the flat horizon
-                  (same definition as the NASA LOLA illumination maps).
-- Earth visible : Earth's centre above the flat horizon.
+- Sun visible   : any part of the Sun's disc above the skyline in the Sun's direction.
+- Earth visible : any part of Earth's disc above the skyline in Earth's direction.
+  (Same definitions as the NASA LOLA long-term visibility maps.)
+
+Calibration: each site's skyline is shifted by one constant per body
+(data/horizon_calibration.json) so that our 18.6-year average equals the NASA
+LOLA long-term value at that site. Before calibration our Earth visibility
+agrees with NASA within 0.5 percentage points at 9 of 13 sites; Sun visibility
+differs by 6.5 points on average (up to 17), because near the pole the Sun
+grazes the skyline and tens of metres of position or terrain change the result.
+Treat date results as estimates anchored to NASA's long-term figures.
 """
 
 from __future__ import annotations
@@ -28,8 +33,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from ephemeris import SUN_RADIUS_KM, _az_el, _to_jd_tt, sun_earth_from_moon_centre
-from sites import load_sites
+from ephemeris import EARTH_RADIUS_KM, SUN_RADIUS_KM, _az_el, _to_jd_tt, sun_earth_from_moon_centre
+from sites import MAST_HEIGHT_M, load_sites
 
 STEP_HOURS = 1.0
 
@@ -42,6 +47,8 @@ class Lookup:
     earth_el: np.ndarray         # (n_sites, T) degrees, Earth centre
     sun_az: np.ndarray           # (n_sites, T) degrees
     earth_az: np.ndarray         # (n_sites, T) degrees
+    sun_margin: np.ndarray       # (n_sites, T) degrees the Sun's top edge is above the skyline (negative = hidden)
+    earth_margin: np.ndarray     # (n_sites, T) same for Earth
     sun_up: np.ndarray           # (n_sites, T) bool
     earth_up: np.ndarray         # (n_sites, T) bool
     hours_to_sunset: np.ndarray  # (n_sites, T) hours until the Sun next sets (0 if down, nan if beyond range)
@@ -76,17 +83,27 @@ def build_lookup(start: dt.date, end: dt.date, max_window_days: int = 60) -> Loo
     sun_el, earth_el = np.empty(shape), np.empty(shape)
     sun_az, earth_az = np.empty(shape), np.empty(shape)
     sun_up, earth_up = np.empty(shape, bool), np.empty(shape, bool)
+    sun_margin, earth_margin = np.empty(shape), np.empty(shape)
     # Sun and Earth vectors depend only on time: compute them once for all sites.
     to_sun, to_earth = sun_earth_from_moon_centre(_to_jd_tt(times))
+    az_grid = np.arange(361.0)
     for i, site in enumerate(sites.itertuples()):
-        sun_az[i], sun_el[i], sun_dist = _az_el(to_sun, site.lat, site.lon, 0.0)
-        earth_az[i], earth_el[i], _ = _az_el(to_earth, site.lat, site.lon, 0.0)
-        sun_up[i] = sun_el[i] > -np.degrees(np.arcsin(SUN_RADIUS_KM / sun_dist))
-        earth_up[i] = earth_el[i] > 0.0
+        height_km = (site.height_m + MAST_HEIGHT_M) / 1000.0
+        sun_az[i], sun_el[i], sun_dist = _az_el(to_sun, site.lat, site.lon, height_km)
+        earth_az[i], earth_el[i], earth_dist = _az_el(to_earth, site.lat, site.lon, height_km)
+        sky = np.append(site.skyline, site.skyline[0])
+        sun_radius = np.degrees(np.arcsin(SUN_RADIUS_KM / sun_dist))
+        earth_radius = np.degrees(np.arcsin(EARTH_RADIUS_KM / earth_dist))
+        # Margin = how far the top edge of the disc is above the (calibrated) skyline.
+        sun_margin[i] = sun_el[i] + sun_radius - (np.interp(sun_az[i], az_grid, sky) + site.sun_offset_deg)
+        earth_margin[i] = earth_el[i] + earth_radius - (np.interp(earth_az[i], az_grid, sky) + site.earth_offset_deg)
+        sun_up[i] = sun_margin[i] > 0.0
+        earth_up[i] = earth_margin[i] > 0.0
 
     return Lookup(
         sites=sites, times=times, sun_el=sun_el, earth_el=earth_el, sun_az=sun_az,
-        earth_az=earth_az, sun_up=sun_up, earth_up=earth_up,
+        earth_az=earth_az, sun_margin=sun_margin, earth_margin=earth_margin,
+        sun_up=sun_up, earth_up=earth_up,
         hours_to_sunset=_hours_until_false(sun_up),
         hours_to_earthset=_hours_until_false(earth_up),
         start=start, end=end, max_window_days=max_window_days,
@@ -123,11 +140,13 @@ def conditions(lookup: Lookup, landing_utc: dt.datetime, window_days: int) -> pd
     j = i + int(window_days * 24 / STEP_HOURS)
     sun, earth = lookup.sun_up[:, i:j], lookup.earth_up[:, i:j]
 
-    out = lookup.sites.copy()
+    out = lookup.sites.drop(columns=["skyline"]).copy()
     out["sun_el_at_landing"] = lookup.sun_el[:, i]
     out["sun_az_at_landing"] = lookup.sun_az[:, i]
     out["earth_el_at_landing"] = lookup.earth_el[:, i]
     out["earth_az_at_landing"] = lookup.earth_az[:, i]
+    out["sun_margin_at_landing"] = lookup.sun_margin[:, i]
+    out["earth_margin_at_landing"] = lookup.earth_margin[:, i]
     out["sun_up_at_landing"] = lookup.sun_up[:, i]
     out["earth_up_at_landing"] = lookup.earth_up[:, i]
     out["hours_to_sunset"] = lookup.hours_to_sunset[:, i]
@@ -152,7 +171,7 @@ def rank_for_date(
     """Apply the limits and rank the sites for a landing date.
 
     Provisional score: average of the mission-window Sun and Earth ratios
-    (flat horizon) and the long-term Sun and Earth ratios (with terrain).
+    and the long-term Sun and Earth ratios.
     """
     out = conditions(lookup, landing_utc, window_days)
     reasons = []
@@ -187,8 +206,28 @@ def timeline(lookup: Lookup, site: str, landing_utc: dt.datetime, window_days: i
             "sun_az": lookup.sun_az[k, i:j],
             "earth_el": lookup.earth_el[k, i:j],
             "earth_az": lookup.earth_az[k, i:j],
+            "sun_margin": lookup.sun_margin[k, i:j],
+            "earth_margin": lookup.earth_margin[k, i:j],
             "sun_up": lookup.sun_up[k, i:j],
             "earth_up": lookup.earth_up[k, i:j],
+        }
+    )
+
+
+def skyline(lookup: Lookup, site: str) -> pd.DataFrame:
+    """Terrain skyline of a site for the panorama view.
+
+    azimuth_deg 0..359 (clockwise from lunar north), terrain_el_deg as computed
+    from the elevation model, plus sun_limit_deg / earth_limit_deg: the
+    calibrated lines the Sun's / Earth's top edge must clear to be visible.
+    """
+    row = lookup.sites[lookup.sites["site"] == site].iloc[0]
+    return pd.DataFrame(
+        {
+            "azimuth_deg": np.arange(360),
+            "terrain_el_deg": row.skyline,
+            "sun_limit_deg": row.skyline + row.sun_offset_deg,
+            "earth_limit_deg": row.skyline + row.earth_offset_deg,
         }
     )
 
