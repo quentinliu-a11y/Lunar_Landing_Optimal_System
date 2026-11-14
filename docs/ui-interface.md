@@ -82,6 +82,9 @@ scan   = planner.date_scan(lookup, window_days=14)                    # about 0.
 | `max_sun_el_window` | degrees | Highest Sun elevation during the window |
 | `slope_site_deg`, `slope_mean_deg`, `slope_max_deg` | degrees | Slope at the site, and the mean and maximum within 120 m of it (80 m baseline, LOLA 40 m elevation model) |
 | `flatness` | 0–1 | 1 − mean slope ÷ slope limit; 0 when the slope is at or over the limit |
+| `sun_window_worst`, `earth_window_worst` | 0–1 | Lowest window ratio if the landing slips by up to `slip_days` days either way (default 14) |
+| `stable` | true/false | Would still meet the two mission-window limits in that worst case |
+| `eclipse_hours` | hours | Hours in the window during which Earth covers part or all of the Sun (lunar eclipse). Sunlight ratios do not subtract these |
 | `passes` | true/false | Meets all five limits (two long-term, two mission-window, slope) |
 | `fail_reasons` | text | Which limits failed; empty when the site passes |
 | `score` | 0–1 | Weighted average of three factor scores: `sun_window`, `earth_window`, `flatness`. Equal weights by default; provisional |
@@ -92,6 +95,19 @@ scan   = planner.date_scan(lookup, window_days=14)                    # about 0.
 
 `date_scan` returns `date`, `site`, `sun_window`, `earth_window` for a site-by-date heat map.
 
+More functions, all table lookups:
+
+| Call | Returns | Use |
+|---|---|---|
+| `planner.nearest_passing_dates(lookup, landing, 14)` | Per site: `passes_on_date`, `previous_date`, `next_date`, `days_to_nearest` | When few or no sites pass: "nearest date this site works" |
+| `planner.best_dates(lookup, site, 14, top=5)` | The best landing dates for one site, at least 7 days apart | "Best dates for this site" |
+| `planner.passing_calendar(lookup, 14)` | `date`, `site`, `sun_window`, `earth_window`, `passes` for every date | Calendar or heat map of feasible dates |
+| `planner.custom_site(lat, lon, landing, 14)` | `(summary, timeline)` for any coordinates | Custom coordinates. **No terrain**: label as "flat-horizon estimate, terrain not included" |
+
+`timeline` also has an `eclipse` column: 0 none, 1 Earth covers part of the Sun, 2 all of it.
+
+The limit arguments shown below can be passed to `nearest_passing_dates` and `passing_calendar` too. In `custom_site`, `hours_to_sunset` is `None` when the Sun stays up for the whole window.
+
 Limits are arguments of `rank_for_date`: `min_sun_long_term`, `min_earth_long_term` (default 0.5), `min_sun_window`, `min_earth_window` (default 0.95) and `max_slope_deg` (default 10, applied to `slope_mean_deg`).
 
 Weights are the `weights` argument, for example `weights={"sunlight": 2, "earth": 1, "flatness": 1}`. Give the user sliders for the limits and the three weights, and always show the weights in use.
@@ -101,13 +117,13 @@ Weights are the `weights` argument, for example `weights={"sunlight": 2, "earth"
 - **"Estimate anchored to NASA long-term data."** Visibility uses the real terrain skyline from NASA LOLA elevation models, shifted by one constant per site so that our 18.6-year average equals NASA's long-term figure. Near the pole the Sun grazes the skyline, so results for a specific date are estimates.
 - "Earth visible" means any part of Earth's disc is above the skyline. A specific ground station may be out of view for part of that time.
 - Sun and Earth positions were checked against NASA JPL Horizons and agree within 0.01°.
-- Lunar eclipses are not modelled: a site can be shown as sunlit while Earth is blocking the Sun.
+- Lunar eclipses are detected and reported as `eclipse_hours`, but the sunlight ratios do not subtract them. Show eclipse hours next to the sunlight figure when they are not zero.
 
 ## What is not available yet
 
 Do not display numbers for these until the logic supplies them. Show "not available yet" instead.
 
-- Custom coordinates (the logic supports any latitude/longitude through `ephemeris.sky_positions`, but it is not wired into the ranking)
+- Terrain and slope for custom coordinates (only the 13 preset sites have them)
 
 ## Rules for the visual interface
 

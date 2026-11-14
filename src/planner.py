@@ -51,6 +51,9 @@ class Lookup:
     earth_margin: np.ndarray     # (n_sites, T) same for Earth
     sun_up: np.ndarray           # (n_sites, T) bool
     earth_up: np.ndarray         # (n_sites, T) bool
+    eclipse: np.ndarray          # (n_sites, T) 0 = none, 1 = Earth covers part of the Sun, 2 = Earth covers all of it
+    cum_sun: np.ndarray          # (n_sites, T+1) running count of sunlit hours, for O(1) window ratios
+    cum_earth: np.ndarray        # (n_sites, T+1) same for Earth
     hours_to_sunset: np.ndarray  # (n_sites, T) hours until the Sun next sets (0 if down, nan if beyond range)
     hours_to_earthset: np.ndarray
     start: dt.date
@@ -84,6 +87,7 @@ def build_lookup(start: dt.date, end: dt.date, max_window_days: int = 60) -> Loo
     sun_az, earth_az = np.empty(shape), np.empty(shape)
     sun_up, earth_up = np.empty(shape, bool), np.empty(shape, bool)
     sun_margin, earth_margin = np.empty(shape), np.empty(shape)
+    eclipse = np.zeros(shape, np.int8)
     # Sun and Earth vectors depend only on time: compute them once for all sites.
     to_sun, to_earth = sun_earth_from_moon_centre(_to_jd_tt(times))
     az_grid = np.arange(361.0)
@@ -99,11 +103,18 @@ def build_lookup(start: dt.date, end: dt.date, max_window_days: int = 60) -> Loo
         earth_margin[i] = earth_el[i] + earth_radius - (np.interp(earth_az[i], az_grid, sky) + site.earth_offset_deg)
         sun_up[i] = sun_margin[i] > 0.0
         earth_up[i] = earth_margin[i] > 0.0
+        # Lunar eclipse seen from the site: Earth's disc overlapping the Sun's disc.
+        e1, e2 = np.radians(sun_el[i]), np.radians(earth_el[i])
+        cos_sep = np.sin(e1) * np.sin(e2) + np.cos(e1) * np.cos(e2) * np.cos(np.radians(sun_az[i] - earth_az[i]))
+        sep = np.degrees(np.arccos(np.clip(cos_sep, -1, 1)))
+        eclipse[i] = np.where(sep < earth_radius - sun_radius, 2, np.where(sep < earth_radius + sun_radius, 1, 0))
 
     return Lookup(
         sites=sites, times=times, sun_el=sun_el, earth_el=earth_el, sun_az=sun_az,
         earth_az=earth_az, sun_margin=sun_margin, earth_margin=earth_margin,
-        sun_up=sun_up, earth_up=earth_up,
+        sun_up=sun_up, earth_up=earth_up, eclipse=eclipse,
+        cum_sun=np.concatenate([np.zeros((len(sites), 1)), np.cumsum(sun_up, axis=1)], axis=1),
+        cum_earth=np.concatenate([np.zeros((len(sites), 1)), np.cumsum(earth_up, axis=1)], axis=1),
         hours_to_sunset=_hours_until_false(sun_up),
         hours_to_earthset=_hours_until_false(earth_up),
         start=start, end=end, max_window_days=max_window_days,
@@ -114,7 +125,7 @@ def _index(lookup: Lookup, landing_utc: dt.datetime) -> int:
     t0 = dt.datetime.combine(lookup.start, dt.time(0))
     i = int(round((landing_utc.replace(tzinfo=None) - t0).total_seconds() / 3600 / STEP_HOURS))
     last = int(((lookup.end - lookup.start).days + 1) * 24 / STEP_HOURS)
-    if not 0 <= i <= last:
+    if not 0 <= i < last:
         raise ValueError(f"Landing date must be between {lookup.start} and {lookup.end}.")
     return i
 
@@ -129,10 +140,12 @@ def _longest_false_run(up: np.ndarray) -> np.ndarray:
     return best
 
 
-def conditions(lookup: Lookup, landing_utc: dt.datetime, window_days: int) -> pd.DataFrame:
+def conditions(lookup: Lookup, landing_utc: dt.datetime, window_days: int, slip_days: int = 14) -> pd.DataFrame:
     """Conditions at every site for one landing time and mission length.
 
-    One row per site, in the same order as lookup.sites.
+    One row per site, in the same order as lookup.sites. `slip_days` sets how
+    far the landing may move (earlier or later, whole days) for the
+    worst-case columns.
     """
     if not 1 <= window_days <= lookup.max_window_days:
         raise ValueError(f"Mission length must be 1 to {lookup.max_window_days} days.")
@@ -156,6 +169,19 @@ def conditions(lookup: Lookup, landing_utc: dt.datetime, window_days: int) -> pd
     out["longest_dark_h"] = _longest_false_run(sun)
     out["longest_blackout_h"] = _longest_false_run(earth)
     out["max_sun_el_window"] = lookup.sun_el[:, i:j].max(axis=1)
+    out["eclipse_hours"] = (lookup.eclipse[:, i:j] > 0).sum(axis=1) * STEP_HOURS
+
+    # Stability if the landing slips: the same window started up to slip_days earlier or later.
+    w = j - i
+    per_day = int(24 / STEP_HOURS)
+    last_start = lookup.cum_sun.shape[1] - 1 - w
+    starts = i + per_day * np.arange(-slip_days, slip_days + 1)
+    starts = starts[(starts >= 0) & (starts <= last_start)]
+    sun_slip = (lookup.cum_sun[:, starts + w] - lookup.cum_sun[:, starts]) / w
+    earth_slip = (lookup.cum_earth[:, starts + w] - lookup.cum_earth[:, starts]) / w
+    out["sun_window_worst"] = sun_slip.min(axis=1)
+    out["earth_window_worst"] = earth_slip.min(axis=1)
+    out["slip_dates_checked"] = starts.size  # 2 * slip_days + 1 unless cut short at the edge of the date range
     return out
 
 
@@ -172,6 +198,7 @@ def rank_for_date(
     min_earth_window: float = 0.95,
     max_slope_deg: float = 10.0,
     weights: dict | None = None,
+    slip_days: int = 14,
 ) -> pd.DataFrame:
     """Apply the limits and rank the sites for a landing date.
 
@@ -185,13 +212,19 @@ def rank_for_date(
       flatness = 1 - mean slope / max_slope_deg (0 when the slope is at or over the limit)
     `weights` maps "sunlight", "earth", "flatness" to non-negative numbers;
     equal weights by default. The weighting scheme is provisional.
+
+    Stability columns (not part of the score): sun_window_worst and
+    earth_window_worst are the lowest window ratios if the landing moves by up
+    to `slip_days` days either way; stable is True when the site would still
+    meet the two mission-window limits in that worst case.
     """
     w = {**DEFAULT_WEIGHTS, **(weights or {})}
     total = sum(w.values())
     if total <= 0 or min(w.values()) < 0:
         raise ValueError("Weights must be non-negative and not all zero.")
 
-    out = conditions(lookup, landing_utc, window_days)
+    out = conditions(lookup, landing_utc, window_days, slip_days)
+    out["stable"] = (out["sun_window_worst"] >= min_sun_window) & (out["earth_window_worst"] >= min_earth_window)
     out["flatness"] = (1.0 - out["slope_mean_deg"] / max_slope_deg).clip(lower=0.0)
     reasons = []
     for r in out.itertuples():
@@ -233,6 +266,7 @@ def timeline(lookup: Lookup, site: str, landing_utc: dt.datetime, window_days: i
             "earth_margin": lookup.earth_margin[k, i:j],
             "sun_up": lookup.sun_up[k, i:j],
             "earth_up": lookup.earth_up[k, i:j],
+            "eclipse": lookup.eclipse[k, i:j],
         }
     )
 
@@ -275,3 +309,111 @@ def date_scan(lookup: Lookup, window_days: int, step_days: int = 1) -> pd.DataFr
         for k, name in enumerate(lookup.sites["site"]):
             rows.append((date, name, sun[k], earth[k]))
     return pd.DataFrame(rows, columns=["date", "site", "sun_window", "earth_window"])
+
+
+def passing_calendar(
+    lookup: Lookup,
+    window_days: int,
+    min_sun_long_term: float = 0.5,
+    min_earth_long_term: float = 0.5,
+    min_sun_window: float = 0.95,
+    min_earth_window: float = 0.95,
+    max_slope_deg: float = 10.0,
+) -> pd.DataFrame:
+    """Which sites pass all limits on which landing dates (landing at 00:00 UTC).
+
+    Long format: date, site, sun_window, earth_window, passes.
+    """
+    scan = date_scan(lookup, window_days)
+    fixed_ok = (
+        (lookup.sites["sun_long_term"] >= min_sun_long_term)
+        & (lookup.sites["earth_long_term"] >= min_earth_long_term)
+        & (lookup.sites["slope_mean_deg"] <= max_slope_deg)
+    )
+    ok_by_site = dict(zip(lookup.sites["site"], fixed_ok))
+    scan["passes"] = (
+        (scan["sun_window"] >= min_sun_window) & (scan["earth_window"] >= min_earth_window) & scan["site"].map(ok_by_site)
+    )
+    return scan
+
+
+def nearest_passing_dates(lookup: Lookup, landing_utc: dt.datetime, window_days: int, **limits) -> pd.DataFrame:
+    """For each site, the closest landing dates that pass all limits.
+
+    Columns: site, passes_on_date, previous_date, next_date, days_to_nearest.
+    Dates are None when the site never passes in that direction within the
+    lookup range. Use it when few or no sites pass on the chosen date.
+    """
+    cal = passing_calendar(lookup, window_days, **limits)
+    day = landing_utc.date()
+    rows = []
+    for site, grp in cal.groupby("site", sort=False):
+        good = grp.loc[grp["passes"], "date"]
+        before = [d for d in good if d < day]
+        after = [d for d in good if d > day]
+        on = bool((good == day).any())
+        prev_d = max(before) if before else None
+        next_d = min(after) if after else None
+        gaps = [abs((d - day).days) for d in (prev_d, next_d) if d is not None]
+        rows.append((site, on, prev_d, next_d, 0 if on else (min(gaps) if gaps else None)))
+    return pd.DataFrame(rows, columns=["site", "passes_on_date", "previous_date", "next_date", "days_to_nearest"])
+
+
+def best_dates(lookup: Lookup, site: str, window_days: int, top: int = 5) -> pd.DataFrame:
+    """The landing dates with the best combined window ratios at one site.
+
+    Ranked by the lower of the Sun and Earth window ratios, then by their sum.
+    Consecutive days are similar, so results are at least 7 days apart.
+    """
+    scan = date_scan(lookup, window_days)
+    g = scan[scan["site"] == site].copy()
+    g["worst_of_two"] = g[["sun_window", "earth_window"]].min(axis=1)
+    g["sum"] = g["sun_window"] + g["earth_window"]
+    g = g.sort_values(["worst_of_two", "sum"], ascending=False)
+    picked = []
+    for row in g.itertuples():
+        if all(abs((row.date - p.date).days) >= 7 for p in picked):
+            picked.append(row)
+        if len(picked) == top:
+            break
+    return pd.DataFrame([(p.date, p.sun_window, p.earth_window) for p in picked], columns=["date", "sun_window", "earth_window"])
+
+
+def custom_site(lat_deg: float, lon_deg: float, landing_utc: dt.datetime, window_days: int, height_m: float = 0.0):
+    """Conditions at any latitude/longitude, WITHOUT terrain.
+
+    The horizon is that of a smooth sphere, so results are an optimistic
+    approximation: label them "flat-horizon estimate, terrain not included".
+    Returns (summary dict, hourly timeline DataFrame).
+    """
+    if not -90.0 <= lat_deg <= 90.0:
+        raise ValueError("Latitude must be between -90 and 90 degrees.")
+    n = int(window_days * 24 / STEP_HOURS)
+    t0 = np.datetime64(landing_utc.replace(tzinfo=None), "ms")
+    times = t0 + (np.arange(n + 1) * STEP_HOURS * 3_600_000).astype("timedelta64[ms]")
+    to_sun, to_earth = sun_earth_from_moon_centre(_to_jd_tt(times))
+    height_km = (height_m + MAST_HEIGHT_M) / 1000.0
+    sun_az, sun_el, sun_dist = _az_el(to_sun, lat_deg, lon_deg, height_km)
+    earth_az, earth_el, earth_dist = _az_el(to_earth, lat_deg, lon_deg, height_km)
+    sun_up = sun_el + np.degrees(np.arcsin(SUN_RADIUS_KM / sun_dist)) > 0.0
+    earth_up = earth_el + np.degrees(np.arcsin(EARTH_RADIUS_KM / earth_dist)) > 0.0
+    tl = pd.DataFrame(
+        {"time_utc": times, "sun_el": sun_el, "sun_az": sun_az, "earth_el": earth_el, "earth_az": earth_az,
+         "sun_up": sun_up, "earth_up": earth_up}
+    )
+
+    def first_false(up):
+        idx = np.flatnonzero(~up)
+        return float(idx[0] * STEP_HOURS) if idx.size else None  # None = stays up for the whole window
+
+    summary = {
+        "lat": lat_deg, "lon": lon_deg, "terrain_included": False,
+        "sun_window": float(sun_up[:n].mean()), "earth_window": float(earth_up[:n].mean()),
+        "longest_dark_h": float(_longest_false_run(sun_up[None, :n])[0]),
+        "longest_blackout_h": float(_longest_false_run(earth_up[None, :n])[0]),
+        "hours_to_sunset": first_false(sun_up), "hours_to_earthset": first_false(earth_up),
+        "sun_el_at_landing": float(sun_el[0]), "earth_el_at_landing": float(earth_el[0]),
+        "sun_az_at_landing": float(sun_az[0]), "earth_az_at_landing": float(earth_az[0]),
+        "max_sun_el_window": float(sun_el[:n].max()),
+    }
+    return summary, tl

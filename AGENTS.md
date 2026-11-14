@@ -49,7 +49,8 @@ Not decided yet (ask a human before assuming):
 
 - The Moon has no atmosphere: no refraction. Whether the Sun or Earth is visible depends only on its elevation angle compared with the terrain horizon in that direction.
 - At the pole itself the Sun stays within about 1.5° of the level horizon; at 85°S it swings about 5° each lunar day. Either way terrain decides visibility. A flat-horizon result is a first approximation only and must be labelled as such.
-- Lunar eclipses (Earth blocking the Sun) are not modelled. Say so wherever sunlight results are shown.
+- Lunar eclipses (Earth blocking the Sun) are detected and reported as eclipse hours but are not subtracted from sunlight ratios. Show them wherever sunlight results are shown.
+- Run `python tests/test_ephemeris.py` and `python tests/test_planner.py` before pushing any change to `src/`.
 - Derivations of the geometry are in `docs/physics-and-coordinates.md`; its section 10 maps them to the code.
 - The Sun is a disc about 0.5° wide; "sunlit" can mean any part of the disc visible. State which definition a calculation uses.
 - Lunar reference radius: 1,737,400 m. Elevations are relative to this sphere.

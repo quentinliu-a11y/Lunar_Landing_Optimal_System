@@ -225,7 +225,7 @@ Added by Claude (Anthropic), 2026-11-14, after reviewing this note against the c
 
 Not modelled, and to be stated wherever results are shown:
 
-- **Lunar eclipses.** Earth blocking the Sun is not evaluated. A site can be reported as sunlit during an eclipse.
+- **Lunar eclipses.** Detected (Earth's disc overlapping the Sun's disc as seen from the site) and reported as eclipse hours, but not subtracted from the sunlight ratios. Detected dates for 2027-2030 match the published lunar eclipse dates recalled for that period.
 - **Ground stations.** "Earth visible" is a geometric proxy for communication, as section 7 says.
 - **Partial-disc power.** Sunlight is a yes/no state; received power is not computed.
 - **Skyline variation across the disc** and sub-hour outages.

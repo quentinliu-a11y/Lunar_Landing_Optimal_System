@@ -14,7 +14,7 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 3 | Ephemeris pipeline: Sun and Earth elevation over time for one site (flat horizon) | Claude (for Qiming) | done | `src/ephemeris.py`; checked against JPL Horizons at 10 points, within 0.002° elevation |
 | 4 | Terrain horizon for preset sites, precomputed | Claude (for Qiming) | done | `data/terrain_horizons.txt` (13 sites), `data/horizon_calibration.json`. Before calibration: Earth visibility within 0.5 points of NASA at 9 of 13 sites; Sun differs 6.5 points on average, 17 at worst |
 | 5 | Metrics per scenario (sunlit %, longest darkness, Earth visible %, longest blackout) | Claude (for Qiming) | done | `src/planner.py`, terrain skyline included; ran for 2027–2030 |
-| 6 | Weighted score, ranking and Pareto set | Claude (for Qiming) | doing | Limits, slope and a three-factor weighted score are in `planner.rank_for_date`; weight ingredients, stability adjustment and Pareto set not done |
+| 6 | Weighted score, ranking and Pareto set | Claude (for Qiming) | doing | Done in `src/planner.py`: five limits, three-factor weighted score, slip stability columns, nearest passing dates, best dates per site, custom coordinates (no terrain), eclipse detection; 8 checks in `tests/test_planner.py` pass. Not done: weight ingredients, Pareto set |
 | 7 | App: scenario comparison view and timelines | | todo | |
 | 8 | Site × date heatmap (robustness to delay) | | todo | |
 | 9 | Demo: 7 slides or 30-second video, in English | | todo | Hard limits |
@@ -69,6 +69,7 @@ List everything here as you use it. The submission form asks for all of it.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### AI tools used and for what
+- Claude (Anthropic): added slip stability, nearest/best dates, custom coordinates and eclipse detection to `src/planner.py`, and wrote `tests/test_planner.py`.
 - Claude (Anthropic): reviewed `docs/physics-and-coordinates.md` against the code, checked its direction vectors numerically against `src/ephemeris.py`, and added its section 10.
 - Claude (Anthropic): computed site slopes (`data/site_slopes.json`) from LDEM_85S_40M and added the slope limit and weighted score to `src/planner.py`.
 - OpenAI Codex: generated `docs/physics-and-coordinates.md`, derived spherical projection and ENU/terrain visibility geometry, ran analytical checks, and logged a documented half-pixel registration discrepancy. Used the `using-superpowers` and `verification-before-completion` workflow skills. Did not recompute candidate statistics or implement the ephemeris pipeline. The expected challenge reference document was missing from this checkout.
