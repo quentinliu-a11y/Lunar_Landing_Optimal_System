@@ -4,7 +4,7 @@ A planning tool that answers one question for lunar south-pole missions: **if we
 
 Team entry for the 2026 NASA Space Apps Challenge, challenge [Lunar Landing Site Navigator](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/).
 
-> Status, 14 November 2026: the calculation engine is complete and tested. The interface in `src/app.py` is an early reference version that does not yet show the date-specific results.
+> Status, 14 November 2026: the calculation engine and a working interface are complete and tested locally. The app has not been deployed to a public address yet.
 
 ## The problem
 
@@ -88,7 +88,7 @@ python tests/test_planner.py
 | `src/ephemeris.py` | Sun and Earth direction at any point on the Moon |
 | `src/sites.py` | Candidate sites with long-term visibility, skyline and slope |
 | `src/planner.py` | Date-specific conditions, limits, ranking, stability, nearest dates, custom coordinates |
-| `src/app.py` | Reference interface |
+| `src/app.py` | The interface (Streamlit): date page, ranked map, sky panorama, date comparison, custom coordinates |
 | `data/` | Processed NASA data: skylines, calibration, slopes, visibility statistics |
 | `tests/` | Checks against JPL Horizons and of the ranking rules |
 | `docs/design-principles.md` | Design decisions, limits and measured figures |

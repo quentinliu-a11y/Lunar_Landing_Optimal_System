@@ -7,7 +7,7 @@ The work is split in two:
 - **Logic** (`src/sites.py`, and later the date calculations): data loading, limits, ranking. 
 - **Visual interface**: designed and built separately. It only calls the functions below and never computes results itself.
 
-`src/app.py` is a plain reference interface that shows the agreed flow working. Replace it freely; do not change the logic to fit a design.
+`src/app.py` is a complete working interface built on these functions (ranked polar map, site panel, sky panorama, visibility timeline, date heat maps, custom coordinates). A redesign may restyle or replace it, but must keep every result it shows and must not change the logic to fit a design. Check a new version by running the app and both test files.
 
 ## The agreed flow
 

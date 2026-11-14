@@ -15,8 +15,8 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 4 | Terrain horizon for preset sites, precomputed | Claude (for Qiming) | done | `data/terrain_horizons.txt` (13 sites), `data/horizon_calibration.json`. Before calibration: Earth visibility within 0.5 points of NASA at 9 of 13 sites; Sun differs 6.5 points on average, 17 at worst |
 | 5 | Metrics per scenario (sunlit %, longest darkness, Earth visible %, longest blackout) | Claude (for Qiming) | done | `src/planner.py`, terrain skyline included; ran for 2027–2030 |
 | 6 | Weighted score, ranking and Pareto set | Claude (for Qiming) | doing | Done in `src/planner.py`: five limits, three-factor weighted score, slip stability columns, nearest passing dates, best dates per site, custom coordinates (no terrain), eclipse detection; 8 checks in `tests/test_planner.py` pass. Not done: weight ingredients, Pareto set |
-| 7 | App: scenario comparison view and timelines | | todo | |
-| 8 | Site × date heatmap (robustness to delay) | | todo | |
+| 7 | App: scenario comparison view and timelines | Claude (for Qiming) | done | `src/app.py`: two-step flow, ranked map, site panel, sky panorama, visibility timeline, custom coordinates. Run locally in headless Chrome with no errors; every control exercised in an automated run. Not deployed |
+| 8 | Site × date heatmap (robustness to delay) | Claude (for Qiming) | done | "Compare dates" tab in `src/app.py`; slip worst case shown per site |
 | 9 | Demo: 7 slides or 30-second video, in English | | todo | Hard limits |
 | 10 | Project page text: summary, description, NASA data, references, AI use | | todo | |
 | 11 | Make all links public and test them in a private window | | todo | |
@@ -69,6 +69,7 @@ List everything here as you use it. The submission form asks for all of it.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### AI tools used and for what
+- Claude (Anthropic): rewrote `src/app.py` as the working interface on top of `src/planner.py`, added `.streamlit/config.toml`, and made the date calendar use the chosen landing hour.
 - Claude (Anthropic): rewrote `README.md` to describe the built tool, its data, validation and limits.
 - Claude (Anthropic): added slip stability, nearest/best dates, custom coordinates and eclipse detection to `src/planner.py`, and wrote `tests/test_planner.py`.
 - Claude (Anthropic): reviewed `docs/physics-and-coordinates.md` against the code, checked its direction vectors numerically against `src/ephemeris.py`, and added its section 10.

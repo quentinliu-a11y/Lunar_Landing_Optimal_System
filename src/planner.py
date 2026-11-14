@@ -289,8 +289,10 @@ def skyline(lookup: Lookup, site: str) -> pd.DataFrame:
     )
 
 
-def date_scan(lookup: Lookup, window_days: int, step_days: int = 1) -> pd.DataFrame:
+def date_scan(lookup: Lookup, window_days: int, step_days: int = 1, hour_utc: int = 0) -> pd.DataFrame:
     """Mission-window Sun and Earth ratios for every site and every landing date.
+
+    Landing is at `hour_utc` o'clock UTC on each date.
 
     Long format: date, site, sun_window, earth_window. Use it for a
     site-by-date heat map or to find the best landing dates.
@@ -302,7 +304,7 @@ def date_scan(lookup: Lookup, window_days: int, step_days: int = 1) -> pd.DataFr
     cearth = np.concatenate([np.zeros((len(lookup.sites), 1)), np.cumsum(lookup.earth_up, axis=1)], axis=1)
     rows = []
     for d in range(0, n_days, step_days):
-        i = d * per_day
+        i = d * per_day + int(hour_utc / STEP_HOURS)
         date = lookup.start + dt.timedelta(days=d)
         sun = (csun[:, i + w] - csun[:, i]) / w
         earth = (cearth[:, i + w] - cearth[:, i]) / w
@@ -319,12 +321,13 @@ def passing_calendar(
     min_sun_window: float = 0.95,
     min_earth_window: float = 0.95,
     max_slope_deg: float = 10.0,
+    hour_utc: int = 0,
 ) -> pd.DataFrame:
-    """Which sites pass all limits on which landing dates (landing at 00:00 UTC).
+    """Which sites pass all limits on which landing dates (landing at `hour_utc` UTC).
 
     Long format: date, site, sun_window, earth_window, passes.
     """
-    scan = date_scan(lookup, window_days)
+    scan = date_scan(lookup, window_days, hour_utc=hour_utc)
     fixed_ok = (
         (lookup.sites["sun_long_term"] >= min_sun_long_term)
         & (lookup.sites["earth_long_term"] >= min_earth_long_term)
@@ -344,6 +347,7 @@ def nearest_passing_dates(lookup: Lookup, landing_utc: dt.datetime, window_days:
     Dates are None when the site never passes in that direction within the
     lookup range. Use it when few or no sites pass on the chosen date.
     """
+    limits.setdefault("hour_utc", landing_utc.hour)  # same time of day as the chosen landing
     cal = passing_calendar(lookup, window_days, **limits)
     day = landing_utc.date()
     rows = []
