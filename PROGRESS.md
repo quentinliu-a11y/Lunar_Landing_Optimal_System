@@ -21,21 +21,37 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 11 | Make all links public and test them in a private window | | todo | |
 | 12 | Submit for judging | | todo | |
 
+## Proposed split for three people
+
+Not agreed yet. Each role hands over through files in `data/`, so the three can work in parallel.
+
+| Role | Owns | Tasks | Hands over |
+|---|---|---|---|
+| A. Data and physics | Sun and Earth positions, terrain horizon, per-site timelines | 3, 4 | One timeline file per site: time, Sun elevation, Earth elevation, sunlit yes/no, Earth visible yes/no |
+| B. Scoring and validation | Site list, limits, weights, stability, ranking, checks against QuickMap | 2, 5, 6 | A ranking function: (date, settings) -> table of sites with factor values, pass/fail and score |
+| C. Interface and presentation | App pages, map, panorama, demo, submission text | 7, 8, 9, 10 | The running app, the demo and the project page text |
+
+Tasks 1, 11 and 12 are shared. First step for everyone: agree the file formats above, and B gives C a small made-up sample so the interface can be built before real data exists.
+
 ## Decisions
 
 | Date | Decision | Why |
 |---|---|---|
-| | | |
+| 14 Nov | Tool is date-first: pick a landing date, see conditions, go to a map of recommended sites | Team lead's concept |
+| 14 Nov | Rank a fixed list of named sites instead of scoring every pixel | Achievable by the deadline; scores are explainable |
+| 14 Nov | Top three factors: sunlight ratio, Earth communication availability, flatness | Team lead's choice |
+| 14 Nov | Some factors act as hard limits before scoring | Team lead's choice; default values in `docs/design-principles.md` |
 
 ## References and AI use
 
 List everything here as you use it. The submission form asks for all of it.
 
 ### NASA data and resources
--
+- LOLA average Sun and Earth visibility maps, 60 m/px, south pole (`avgvisib_85s_060m_201608.img`, `..._earth.img`), PDS Geosciences Node: https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/ . Method: Mazarico et al. (2011), Icarus 211, 1066.
+- Moon Trek `A3_Named_regions` service (Artemis III region outlines): https://trek.nasa.gov/moon/trekarcgis2/rest/services/A3_Named_regions/MapServer/0
 
 ### Partner agency data and other references (data, tools, libraries, images)
 -
 
 ### AI tools used and for what
--
+- Claude (Anthropic): collected challenge rules and data-source notes (`docs/space-apps-2026-reference.md`); wrote `README.md`, `AGENTS.md`, `PROGRESS.md` and `docs/design-principles.md` from team decisions; computed the visibility statistics in `data/a3_region_visibility_stats.json` from the NASA maps above.
