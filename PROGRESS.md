@@ -69,6 +69,7 @@ List everything here as you use it. The submission form asks for all of it.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### AI tools used and for what
+- Claude (Anthropic): reviewed `src/planner.py`; vectorised the date scan (about 20 times faster), accepted late times on the last landing day, and counted eclipses only while the Sun is visible. Three tests added; Astra's `tests/test_interface.py` passes against it.
 - Claude (Anthropic): rewrote `src/app.py` as the working interface on top of `src/planner.py`, added `.streamlit/config.toml`, and made the date calendar use the chosen landing hour.
 - Claude (Anthropic): rewrote `README.md` to describe the built tool, its data, validation and limits.
 - Claude (Anthropic): added slip stability, nearest/best dates, custom coordinates and eclipse detection to `src/planner.py`, and wrote `tests/test_planner.py`.

@@ -69,6 +69,27 @@ def test_date_range_is_enforced():
             pass
 
 
+def test_late_time_on_last_day_is_accepted():
+    late = dt.datetime.combine(LOOKUP.end, dt.time(23, 59))
+    r = planner.rank_for_date(LOOKUP, late, 60)
+    assert len(r) == 13
+    tl = planner.timeline(LOOKUP, "Haworth", late, 60)
+    assert str(tl["time_utc"].iloc[0])[:13] == f"{LOOKUP.end} 23"
+
+
+def test_eclipse_only_counted_while_sun_visible():
+    assert not ((LOOKUP.eclipse > 0) & ~LOOKUP.sun_up).any()
+
+
+def test_date_scan_matches_ranking():
+    scan = planner.date_scan(LOOKUP, 14, hour_utc=7).set_index(["date", "site"])
+    for day in (dt.date(2028, 1, 1), dt.date(2028, 9, 17)):
+        r = planner.rank_for_date(LOOKUP, dt.datetime.combine(day, dt.time(7)), 14).set_index("site")
+        for site in r.index:
+            assert abs(scan.loc[(day, site), "sun_window"] - r.loc[site, "sun_window"]) < 1e-12
+            assert abs(scan.loc[(day, site), "earth_window"] - r.loc[site, "earth_window"]) < 1e-12
+
+
 def test_calendar_agrees_with_ranking():
     cal = planner.passing_calendar(LOOKUP, 14)
     day = cal[cal["date"] == LANDING.date()].set_index("site")
@@ -83,6 +104,7 @@ def test_known_lunar_eclipses_are_detected():
     # 2028-01-12, 2028-07-06, 2028-12-31.
     days = {str(t)[:10] for t in LOOKUP.times[(LOOKUP.eclipse > 0).any(axis=0)]}
     assert {"2028-01-12", "2028-07-06", "2028-12-31"} <= days, days
+    # (counted only where the Sun was above the skyline at that site; at least one site sees each)
 
 
 def test_custom_site_at_the_pole_and_equator():

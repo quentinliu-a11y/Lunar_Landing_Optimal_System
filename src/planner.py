@@ -51,7 +51,7 @@ class Lookup:
     earth_margin: np.ndarray     # (n_sites, T) same for Earth
     sun_up: np.ndarray           # (n_sites, T) bool
     earth_up: np.ndarray         # (n_sites, T) bool
-    eclipse: np.ndarray          # (n_sites, T) 0 = none, 1 = Earth covers part of the Sun, 2 = Earth covers all of it
+    eclipse: np.ndarray          # (n_sites, T) 0 = none, 1 = Earth covers part of the visible Sun, 2 = all of it
     cum_sun: np.ndarray          # (n_sites, T+1) running count of sunlit hours, for O(1) window ratios
     cum_earth: np.ndarray        # (n_sites, T+1) same for Earth
     hours_to_sunset: np.ndarray  # (n_sites, T) hours until the Sun next sets (0 if down, nan if beyond range)
@@ -108,6 +108,7 @@ def build_lookup(start: dt.date, end: dt.date, max_window_days: int = 60) -> Loo
         cos_sep = np.sin(e1) * np.sin(e2) + np.cos(e1) * np.cos(e2) * np.cos(np.radians(sun_az[i] - earth_az[i]))
         sep = np.degrees(np.arccos(np.clip(cos_sep, -1, 1)))
         eclipse[i] = np.where(sep < earth_radius - sun_radius, 2, np.where(sep < earth_radius + sun_radius, 1, 0))
+        eclipse[i][~sun_up[i]] = 0  # only matters while the Sun is above the skyline
 
     return Lookup(
         sites=sites, times=times, sun_el=sun_el, earth_el=earth_el, sun_az=sun_az,
@@ -122,12 +123,17 @@ def build_lookup(start: dt.date, end: dt.date, max_window_days: int = 60) -> Loo
 
 
 def _index(lookup: Lookup, landing_utc: dt.datetime) -> int:
+    """Index of the hourly sample nearest to the landing time.
+
+    Any time on a day from lookup.start to lookup.end is accepted. A time late
+    on the last day that would round into the next day uses that day's last hour.
+    """
     t0 = dt.datetime.combine(lookup.start, dt.time(0))
-    i = int(round((landing_utc.replace(tzinfo=None) - t0).total_seconds() / 3600 / STEP_HOURS))
-    last = int(((lookup.end - lookup.start).days + 1) * 24 / STEP_HOURS)
-    if not 0 <= i < last:
+    hours = (landing_utc.replace(tzinfo=None) - t0).total_seconds() / 3600 / STEP_HOURS
+    last = int(((lookup.end - lookup.start).days + 1) * 24 / STEP_HOURS)  # first hour after the last day
+    if not 0 <= hours < last:
         raise ValueError(f"Landing date must be between {lookup.start} and {lookup.end}.")
-    return i
+    return min(int(round(hours)), last - 1)
 
 
 def _longest_false_run(up: np.ndarray) -> np.ndarray:
@@ -300,17 +306,18 @@ def date_scan(lookup: Lookup, window_days: int, step_days: int = 1, hour_utc: in
     w = int(window_days * 24 / STEP_HOURS)
     per_day = int(24 / STEP_HOURS)
     n_days = (lookup.end - lookup.start).days + 1
-    csun = np.concatenate([np.zeros((len(lookup.sites), 1)), np.cumsum(lookup.sun_up, axis=1)], axis=1)
-    cearth = np.concatenate([np.zeros((len(lookup.sites), 1)), np.cumsum(lookup.earth_up, axis=1)], axis=1)
-    rows = []
-    for d in range(0, n_days, step_days):
-        i = d * per_day + int(hour_utc / STEP_HOURS)
-        date = lookup.start + dt.timedelta(days=d)
-        sun = (csun[:, i + w] - csun[:, i]) / w
-        earth = (cearth[:, i + w] - cearth[:, i]) / w
-        for k, name in enumerate(lookup.sites["site"]):
-            rows.append((date, name, sun[k], earth[k]))
-    return pd.DataFrame(rows, columns=["date", "site", "sun_window", "earth_window"])
+    days = np.arange(0, n_days, step_days)
+    starts = days * per_day + int(hour_utc / STEP_HOURS)
+    sun = (lookup.cum_sun[:, starts + w] - lookup.cum_sun[:, starts]) / w          # (n_sites, n_dates)
+    earth = (lookup.cum_earth[:, starts + w] - lookup.cum_earth[:, starts]) / w
+    names = lookup.sites["site"].to_numpy()
+    dates = [lookup.start + dt.timedelta(days=int(d)) for d in days]
+    return pd.DataFrame({
+        "date": np.repeat(np.array(dates, dtype=object), len(names)),
+        "site": np.tile(names, len(dates)),
+        "sun_window": sun.T.ravel(),
+        "earth_window": earth.T.ravel(),
+    })
 
 
 def passing_calendar(
@@ -352,12 +359,11 @@ def nearest_passing_dates(lookup: Lookup, landing_utc: dt.datetime, window_days:
     day = landing_utc.date()
     rows = []
     for site, grp in cal.groupby("site", sort=False):
-        good = grp.loc[grp["passes"], "date"]
-        before = [d for d in good if d < day]
-        after = [d for d in good if d > day]
+        good = grp.loc[grp["passes"], "date"].to_numpy()
+        before, after = good[good < day], good[good > day]
         on = bool((good == day).any())
-        prev_d = max(before) if before else None
-        next_d = min(after) if after else None
+        prev_d = before.max() if before.size else None
+        next_d = after.min() if after.size else None
         gaps = [abs((d - day).days) for d in (prev_d, next_d) if d is not None]
         rows.append((site, on, prev_d, next_d, 0 if on else (min(gaps) if gaps else None)))
     return pd.DataFrame(rows, columns=["site", "passes_on_date", "previous_date", "next_date", "days_to_nearest"])
