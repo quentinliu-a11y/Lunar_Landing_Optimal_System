@@ -208,6 +208,30 @@ Inspected NASA/PDS solar-product metadata and projection conventions. This is me
 
 Team decisions still needed before production calculations: mission duration, observation heights, sunlight definition, Earth proxy/station definition, slope footprint/limit, final candidate points, weights, and optional factors. These derivations do not settle them.
 
+## 10. How the implementation relates to this note
+
+Added by Claude (Anthropic), 2026-11-14, after reviewing this note against the code. Sections 1 to 9 are unchanged.
+
+| Topic in this note | Status in the code |
+|---|---|
+| Polar stereographic equations (section 4) | Same equations in `src/sites.py`. |
+| Pixel-centre discrepancy (section 4) | Confirmed and fixed. Site positions were recomputed from the raw rasters with NASA's convention and stored in `data/terrain_horizons.txt`. The older JSON file is marked as superseded for positions. |
+| East/north/up vectors and azimuth (section 5) | `src/ephemeris.py` builds north from the pole direction and east as north x up. Checked numerically at three sites: identical to the E, N, U above to 1e-15. |
+| Geometric versus apparent directions (section 5) | The code uses geometric positions without light-time or aberration. Compared with JPL Horizons apparent airless azimuth/elevation at 10 points: within 0.002 deg elevation and 0.008 deg azimuth (`tests/test_ephemeris.py`). |
+| Skyline from 3D positions, no extra curvature term, negative horizons kept (section 6) | Done this way. Terrain was searched to 300 km; LDEM_75S_120M covers that range for every site, so no direction is unmodelled. |
+| Visibility definition (section 7) | "Any part of the disc visible" for both Sun and Earth, using the scalar test with a time-dependent angular radius. The Earth product label was read during the analysis and states the same any-fraction convention as the Sun label. |
+| Window ratio (section 8) | Hourly samples, start included and end excluded, equal durations. |
+| Slope (section 8) | Central differences on the projected 40 m grid over an 80 m baseline, not a plane fit in the local frame. The projection scale error at these latitudes is under 0.5%, which is small beside the footprint choice. |
+
+Not modelled, and to be stated wherever results are shown:
+
+- **Lunar eclipses.** Earth blocking the Sun is not evaluated. A site can be reported as sunlit during an eclipse.
+- **Ground stations.** "Earth visible" is a geometric proxy for communication, as section 7 says.
+- **Partial-disc power.** Sunlight is a yes/no state; received power is not computed.
+- **Skyline variation across the disc** and sub-hour outages.
+
+One correction to project wording that follows from section 2: the Sun stays within about 1.5 deg of the level horizon only at the pole itself. At 85 deg S it swings about 5 deg each lunar day, which matches the computed values (Malapert Massif: -4.2 to +4.4 deg in January 2028).
+
 ## References
 
 1. NASA, [Cross-Program Design Specification for Natural Environments, revision H, section 3.4.9](https://ntrs.nasa.gov/api/citations/20205007447/downloads/SLS-SPEC-159%20Cross-Program%20Design%20Specification%20for%20Natural%20Environments%20%28DSNE%29%20REVISION%20H.pdf). Physical background only; not an adopted project requirement.

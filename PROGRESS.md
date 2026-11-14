@@ -23,7 +23,7 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 12 | Submit for judging | | todo | |
 
 | 13 | Derive physical geometry and coordinate transformations | OpenAI Codex | done | `docs/physics-and-coordinates.md`: 24 projection round trips, cardinal directions, ENU bases, curvature and pixel-centre checks passed; no date-specific NASA-tool comparison. |
-| 14 | Audit raw-raster pixel registration and recompute site coordinates if needed | | todo | The JSON's documented 60 m raster transform differs from NASA's pixel-centre convention by +30 m in x and -30 m in y; processing script and raw values not checked in task 13. |
+| 14 | Audit raw-raster pixel registration and recompute site coordinates if needed | Claude (for Qiming) | done | Confirmed: the first analysis used a half-pixel-shifted transform (+30 m in x, -30 m in y). Site coordinates were recomputed from the raw rasters with NASA's pixel-centre convention, x=(c-2528.5)*60, y=(2528.5-r)*60, and are stored in `data/terrain_horizons.txt`, which the code uses. `data/a3_region_visibility_stats.json` keeps the earlier coordinates (about 42 m off) and is marked as superseded for positions; its visibility values are unaffected. |
 
 ## Proposed split for three people
 
@@ -65,11 +65,11 @@ List everything here as you use it. The submission form asks for all of it.
 
 ### Partner agency data and other references (data, tools, libraries, images)
 - Task 13: existing Python interpreter and standard-library `math`, `ast`, and `pathlib` for analytical checks; OpenAI Codex web search for primary-source documentation. No new runtime dependencies. USGS projection reference and NASA Earth-label retrieval were attempted but unavailable; neither supports a new verified result.
-- Python libraries: Streamlit, Plotly, pandas (see `requirements.txt`).
 - Python libraries: Streamlit, Plotly, pandas, NumPy, PyERFA (see `requirements.txt`). PyERFA supplies the Earth and Moon position routines `epv00` and `moon98`.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### AI tools used and for what
+- Claude (Anthropic): reviewed `docs/physics-and-coordinates.md` against the code, checked its direction vectors numerically against `src/ephemeris.py`, and added its section 10.
 - Claude (Anthropic): computed site slopes (`data/site_slopes.json`) from LDEM_85S_40M and added the slope limit and weighted score to `src/planner.py`.
 - OpenAI Codex: generated `docs/physics-and-coordinates.md`, derived spherical projection and ENU/terrain visibility geometry, ran analytical checks, and logged a documented half-pixel registration discrepancy. Used the `using-superpowers` and `verification-before-completion` workflow skills. Did not recompute candidate statistics or implement the ephemeris pipeline. The expected challenge reference document was missing from this checkout.
 - Claude (Anthropic): computed the terrain skylines (`data/terrain_horizons.txt`) and calibration (`data/horizon_calibration.json`) from the LOLA elevation models, and added terrain to `src/planner.py` and `src/sites.py`.

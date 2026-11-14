@@ -101,6 +101,7 @@ Weights are the `weights` argument, for example `weights={"sunlight": 2, "earth"
 - **"Estimate anchored to NASA long-term data."** Visibility uses the real terrain skyline from NASA LOLA elevation models, shifted by one constant per site so that our 18.6-year average equals NASA's long-term figure. Near the pole the Sun grazes the skyline, so results for a specific date are estimates.
 - "Earth visible" means any part of Earth's disc is above the skyline. A specific ground station may be out of view for part of that time.
 - Sun and Earth positions were checked against NASA JPL Horizons and agree within 0.01°.
+- Lunar eclipses are not modelled: a site can be shown as sunlit while Earth is blocking the Sun.
 
 ## What is not available yet
 

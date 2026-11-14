@@ -1,5 +1,6 @@
 {
   "_note": "AI-assisted: computed by Claude (Anthropic) on 2026-11-14 from the NASA LOLA products listed in 'sources'. Checked: the highest-sunlight pixel falls on the Shackleton-de Gerlache connecting ridge and the 100% Earth-visibility pixels fall on the Earth-facing side near longitude 0, as expected. Not independently re-run by a human yet.",
+  "_superseded_note": "POSITIONS IN THIS FILE ARE ABOUT 42 M OFF. The transform in 'definition' is shifted by half a pixel (+30 m in x, -30 m in y) from NASA's pixel-centre convention, x=(i-2528.5)*60, y=(2528.5-j)*60. Visibility values and counts are correct. Corrected site positions, recomputed from the raw rasters, are in data/terrain_horizons.txt, which is the file the code reads. Found independently by Claude and by the OpenAI Codex audit (docs/physics-and-coordinates.md, section 4).",
   "sources": [
     "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/avgvisib_85s_060m_201608.img",
     "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/avgvisib_85s_060m_201608_earth.img",
@@ -9,27 +10,260 @@
   "whole_map_south_of_85S": {
     "pixels": 20085797,
     "area_km2": 72309,
-    "max_sun": {"sun": 0.884, "earth": 0.581, "lat": -89.475, "lon": -137.596},
-    "max_earth": {"earth": 1.0, "sun": 0.477, "lat": -85.571, "lon": 3.635},
-    "best_both": {"sun": 0.758, "earth": 0.717, "lat": -85.954, "lon": -3.391},
-    "thresholds": [0.5, 0.7, 0.8, 0.85, 0.9, 0.95],
-    "pixels_sun_at_least": [50483, 231, 19, 7, 0, 0],
-    "area_fraction_earth_at_least": [0.1335, 0.0272, 0.0173, 0.0150, 0.0124, 0.0083],
-    "pixels_both_at_least": [17452, 4, 0, 0, 0, 0]
+    "max_sun": {
+      "sun": 0.884,
+      "earth": 0.581,
+      "lat": -89.475,
+      "lon": -137.596
+    },
+    "max_earth": {
+      "earth": 1.0,
+      "sun": 0.477,
+      "lat": -85.571,
+      "lon": 3.635
+    },
+    "best_both": {
+      "sun": 0.758,
+      "earth": 0.717,
+      "lat": -85.954,
+      "lon": -3.391
+    },
+    "thresholds": [
+      0.5,
+      0.7,
+      0.8,
+      0.85,
+      0.9,
+      0.95
+    ],
+    "pixels_sun_at_least": [
+      50483,
+      231,
+      19,
+      7,
+      0,
+      0
+    ],
+    "area_fraction_earth_at_least": [
+      0.1335,
+      0.0272,
+      0.0173,
+      0.015,
+      0.0124,
+      0.0083
+    ],
+    "pixels_both_at_least": [
+      17452,
+      4,
+      0,
+      0,
+      0,
+      0
+    ]
   },
   "artemis3_regions": [
-    {"region": "Connecting Ridge", "mean_sun": 0.283, "mean_earth": 0.219, "best_sun": {"sun": 0.884, "earth": 0.581, "lat": -89.475, "lon": -137.596}, "best_earth": 0.587, "best_both": {"sun": 0.719, "earth": 0.587, "lat": -89.315, "lon": -114.047}},
-    {"region": "Peak Near Shackleton", "mean_sun": 0.301, "mean_earth": 0.255, "best_sun": {"sun": 0.860, "earth": 0.565, "lat": -88.808, "lon": 123.769}, "best_earth": 0.606, "best_both": {"sun": 0.647, "earth": 0.606, "lat": -88.805, "lon": 123.453}},
-    {"region": "Nobile Rim 1", "mean_sun": 0.272, "mean_earth": 0.207, "best_sun": {"sun": 0.831, "earth": 0.599, "lat": -85.300, "lon": 37.116}, "best_earth": 1.0, "best_both": {"sun": 0.675, "earth": 0.737, "lat": -85.293, "lon": 36.957}},
-    {"region": "de Gerlache Rim", "mean_sun": 0.248, "mean_earth": 0.311, "best_sun": {"sun": 0.827, "earth": 0.614, "lat": -88.666, "lon": -68.420}, "best_earth": 0.618, "best_both": {"sun": 0.694, "earth": 0.618, "lat": -88.449, "lon": -67.819}},
-    {"region": "Malapert Massif", "mean_sun": 0.350, "mean_earth": 0.519, "best_sun": {"sun": 0.819, "earth": 0.587, "lat": -86.002, "lon": 2.070}, "best_earth": 1.0, "best_both": {"sun": 0.758, "earth": 0.717, "lat": -85.954, "lon": -3.391}},
-    {"region": "Connecting Ridge Extension", "mean_sun": 0.205, "mean_earth": 0.166, "best_sun": {"sun": 0.794, "earth": 0.586, "lat": -89.316, "lon": -114.266}, "best_earth": 0.594, "best_both": {"sun": 0.604, "earth": 0.594, "lat": -89.016, "lon": -92.420}},
-    {"region": "de Gerlache-Kocher Massif", "mean_sun": 0.229, "mean_earth": 0.322, "best_sun": {"sun": 0.785, "earth": 0.575, "lat": -85.829, "lon": -116.346}, "best_earth": 0.606, "best_both": {"sun": 0.630, "earth": 0.606, "lat": -85.880, "lon": -112.614}},
-    {"region": "de Gerlache Rim 2", "mean_sun": 0.282, "mean_earth": 0.399, "best_sun": {"sun": 0.751, "earth": 0.602, "lat": -88.466, "lon": -67.869}, "best_earth": 0.618, "best_both": {"sun": 0.694, "earth": 0.618, "lat": -88.449, "lon": -67.819}},
-    {"region": "Leibnitz Beta Plateau", "mean_sun": 0.262, "mean_earth": 0.426, "best_sun": {"sun": 0.747, "earth": 0.568, "lat": -85.444, "lon": 32.214}, "best_earth": 1.0, "best_both": {"sun": 0.676, "earth": 0.806, "lat": -85.481, "lon": 30.740}},
-    {"region": "Haworth", "mean_sun": 0.222, "mean_earth": 0.373, "best_sun": {"sun": 0.705, "earth": 0.601, "lat": -86.370, "lon": -23.268}, "best_earth": 0.822, "best_both": {"sun": 0.672, "earth": 0.696, "lat": -86.367, "lon": -23.215}},
-    {"region": "Faustini Rim A", "mean_sun": 0.165, "mean_earth": 0.330, "best_sun": {"sun": 0.659, "earth": 0.514, "lat": -87.773, "lon": 94.688}, "best_earth": 0.524, "best_both": {"sun": 0.518, "earth": 0.515, "lat": -87.812, "lon": 94.097}}
+    {
+      "region": "Connecting Ridge",
+      "mean_sun": 0.283,
+      "mean_earth": 0.219,
+      "best_sun": {
+        "sun": 0.884,
+        "earth": 0.581,
+        "lat": -89.475,
+        "lon": -137.596
+      },
+      "best_earth": 0.587,
+      "best_both": {
+        "sun": 0.719,
+        "earth": 0.587,
+        "lat": -89.315,
+        "lon": -114.047
+      }
+    },
+    {
+      "region": "Peak Near Shackleton",
+      "mean_sun": 0.301,
+      "mean_earth": 0.255,
+      "best_sun": {
+        "sun": 0.86,
+        "earth": 0.565,
+        "lat": -88.808,
+        "lon": 123.769
+      },
+      "best_earth": 0.606,
+      "best_both": {
+        "sun": 0.647,
+        "earth": 0.606,
+        "lat": -88.805,
+        "lon": 123.453
+      }
+    },
+    {
+      "region": "Nobile Rim 1",
+      "mean_sun": 0.272,
+      "mean_earth": 0.207,
+      "best_sun": {
+        "sun": 0.831,
+        "earth": 0.599,
+        "lat": -85.3,
+        "lon": 37.116
+      },
+      "best_earth": 1.0,
+      "best_both": {
+        "sun": 0.675,
+        "earth": 0.737,
+        "lat": -85.293,
+        "lon": 36.957
+      }
+    },
+    {
+      "region": "de Gerlache Rim",
+      "mean_sun": 0.248,
+      "mean_earth": 0.311,
+      "best_sun": {
+        "sun": 0.827,
+        "earth": 0.614,
+        "lat": -88.666,
+        "lon": -68.42
+      },
+      "best_earth": 0.618,
+      "best_both": {
+        "sun": 0.694,
+        "earth": 0.618,
+        "lat": -88.449,
+        "lon": -67.819
+      }
+    },
+    {
+      "region": "Malapert Massif",
+      "mean_sun": 0.35,
+      "mean_earth": 0.519,
+      "best_sun": {
+        "sun": 0.819,
+        "earth": 0.587,
+        "lat": -86.002,
+        "lon": 2.07
+      },
+      "best_earth": 1.0,
+      "best_both": {
+        "sun": 0.758,
+        "earth": 0.717,
+        "lat": -85.954,
+        "lon": -3.391
+      }
+    },
+    {
+      "region": "Connecting Ridge Extension",
+      "mean_sun": 0.205,
+      "mean_earth": 0.166,
+      "best_sun": {
+        "sun": 0.794,
+        "earth": 0.586,
+        "lat": -89.316,
+        "lon": -114.266
+      },
+      "best_earth": 0.594,
+      "best_both": {
+        "sun": 0.604,
+        "earth": 0.594,
+        "lat": -89.016,
+        "lon": -92.42
+      }
+    },
+    {
+      "region": "de Gerlache-Kocher Massif",
+      "mean_sun": 0.229,
+      "mean_earth": 0.322,
+      "best_sun": {
+        "sun": 0.785,
+        "earth": 0.575,
+        "lat": -85.829,
+        "lon": -116.346
+      },
+      "best_earth": 0.606,
+      "best_both": {
+        "sun": 0.63,
+        "earth": 0.606,
+        "lat": -85.88,
+        "lon": -112.614
+      }
+    },
+    {
+      "region": "de Gerlache Rim 2",
+      "mean_sun": 0.282,
+      "mean_earth": 0.399,
+      "best_sun": {
+        "sun": 0.751,
+        "earth": 0.602,
+        "lat": -88.466,
+        "lon": -67.869
+      },
+      "best_earth": 0.618,
+      "best_both": {
+        "sun": 0.694,
+        "earth": 0.618,
+        "lat": -88.449,
+        "lon": -67.819
+      }
+    },
+    {
+      "region": "Leibnitz Beta Plateau",
+      "mean_sun": 0.262,
+      "mean_earth": 0.426,
+      "best_sun": {
+        "sun": 0.747,
+        "earth": 0.568,
+        "lat": -85.444,
+        "lon": 32.214
+      },
+      "best_earth": 1.0,
+      "best_both": {
+        "sun": 0.676,
+        "earth": 0.806,
+        "lat": -85.481,
+        "lon": 30.74
+      }
+    },
+    {
+      "region": "Haworth",
+      "mean_sun": 0.222,
+      "mean_earth": 0.373,
+      "best_sun": {
+        "sun": 0.705,
+        "earth": 0.601,
+        "lat": -86.37,
+        "lon": -23.268
+      },
+      "best_earth": 0.822,
+      "best_both": {
+        "sun": 0.672,
+        "earth": 0.696,
+        "lat": -86.367,
+        "lon": -23.215
+      }
+    },
+    {
+      "region": "Faustini Rim A",
+      "mean_sun": 0.165,
+      "mean_earth": 0.33,
+      "best_sun": {
+        "sun": 0.659,
+        "earth": 0.514,
+        "lat": -87.773,
+        "lon": 94.688
+      },
+      "best_earth": 0.524,
+      "best_both": {
+        "sun": 0.518,
+        "earth": 0.515,
+        "lat": -87.812,
+        "lon": 94.097
+      }
+    }
   ],
-  "not_covered": ["Amundsen Rim", "Nobile Rim 2"],
+  "not_covered": [
+    "Amundsen Rim",
+    "Nobile Rim 2"
+  ],
   "not_covered_reason": "These two regions lie north of the 60 m map's coverage (about 84 deg S). Use the 120 m products avgvisib_75s_120m_201608*.img for them."
 }
