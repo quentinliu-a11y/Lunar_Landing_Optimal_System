@@ -103,7 +103,28 @@ Files: images (JPG, PNG, GIF up to 10 MB) can be uploaded; videos and documents 
 - Slides: readable template, few words, strong visuals; show an image of the project, the user experience, and how NASA and partner data make it possible; include team name, member names and the selected challenge.
 - No images, video, audio or likeness of anyone under 18.
 
-## 5. Source pages
+## 5. What QuickMap offers (checked 14 Nov 2026)
+
+QuickMap has moved to https://quickmap.lroc.im-ldi.com (hosted by Intuitive Machines); the old quickmap.lroc.asu.edu address is being retired. Layers are added through Layers → Add Layers. Each layer has a "Layer details" panel with a description and, for some, a "More Info" link to the source data.
+
+Layer groups relevant to us:
+
+| Group | Layers | Use for us |
+|---|---|---|
+| LRO LOLA | Sun Visibility 60/120/240 m; Earth Visibility 60/120/240 m; Sky Visibility; SLDEM2015 (+LOLA) with slope and azimuth; LOLA 80S 20 m and 25 m DEMs; LOLA south pole 5 m DEM and slope; SP LOLA DEM 5 m 87S; slope and roughness maps; south pole hill shades | Long-term Sun and Earth visibility factors; terrain for horizon and slope |
+| ACT: Temporal Illumination | Sunlit Hemisphere; Terrain Shadows @UTC (80S and 80N, 20 m/px); Terrain Shadows MIN / MAX; Sun Incidence on Terrain; cos(Sun Incidence); Sunlit Terrain Surface Temperature; Permanently Shadowed Region (80S); WAC and NAC polar illumination sets | Date-specific shadows to check our own results against |
+| QTS: SPole (lowres) [2025-12-01] | Hours of Dark Ahead; Hours of Light Ahead; Fully Sunlit for 1st Week; Sunlit Mask; Sunlit Cosine Illum | Same metrics we plan to compute, for one fixed date |
+| QTS: Malapert-Massif [2025-12-01] | Earthlit Mask; Sunlit Mask; Sunlit/Earthlit/Lander Mask; Lander Visibility (Viewshed); Dark/Light Time Before and After | Combined Sun + Earth example for one site and date |
+| LRO: Permanently Shadowed Regions | South pole PSR outlines and filled regions; PSRs ≥ 1 km² and ≥ 5 km²; doubly shadowed regions | Science-value factor (distance to PSR) |
+| Future Missions Sites | Artemis III candidate landing regions 2022 and 2024; Endurance-A traverse | Preset site list |
+| Past Mission Sites, Apollo Sites, LROC NAC CLPS Sites | Landing sites | Preset site list |
+| ACT Terrain: Dynamic DTM | Terrain height, slope, azimuth, hillshade, contour | Terrain display |
+
+Sun Visibility 60 m (LRO LOLA), from its details panel: covers 85° to the pole in polar stereographic projection; each pixel is the fraction of timesteps, from 0 (permanent shadow) to 1 (always visible), in which any part of the solar disc was visible; simulated with a 1-hour timestep over a full lunar nutation cycle of about 18.6 years, following Mazarico et al. (2011), Icarus 211, 1066, doi:10.1016/j.icarus.2010.10.030. Source files: https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/
+
+Not checked yet: whether those source files download cleanly and in what format, the Earth Visibility layer details, the "Visibility Analysis" tool and the time controls.
+
+## 6. Source pages
 
 - Challenges list: https://www.spaceappschallenge.org/2026/challenges/
 - Challenge resources tab: https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/?tab=resources
