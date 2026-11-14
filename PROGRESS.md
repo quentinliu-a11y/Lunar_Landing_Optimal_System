@@ -1,3 +1,4 @@
+<!-- AI-generated handoff update by OpenAI Codex, 2026-11-15. -->
 # Progress
 
 Deadline: **Sunday 15 November, 23:59** (local time of our Local Event). Aim to submit a first version early; the project can be edited and resubmitted until the deadline.
@@ -63,3 +64,15 @@ List everything here as you use it. The submission form asks for all of it.
 - Claude (Anthropic): wrote `src/ephemeris.py`, `src/planner.py` and `tests/test_ephemeris.py`. Ran the Horizons comparison and the planner for 2027–2030.
 - Claude (Anthropic): wrote the logic module `src/sites.py`, the reference interface `src/app.py` and `docs/ui-interface.md`. The reference interface was run headlessly (both steps, limit sliders, site selection); it has not been viewed in a browser.
 - Claude (Anthropic): collected challenge rules and data-source notes (`docs/space-apps-2026-reference.md`); wrote `README.md`, `AGENTS.md`, `PROGRESS.md` and `docs/design-principles.md` from team decisions; computed the visibility statistics in `data/a3_region_visibility_stats.json` from the NASA maps above.
+
+## Visual interface handoff — 15 November
+
+- OpenAI Codex completed the visual interface against commit `0eeac46`: two-step mission flow, 13-site polar map, calibrated skyline panorama, elevation and margin charts, optional date heatmap, bounded caches and lightweight transitions.
+- Validation: 8 Streamlit AppTest checks and the existing ephemeris test passed. Desktop and narrow-screen browser checks covered map selection and heatmap rendering. Tested with Streamlit 1.40.2 and Plotly 5.24.1.
+- Uploaded as a separate review branch because `main` has since advanced to `0525847`, including a newer Claude-built interface and planner. This branch is a visual handoff, not a replacement approved for the latest main. Preserve slope, weights, stability, alternative dates, eclipse reporting, custom coordinates, and landing-hour calendar behavior when integrating. Run both current scientific test files after integration.
+- `sites.py`, `planner.py`, and `ephemeris.py` are unchanged from the validated base. No new application dependencies or generated images.
+
+### Additional references and AI use for this handoff
+
+- OpenAI Codex: generated `src/app.py` and `tests/test_interface.py`, performed independent review and fixed missing-date input validation. Existing installed Edge and Playwright used only for browser verification.
+- Streamlit Plotly selection API documentation: https://docs.streamlit.io/1.40.0/develop/api-reference/charts/st.plotly_chart .
