@@ -1,3 +1,4 @@
+<!-- AI-assisted update by OpenAI Codex, 2026-11-14; physics derivation entries merged with current GitHub progress. -->
 # Progress
 
 Deadline: **Sunday 15 November, 23:59** (local time of our Local Event). Aim to submit a first version early; the project can be edited and resubmitted until the deadline.
@@ -20,6 +21,9 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 10 | Project page text: summary, description, NASA data, references, AI use | | todo | |
 | 11 | Make all links public and test them in a private window | | todo | |
 | 12 | Submit for judging | | todo | |
+
+| 13 | Derive physical geometry and coordinate transformations | OpenAI Codex | done | `docs/physics-and-coordinates.md`: 24 projection round trips, cardinal directions, ENU bases, curvature and pixel-centre checks passed; no date-specific NASA-tool comparison. |
+| 14 | Audit raw-raster pixel registration and recompute site coordinates if needed | | todo | The JSON's documented 60 m raster transform differs from NASA's pixel-centre convention by +30 m in x and -30 m in y; processing script and raw values not checked in task 13. |
 
 ## Proposed split for three people
 
@@ -44,22 +48,30 @@ Tasks 1, 11 and 12 are shared. First step for everyone: agree the file formats a
 | 14 Nov | Date-specific results come from a table precomputed once, so date changes are lookups | Team lead: transitions must be smooth |
 | 14 Nov | Some factors act as hard limits before scoring | Team lead's choice; default values in `docs/design-principles.md` |
 
+| 14 Nov | Physics derivation records explicit parameters without adopting mission-window, disc-visibility, observer-height or weighting defaults | Documentation scope only; open team decisions remain open |
+
 ## References and AI use
 
 List everything here as you use it. The submission form asks for all of it.
 
 ### NASA data and resources
+- NASA PDS LOLA solar visibility metadata: https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/avgvisib_85s_060m_201608.lbl ; polar projection catalog: https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/catalog/dsmap_polar.cat . Inspected for task 13; raw imagery not downloaded in that task. Earth label fetch unsuccessful; its disc definition remains unverified in this audit.
+- NASA PDS LOLA scaling FAQ: https://pds-geosciences.wustl.edu/missions/lro/lola_faq.htm ; JPL Horizons manual: https://ssd.jpl.nasa.gov/horizons/manual.html ; NASA NAIF lunar frame tutorial: https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/Tutorials/pdf/individual_docs/23_lunar-earth_pck-fk.pdf . Consulted for physical and frame conventions; no Horizons ephemeris request executed.
+- NASA Cross-Program Design Specification for Natural Environments, revision H, section 3.4.9: https://ntrs.nasa.gov/api/citations/20205007447/downloads/SLS-SPEC-159%20Cross-Program%20Design%20Specification%20for%20Natural%20Environments%20%28DSNE%29%20REVISION%20H.pdf . Physical background on lunar solar day and obliquity, not an adopted project requirement.
 - LOLA elevation models LDEM_85S_40M and LDEM_75S_120M (PDS Geosciences Node, https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/): terrain skylines in `data/terrain_horizons.txt`.
 - JPL Horizons API (https://ssd.jpl.nasa.gov/api/horizons.api), DE441: reference Sun and Earth azimuth/elevation for two south-pole sites, used to validate `src/ephemeris.py` (`tests/test_ephemeris.py`).
 - LOLA average Sun and Earth visibility maps, 60 m/px, south pole (`avgvisib_85s_060m_201608.img`, `..._earth.img`), PDS Geosciences Node: https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/ . Method: Mazarico et al. (2011), Icarus 211, 1066.
 - Moon Trek `A3_Named_regions` service (Artemis III region outlines): https://trek.nasa.gov/moon/trekarcgis2/rest/services/A3_Named_regions/MapServer/0
 
 ### Partner agency data and other references (data, tools, libraries, images)
+- Task 13: existing Python interpreter and standard-library `math`, `ast`, and `pathlib` for analytical checks; OpenAI Codex web search for primary-source documentation. No new runtime dependencies. USGS projection reference and NASA Earth-label retrieval were attempted but unavailable; neither supports a new verified result.
+- Python libraries: Streamlit, Plotly, pandas (see `requirements.txt`).
 - Python libraries: Streamlit, Plotly, pandas, NumPy, PyERFA (see `requirements.txt`). PyERFA supplies the Earth and Moon position routines `epv00` and `moon98`.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### AI tools used and for what
 - Claude (Anthropic): computed site slopes (`data/site_slopes.json`) from LDEM_85S_40M and added the slope limit and weighted score to `src/planner.py`.
+- OpenAI Codex: generated `docs/physics-and-coordinates.md`, derived spherical projection and ENU/terrain visibility geometry, ran analytical checks, and logged a documented half-pixel registration discrepancy. Used the `using-superpowers` and `verification-before-completion` workflow skills. Did not recompute candidate statistics or implement the ephemeris pipeline. The expected challenge reference document was missing from this checkout.
 - Claude (Anthropic): computed the terrain skylines (`data/terrain_horizons.txt`) and calibration (`data/horizon_calibration.json`) from the LOLA elevation models, and added terrain to `src/planner.py` and `src/sites.py`.
 - Claude (Anthropic): wrote `src/ephemeris.py`, `src/planner.py` and `tests/test_ephemeris.py`. Ran the Horizons comparison and the planner for 2027–2030.
 - Claude (Anthropic): wrote the logic module `src/sites.py`, the reference interface `src/app.py` and `docs/ui-interface.md`. The reference interface was run headlessly (both steps, limit sliders, site selection); it has not been viewed in a browser.
