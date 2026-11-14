@@ -66,7 +66,8 @@ Use NASA data as the core of every calculation; the judging criteria require it.
 | South-pole elevation, 100 m/px (alternative) | Moon Trek ImageServer `LRO_LOLA_DEM_SPole45_100mp_v04` | Point query tested; not used |
 | Candidate sites | Moon Trek `CLPS_sites` and `A3_Named_regions` services | Tested |
 | Long-term average Sun and Earth visibility | LOLA illumination products on PDS Geosciences (linked from QuickMap) | Tested: analysed into `data/a3_region_visibility_stats.json` |
-| Slope, roughness, shadowed regions | QuickMap layers (view only so far) | Not tested |
+| Slope | LOLA elevation model LDEM_85S_40M, processed into `data/site_slopes.json` | Computed for all 13 sites |
+| Roughness, shadowed regions | QuickMap layers (view only so far) | Not tested |
 
 Exact URLs and request formats are in `docs/space-apps-2026-reference.md`, sections 5 and 6. The Moon Trek services are not a documented public API: fetch each dataset once, save it under `data/`, and work from the local copy.
 

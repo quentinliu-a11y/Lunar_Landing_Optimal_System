@@ -13,7 +13,7 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 3 | Ephemeris pipeline: Sun and Earth elevation over time for one site (flat horizon) | Claude (for Qiming) | done | `src/ephemeris.py`; checked against JPL Horizons at 10 points, within 0.002° elevation |
 | 4 | Terrain horizon for preset sites, precomputed | Claude (for Qiming) | done | `data/terrain_horizons.txt` (13 sites), `data/horizon_calibration.json`. Before calibration: Earth visibility within 0.5 points of NASA at 9 of 13 sites; Sun differs 6.5 points on average, 17 at worst |
 | 5 | Metrics per scenario (sunlit %, longest darkness, Earth visible %, longest blackout) | Claude (for Qiming) | done | `src/planner.py`, terrain skyline included; ran for 2027–2030 |
-| 6 | Weighted score, ranking and Pareto set | | todo | |
+| 6 | Weighted score, ranking and Pareto set | Claude (for Qiming) | doing | Limits, slope and a three-factor weighted score are in `planner.rank_for_date`; weight ingredients, stability adjustment and Pareto set not done |
 | 7 | App: scenario comparison view and timelines | | todo | |
 | 8 | Site × date heatmap (robustness to delay) | | todo | |
 | 9 | Demo: 7 slides or 30-second video, in English | | todo | Hard limits |
@@ -59,6 +59,7 @@ List everything here as you use it. The submission form asks for all of it.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### AI tools used and for what
+- Claude (Anthropic): computed site slopes (`data/site_slopes.json`) from LDEM_85S_40M and added the slope limit and weighted score to `src/planner.py`.
 - Claude (Anthropic): computed the terrain skylines (`data/terrain_horizons.txt`) and calibration (`data/horizon_calibration.json`) from the LOLA elevation models, and added terrain to `src/planner.py` and `src/sites.py`.
 - Claude (Anthropic): wrote `src/ephemeris.py`, `src/planner.py` and `tests/test_ephemeris.py`. Ran the Horizons comparison and the planner for 2027–2030.
 - Claude (Anthropic): wrote the logic module `src/sites.py`, the reference interface `src/app.py` and `docs/ui-interface.md`. The reference interface was run headlessly (both steps, limit sliders, site selection); it has not been viewed in a browser.

@@ -1,0 +1,70 @@
+{
+ "_note": "AI-assisted: computed by Claude (Anthropic), 2026-11-14, from the NASA LOLA elevation model LDEM_85S_40M (40 m/pixel, PDS Geosciences Node). Slope in degrees from central differences over an 80 m baseline. slope_site_deg: at the site itself. slope_mean_deg and slope_max_deg: mean and maximum over the 29 grid points within 120 m of the site (a landing-accuracy footprint).",
+ "sites": {
+  "Amundsen Rim": {
+   "slope_site_deg": 3.4,
+   "slope_mean_deg": 5.1,
+   "slope_max_deg": 10.4
+  },
+  "Nobile Rim 2": {
+   "slope_site_deg": 2.4,
+   "slope_mean_deg": 4.5,
+   "slope_max_deg": 8.4
+  },
+  "Haworth": {
+   "slope_site_deg": 2.2,
+   "slope_mean_deg": 2.8,
+   "slope_max_deg": 4.7
+  },
+  "Faustini Rim A": {
+   "slope_site_deg": 3.3,
+   "slope_mean_deg": 3.4,
+   "slope_max_deg": 5.3
+  },
+  "de Gerlache Rim 2": {
+   "slope_site_deg": 9.1,
+   "slope_mean_deg": 7.7,
+   "slope_max_deg": 10.4
+  },
+  "Connecting Ridge Extension": {
+   "slope_site_deg": 3.3,
+   "slope_mean_deg": 4.7,
+   "slope_max_deg": 9.1
+  },
+  "Connecting Ridge": {
+   "slope_site_deg": 9.2,
+   "slope_mean_deg": 7.9,
+   "slope_max_deg": 16.5
+  },
+  "Nobile Rim 1": {
+   "slope_site_deg": 2.0,
+   "slope_mean_deg": 2.9,
+   "slope_max_deg": 5.6
+  },
+  "Peak Near Shackleton": {
+   "slope_site_deg": 4.2,
+   "slope_mean_deg": 3.8,
+   "slope_max_deg": 6.7
+  },
+  "de Gerlache Rim": {
+   "slope_site_deg": 1.2,
+   "slope_mean_deg": 2.9,
+   "slope_max_deg": 6.7
+  },
+  "Leibnitz Beta Plateau": {
+   "slope_site_deg": 5.3,
+   "slope_mean_deg": 5.0,
+   "slope_max_deg": 10.2
+  },
+  "Malapert Massif": {
+   "slope_site_deg": 2.4,
+   "slope_mean_deg": 3.5,
+   "slope_max_deg": 6.9
+  },
+  "de Gerlache-Kocher Massif": {
+   "slope_site_deg": 5.6,
+   "slope_mean_deg": 5.3,
+   "slope_max_deg": 8.6
+  }
+ }
+}

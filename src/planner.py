@@ -159,6 +159,9 @@ def conditions(lookup: Lookup, landing_utc: dt.datetime, window_days: int) -> pd
     return out
 
 
+DEFAULT_WEIGHTS = {"sunlight": 1.0, "earth": 1.0, "flatness": 1.0}
+
+
 def rank_for_date(
     lookup: Lookup,
     landing_utc: dt.datetime,
@@ -167,13 +170,29 @@ def rank_for_date(
     min_earth_long_term: float = 0.5,
     min_sun_window: float = 0.95,
     min_earth_window: float = 0.95,
+    max_slope_deg: float = 10.0,
+    weights: dict | None = None,
 ) -> pd.DataFrame:
     """Apply the limits and rank the sites for a landing date.
 
-    Provisional score: average of the mission-window Sun and Earth ratios
-    and the long-term Sun and Earth ratios.
+    Limits (a site failing any of them is listed after all passing sites):
+    long-term Sun and Earth visibility, mission-window Sun and Earth
+    visibility, and mean slope within 120 m of the site.
+
+    Score (0-1) = weighted average of three factor scores, each 0-1:
+      sunlight = mission-window Sun ratio
+      earth    = mission-window Earth ratio
+      flatness = 1 - mean slope / max_slope_deg (0 when the slope is at or over the limit)
+    `weights` maps "sunlight", "earth", "flatness" to non-negative numbers;
+    equal weights by default. The weighting scheme is provisional.
     """
+    w = {**DEFAULT_WEIGHTS, **(weights or {})}
+    total = sum(w.values())
+    if total <= 0 or min(w.values()) < 0:
+        raise ValueError("Weights must be non-negative and not all zero.")
+
     out = conditions(lookup, landing_utc, window_days)
+    out["flatness"] = (1.0 - out["slope_mean_deg"] / max_slope_deg).clip(lower=0.0)
     reasons = []
     for r in out.itertuples():
         why = []
@@ -185,10 +204,14 @@ def rank_for_date(
             why.append("mission-window sunlight below limit")
         if r.earth_window < min_earth_window:
             why.append("mission-window Earth contact below limit")
+        if r.slope_mean_deg > max_slope_deg:
+            why.append("slope above limit")
         reasons.append("; ".join(why))
     out["fail_reasons"] = reasons
     out["passes"] = out["fail_reasons"] == ""
-    out["score"] = (out["sun_window"] + out["earth_window"] + out["sun_long_term"] + out["earth_long_term"]) / 4
+    out["score"] = (
+        w["sunlight"] * out["sun_window"] + w["earth"] * out["earth_window"] + w["flatness"] * out["flatness"]
+    ) / total
     out = out.sort_values(["passes", "score"], ascending=[False, False]).reset_index(drop=True)
     out["rank"] = out.index + 1
     return out

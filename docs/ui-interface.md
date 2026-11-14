@@ -80,9 +80,11 @@ scan   = planner.date_scan(lookup, window_days=14)                    # about 0.
 | `sun_az_at_landing`, `earth_az_at_landing` | degrees | Direction, clockwise from lunar north |
 | `sun_up_at_landing`, `earth_up_at_landing` | true/false | Visible at landing |
 | `max_sun_el_window` | degrees | Highest Sun elevation during the window |
-| `passes` | true/false | Meets all four limits (two long-term, two mission-window) |
+| `slope_site_deg`, `slope_mean_deg`, `slope_max_deg` | degrees | Slope at the site, and the mean and maximum within 120 m of it (80 m baseline, LOLA 40 m elevation model) |
+| `flatness` | 0–1 | 1 − mean slope ÷ slope limit; 0 when the slope is at or over the limit |
+| `passes` | true/false | Meets all five limits (two long-term, two mission-window, slope) |
 | `fail_reasons` | text | Which limits failed; empty when the site passes |
-| `score` | 0–1 | Provisional: average of the two window ratios and the two long-term ratios |
+| `score` | 0–1 | Weighted average of three factor scores: `sun_window`, `earth_window`, `flatness`. Equal weights by default; provisional |
 
 `timeline` returns hourly rows: `time_utc`, `sun_el`, `sun_az`, `earth_el`, `earth_az`, `sun_margin`, `earth_margin`, `sun_up`, `earth_up`. Use it for the elevation chart and to draw the Sun's and Earth's paths on the panorama.
 
@@ -90,7 +92,9 @@ scan   = planner.date_scan(lookup, window_days=14)                    # about 0.
 
 `date_scan` returns `date`, `site`, `sun_window`, `earth_window` for a site-by-date heat map.
 
-Limits are arguments of `rank_for_date`: `min_sun_long_term`, `min_earth_long_term` (default 0.5) and `min_sun_window`, `min_earth_window` (default 0.95).
+Limits are arguments of `rank_for_date`: `min_sun_long_term`, `min_earth_long_term` (default 0.5), `min_sun_window`, `min_earth_window` (default 0.95) and `max_slope_deg` (default 10, applied to `slope_mean_deg`).
+
+Weights are the `weights` argument, for example `weights={"sunlight": 2, "earth": 1, "flatness": 1}`. Give the user sliders for the limits and the three weights, and always show the weights in use.
 
 ### Must be shown with these values
 
@@ -102,7 +106,6 @@ Limits are arguments of `rank_for_date`: `min_sun_long_term`, `min_earth_long_te
 
 Do not display numbers for these until the logic supplies them. Show "not available yet" instead.
 
-- Slope
 - Custom coordinates (the logic supports any latitude/longitude through `ephemeris.sky_positions`, but it is not wired into the ranking)
 
 ## Rules for the visual interface

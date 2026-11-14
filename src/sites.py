@@ -41,9 +41,11 @@ def load_sites() -> pd.DataFrame:
     height_m (surface height above the 1737.4 km sphere),
     skyline (numpy array of 360 terrain elevation angles in degrees, index =
     azimuth clockwise from lunar north),
-    sun_offset_deg, earth_offset_deg (calibration, see planner.py).
+    sun_offset_deg, earth_offset_deg (calibration, see planner.py),
+    slope_site_deg, slope_mean_deg, slope_max_deg (see data/site_slopes.json).
     """
     calib = json.loads((DATA_DIR / "horizon_calibration.json").read_text(encoding="utf-8"))["sites"]
+    slopes = json.loads((DATA_DIR / "site_slopes.json").read_text(encoding="utf-8"))["sites"]
     rows = []
     for line in (DATA_DIR / "terrain_horizons.txt").read_text(encoding="utf-8").splitlines():
         if not line.strip() or line.startswith("#"):
@@ -61,6 +63,7 @@ def load_sites() -> pd.DataFrame:
                 "height_m": float(height), "skyline": skyline,
                 "sun_offset_deg": calib[name]["sun_offset_deg"],
                 "earth_offset_deg": calib[name]["earth_offset_deg"],
+                **slopes[name],
             }
         )
     return pd.DataFrame(rows)

@@ -77,7 +77,7 @@ Two kinds of limit, because the data in section 3 rules out a single 95% rule:
 | Long-term Earth visibility | 18.6-year average | ≥ 50% | Same |
 | Mission-window sunlight | Mission window after the chosen landing date | ≥ 95% | Team target. Checked: with a 14-day window, 955 of 18,993 site-and-date combinations in 2027–2030 (5.0%) meet this together with the Earth limit |
 | Mission-window Earth visibility | Same window | ≥ 95% | Same check |
-| Slope | Fixed | ≤ lander limit, value not decided | – |
+| Slope | Fixed; mean slope within 120 m of the site | ≤ 10° | Proposed default, adjustable. Measured mean slopes range from 2.8° (Haworth) to 7.9° (Connecting Ridge); Connecting Ridge reaches 16.5° at its steepest point within 120 m |
 
 - Default mission window: 14 days. **Proposed**
 - When no site passes on a date, the tool says so and points to the nearest date on which one does. **Proposed**
@@ -88,6 +88,7 @@ Two kinds of limit, because the data in section 3 rules out a single 95% rule:
 Applied to sites that pass the limits. **Proposed**
 
 - Each factor is scaled to 0–1, multiplied by its weight and summed.
+- Implemented so far (`planner.rank_for_date`): three factors, sunlight (mission-window ratio), Earth (mission-window ratio) and flatness (1 − mean slope ÷ slope limit), with equal weights by default and user-set weights accepted. The weight ingredients and the stability adjustment below are not implemented yet.
 - A factor's weight combines: mission importance (set by mission type), separating power (whether the factor differs between sites), and data confidence (how trustworthy our number is).
 - Stability over time adjusts each site's values, not the factor weights: for factors that change with date, the value used is pulled toward its worst case within a slip window around the chosen date (default ±14 days). A site that stays good when the date slips scores higher than one that is good only on the chosen day.
 - Weights are always shown, and the user can override them.
