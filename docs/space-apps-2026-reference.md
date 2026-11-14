@@ -124,7 +124,33 @@ Sun Visibility 60 m (LRO LOLA), from its details panel: covers 85° to the pole 
 
 Not checked yet: whether those source files download cleanly and in what format, the Earth Visibility layer details, the "Visibility Analysis" tool and the time controls.
 
-## 6. Source pages
+## 6. What Moon Trek offers (checked 14 Nov 2026)
+
+Moon Trek (https://trek.nasa.gov/moon/, JPL, version 3.6.29) is a map viewer with analysis tools, and it sits on web services that can be called directly. Findings come from its public configuration file (https://trek.nasa.gov/moon/jpl/config/config.json) and direct test calls.
+
+### Tested and working
+
+- **South pole elevation service** (LOLA, 100 m/px, 32-bit float, polar stereographic metres, extent ±1,440 km around the pole, values −9126.5 to 7026 m): https://trek.nasa.gov/moon/trekarcgis/rest/services/LRO_LOLA_DEM_SPole45_100mp_v04/ImageServer
+  - `/identify?geometry={"x":0,"y":0}&geometryType=esriGeometryPoint&f=json` returns the elevation at a point (returned 1277 m at x=0, y=0).
+  - `/exportImage?bbox=xmin,ymin,xmax,ymax&size=W,H&format=tiff&pixelType=F32&f=json` returns a link to a GeoTIFF of that area.
+  - Related: north pole `LRO_LOLA_DEM_NPole45_100mp_v04`, global `LRO_LOLA_DEM_Global_256ppd_v06`.
+- **CLPS landing sites** (7 features with site, lander, contract, payload fields): Sinus Viscositatis (Peregrine), Nobile Region (Griffin, VIPER), Malapert A (Nova-C, IM-1), Shackleton Connecting Ridge (Nova-C, IM-2), Reiner Gamma (Nova-C, IM-3), Mare Crisium (Blue Ghost), Schrodinger Basin (SERIES-2). Service: https://trek.nasa.gov/moon/trekarcgis3/rest/services/CLPS_sites/MapServer/0/query?where=1%3D1&outFields=*&f=pjson
+- **Artemis III named regions** (13): Amundsen Rim, Nobile Rim 1, Nobile Rim 2, Haworth, Faustini Rim A, de Gerlache Rim, de Gerlache Rim 2, Connecting Ridge, Connecting Ridge Extension, Peak Near Shackleton, Leibnitz Beta Plateau, Malapert Massif, de Gerlache-Kocher Massif. Service: https://trek.nasa.gov/moon/trekarcgis2/rest/services/A3_Named_regions/MapServer/0/query?where=1%3D1&outFields=*&f=pjson
+- **Layer catalogue search** (449 items in the equirectangular index): https://trek.nasa.gov/moon/TrekServices/ws/index/eq/searchItems?key=LOLA&start=0&rows=40
+
+### Listed in the configuration, not tested
+
+- Sun angle service: https://trek.nasa.gov/getAzElfromT1 (request parameters unknown)
+- Lighting: https://trek.nasa.gov/moon/TrekWS/rest/light
+- Line of sight: https://trek.nasa.gov/moon/TrekWS/rest/los/
+- Slope: https://trek.nasa.gov/moon/TrekWS/rest/slope
+- Elevation profile, south pole: https://trek.nasa.gov/moon/TrekServices/ws/elevationProfileSP/calculate
+- Subset a layer to GeoTIFF: https://trek.nasa.gov/moon/TrekWS/rest/transform/latlon/subset/stream/tiff
+- Tools enabled in the viewer: sun angle, lighting, line of sight, slope, elevation profile, distance, subset, 3D print (STL), crater and rock detection. Some may need a login.
+
+These are services behind the Moon Trek viewer, not a documented public API, so they may change or limit heavy use. Download what we need once and keep a local copy.
+
+## 7. Source pages
 
 - Challenges list: https://www.spaceappschallenge.org/2026/challenges/
 - Challenge resources tab: https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/?tab=resources
