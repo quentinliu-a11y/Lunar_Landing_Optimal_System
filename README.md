@@ -4,7 +4,7 @@ A planning tool that answers one question for lunar south-pole missions: **if we
 
 Team entry for the 2026 NASA Space Apps Challenge, challenge [Lunar Landing Site Navigator](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/).
 
-> Status, 14 November 2026: the calculation engine and a working interface are complete and tested locally. The app has not been deployed to a public address yet.
+> Status, 15 November 2026: the calculation engine and the interface are complete and tested. Text for the project page is in `docs/submission.md`.
 
 ## The problem
 
