@@ -251,6 +251,11 @@
       .badge.data{border-color:rgba(143,227,180,.5);color:var(--good)}
       input[type=range]{accent-color:#f2b25c!important}
       footer.sources{font-size:12.5px!important;color:var(--muted)}
+
+      .view-btn.track.sun[aria-pressed=true]{background:rgba(242,178,92,.22)!important;border-color:#f2b25c!important;color:#fff!important}
+      .view-btn.track.earth[aria-pressed=true]{background:rgba(118,182,255,.22)!important;border-color:#76b6ff!important;color:#fff!important}
+      #gl-wrap.tracking #gl{cursor:default}
+      .hud-bl{flex-wrap:wrap;max-width:calc(100% - 28px)}
 </style>
   </head>
   <body>
@@ -323,8 +328,10 @@
                   <button class="view-btn" type="button" data-view="surface" aria-pressed="false">SURFACE</button>
                   <button class="view-btn" type="button" data-view="lander" aria-pressed="false">LANDER</button>
                   <button class="view-btn" type="button" data-view="top" aria-pressed="false">TOP-DOWN</button>
+                  <button class="view-btn track sun" type="button" data-view="sun" aria-pressed="false" title="Stand by the lander and keep looking at the Sun">☉ FACE SUN</button>
+                  <button class="view-btn track earth" type="button" data-view="earth" aria-pressed="false" title="Stand by the lander and keep looking at Earth">⊕ FACE EARTH</button>
                 </div>
-                <div class="hud hud-br">drag to orbit · scroll / pinch to zoom<br />dashed arcs = Sun and Earth paths over the mission</div>
+                <div class="hud hud-br">drag to orbit · scroll / pinch to zoom<br />dashed arcs = Sun and Earth paths over the mission<br />☉ / ⊕ = stand by the lander and follow the Sun or Earth</div>
                 <div id="gl-error" role="alert"></div>
               </div>
               <div class="legend">
@@ -889,10 +896,11 @@ if __name__ == "__main__":
           }
         }
         // distant horizon ridge ring — the site's own horizon profile, in metres
-        var ridgeBase = 3;
-        var ridge = ridgeBase + Math.max(0, horizonEl(site, az) - site.base) * 9 + 1.5 * n(5.1, 1.7, 0.03);
-        var ring = Math.max(0, Math.min(1, (r - 150) / 110));
-        h = h * (1 - ring * 0.55) + ridge * ring * ring;
+        // Edge of the scene: height set so that, seen from the lander's 2 m mast, the terrain sits at this
+        // site's real NASA LOLA skyline angle in every direction (it may fall away below level).
+        var ridge = 2 + r * Math.tan(horizonEl(site, az) * Math.PI / 180) + 0.6 * n(5.1, 1.7, 0.03);
+        var ring = Math.max(0, Math.min(1, (r - 150) / 110)); ring = ring * ring * (3 - 2 * ring);
+        h = h * (1 - ring) + ridge * ring;
         // flat landing pad
         var pad = Math.max(0, Math.min(1, (r - 10) / 12));
         return h * pad;
@@ -1100,18 +1108,19 @@ if __name__ == "__main__":
 
         // Sun + Earth bodies
         var sunGroup = new THREE.Group();
-        var sunMesh = new THREE.Mesh(new THREE.SphereGeometry(17, 28, 20), new THREE.MeshBasicMaterial({ color: 0xffdf9e, fog: false }));
+        // Sun about 0.4° in radius (real: 0.27°, drawn slightly larger to stay visible); Earth about 1° (real: 0.95°).
+        var sunMesh = new THREE.Mesh(new THREE.SphereGeometry(4, 28, 20), new THREE.MeshBasicMaterial({ color: 0xffdf9e, fog: false }));
         sunGroup.add(sunMesh);
         var sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture("rgba(255,214,140,.95)", "rgba(245,158,11,.35)"), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
-        sunGlow.scale.set(150, 150, 1);
+        sunGlow.scale.set(80, 80, 1);
         sunGroup.add(sunGlow);
         scene.add(sunGroup);
 
         var earthGroup = new THREE.Group();
-        var earthMesh = new THREE.Mesh(new THREE.SphereGeometry(15, 36, 24), new THREE.MeshStandardMaterial({ map: earthTexture(), roughness: 0.65, metalness: 0, fog: false }));
+        var earthMesh = new THREE.Mesh(new THREE.SphereGeometry(7.5, 36, 24), new THREE.MeshStandardMaterial({ map: earthTexture(), roughness: 0.65, metalness: 0, fog: false }));
         earthGroup.add(earthMesh);
         var atmo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture("rgba(140,190,255,.55)", "rgba(59,130,246,.18)"), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
-        atmo.scale.set(46, 46, 1);
+        atmo.scale.set(22, 22, 1);
         earthGroup.add(atmo);
         scene.add(earthGroup);
 
@@ -1249,7 +1258,8 @@ if __name__ == "__main__":
         G.sunLight.intensity = sunlit ? 3.4 : 0.05;
         G.sunLight.position.set(sd.x * 650, Math.max(4, sd.y * 650), sd.z * 650);
         G.sunLight.color.setHSL(0.09 + 0.035 * Math.min(1, Math.max(0, sp.el) / 40), 0.72, 0.72);
-        G.amb.intensity = sunlit ? 0.34 + lit * 0.3 : 0.13;
+        G.amb.intensity = sunlit ? 0.14 : 0.07;   // airless: shadows stay dark
+        G.sunGroup.children[1].material.opacity = sunlit ? 1 : 0.12;
         // earthshine fill when Earth is up and the Sun is not
         G.earthShine.intensity = (!sunlit && evis) ? 0.5 : (evis ? 0.14 : 0.0);
         G.earthShine.position.set(ed.x * 200, Math.max(10, ed.y * 200), ed.z * 200);
@@ -1465,12 +1475,44 @@ if __name__ == "__main__":
         btn.addEventListener("click", function () {
           Array.prototype.forEach.call(document.querySelectorAll(".view-btn"), function (b) { b.setAttribute("aria-pressed", "false"); });
           btn.setAttribute("aria-pressed", "true");
-          if (G) {
-            var v = VIEWS[btn.getAttribute("data-view")];
-            G.flyTo(new THREE.Vector3(v.pos[0], v.pos[1], v.pos[2]), new THREE.Vector3(v.tgt[0], v.tgt[1], v.tgt[2]));
-          }
+          var view = btn.getAttribute("data-view");
+          if (!G) return;
+          if (view === "sun" || view === "earth") { startTracking(view); return; }
+          stopTracking();
+          var v = VIEWS[view];
+          G.flyTo(new THREE.Vector3(v.pos[0], v.pos[1], v.pos[2]), new THREE.Vector3(v.tgt[0], v.tgt[1], v.tgt[2]));
         });
       });
+      /* Face Sun / Face Earth: stand beside the lander and keep looking at the body, every frame. */
+      var track = null;
+      function startTracking(body) {
+        track = { body: body, blend: 0 };
+        G.controls.enabled = false; G.controls.autoRotate = false;
+        G.camera.fov = 34; G.camera.updateProjectionMatrix();
+        els["gl-wrap"].classList.add("tracking");
+      }
+      function stopTracking() {
+        if (!track) return;
+        track = null; G.controls.enabled = true;
+        G.camera.fov = 55; G.camera.updateProjectionMatrix();
+        G.controls.target.set(0, 3, 0);
+        els["gl-wrap"].classList.remove("tracking");
+      }
+      var _tDir = null, _tPos = null, _tLook = null;
+      function stepTracking() {
+        if (!track) return false;
+        if (!_tDir) { _tDir = new THREE.Vector3(); _tPos = new THREE.Vector3(); _tLook = new THREE.Vector3(); }
+        var goal = track.body === "sun" ? G.sunGroup.position : G.earthGroup.position;
+        _tDir.set(goal.x, 0, goal.z).normalize();                 // horizontal direction to the body
+        // first-person from the lander: eye on the far side of the deck, 2.6 m up (the skyline is computed for a 2 m mast)
+        _tPos.set(_tDir.x * 4, 2.6, _tDir.z * 4);
+        track.blend = Math.min(1, track.blend + 0.035);
+        var k = track.blend < 1 ? 0.12 : 1;
+        G.camera.position.lerp(_tPos, k);
+        _tLook.copy(goal);
+        G.camera.lookAt(_tLook);
+        return true;
+      }
 
       /* ---------------- python code: show, copy, download ---------------- */
       var pyText = els["py-source"].textContent.replace(/^\n+/, "").replace(/\s+$/, "") + "\n";
@@ -1546,8 +1588,7 @@ if __name__ == "__main__":
         try {
           var dt = Math.min(0.05, (ts - lastFrame) / 1000 || 0.016);
           lastFrame = ts;
-          G.stepCamAnim();
-          G.controls.update();
+          if (!stepTracking()) { G.stepCamAnim(); G.controls.update(); }
           G.earthMesh.rotation.y += dt * 0.02;
           G.beaconMat.emissiveIntensity = (Math.sin(ts * 0.004) > 0.55) ? 3.2 : 0.05;
           if (G.signalMat.opacity > 0) G.signalMat.opacity = 0.35 + 0.25 * Math.sin(ts * 0.006);

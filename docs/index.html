@@ -274,7 +274,7 @@ a{color:inherit}
 <section class="scene" id="s-site" aria-label="3D site view">
   <iframe id="sim" title="Illustrative 3D lunar site scene" loading="lazy"></iframe>
   <div class="bar4 glass"><p><b id="simsite"></b> in 3D for your mission: Sun and Earth paths and the terrain skyline come from our NASA-based model; the ground and lander are illustrative.</p>
-    <button class="btn" id="back3">← Back to sites</button></div>
+    <button class="btn" id="back3">← Back to sites</button><button class="btn solid" id="replan">Re-plan</button></div>
 </section>
 
 <div id="flash"></div>
@@ -525,6 +525,7 @@ function toSite(){guardRun(async()=>{
   cam.getAnimations().forEach(a=>a.cancel());
 })}
 $('#back3').onclick=()=>guardRun(async()=>{show(2);$('#panel').classList.add('show')});
+$('#replan').onclick=()=>guardRun(async()=>{show(1);$('#plan').getAnimations().forEach(a=>a.cancel());scenes[1].querySelector('.intro').getAnimations().forEach(a=>a.cancel());scenes[1].querySelector('.cam').getAnimations().forEach(a=>a.cancel())});
 
 addEventListener('keydown',e=>{if(e.key==='Enter'&&state.scene===0)$('#start').click()});
 
