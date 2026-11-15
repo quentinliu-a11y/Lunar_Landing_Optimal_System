@@ -1,5 +1,7 @@
 # AI-generated interface redesign by OpenAI Codex, based on Claude's working interface.
 # Reviewed and adjusted by Claude (Anthropic), 2026-11-15: label legibility, heat-map margins, slip result shown directly.
+# Visual redesign by Claude (Anthropic), 2026-11-15: dark "night side" theme, Sun amber / Earth blue throughout,
+# site read-out with bars that mark the worst case if the landing slips. AI-generated.
 """Lunar Landing Optimal System - polar atlas interface.
 
 AI-assisted: written by Claude (Anthropic), 2026-11-14.
@@ -31,9 +33,9 @@ st.set_page_config(page_title="Lunar Landing | South Pole Atlas", layout="wide",
                    initial_sidebar_state="collapsed")
 
 FIRST_DAY, LAST_DAY = dt.date(2027, 1, 1), dt.date(2030, 12, 31)
-PASS, FAIL, PICK = "#79bcaa", "#7d8a91", "#db8757"
-SUN, EARTH, GROUND = "#a3581c", "#22758c", "#dde2dc"
-BG = "#faf9f5"
+PASS, FAIL, PICK = "#6fcf97", "#6b747c", "#ff7a45"
+SUN, EARTH, GROUND = "#f0a43a", "#5aa9e6", "#1b2229"
+BG, PANEL, RULE, INK, MUTED = "#0b0e11", "#141a20", "#27303a", "#e8e6df", "#8c959c"
 IMAGERY_CREDIT = "NASA/GSFC/Arizona State University · LROC WAC mosaic via NASA Moon Trek"
 IMAGERY_URL = "https://trek.nasa.gov/moon/trekarcgis/rest/services/LRO_WAC_Mosaic_SPole60_100m_v02/ImageServer"
 ESTIMATE_NOTE = (
@@ -44,65 +46,92 @@ ESTIMATE_NOTE = (
 
 def styles() -> None:
     st.markdown("""<style>
-    :root {color-scheme:light; --ink:#203631; --muted:#5b6c65; --rule:#d6dcd3;}
-    .stApp {background:#faf9f5; color:var(--ink);}
-    [data-testid="stHeader"] {background:rgba(250,249,245,.96);}
-    [data-testid="stMainBlockContainer"], .main .block-container {
-        max-width:1480px; padding:2.3rem 3.5rem 3rem;}
-    [data-testid="stSidebar"] {background:#edf0e8; border-right:1px solid var(--rule);}
-    h1,h2,h3,p,label,[data-testid="stMetricValue"] {color:var(--ink);}
-    h1 {font-family:Georgia,serif; font-weight:400!important; letter-spacing:-.045em;
-        font-size:clamp(2.6rem,5.2vw,4.9rem)!important; line-height:1.04!important;}
-    h2 {font-family:Georgia,serif; font-size:2.1rem!important; font-weight:400!important; letter-spacing:-.025em;}
-    h3 {font-size:1.25rem!important; font-weight:600!important;}
-    [data-testid="stCaptionContainer"] p {color:var(--muted); font-size:.82rem; line-height:1.5;}
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+    :root {color-scheme:dark; --bg:#0b0e11; --panel:#141a20; --rule:#27303a; --ink:#e8e6df; --muted:#8c959c;
+        --sun:#f0a43a; --earth:#5aa9e6; --pass:#6fcf97; --pick:#ff7a45;
+        --sans:'Space Grotesk','Segoe UI',Arial,sans-serif; --mono:'IBM Plex Mono',Consolas,monospace;}
+    .stApp {background:var(--bg); color:var(--ink); font-family:var(--sans);}
+    [data-testid="stHeader"] {background:transparent;}
+    [data-testid="stMainBlockContainer"], .main .block-container {max-width:1480px; padding:2rem 3.5rem 3rem;}
+    [data-testid="stSidebar"] {background:var(--panel); border-right:1px solid var(--rule);}
+    h1,h2,h3,h1 span,h2 span,h3 span {font-family:var(--sans)!important; color:var(--ink);}
+    p,label,li {font-family:var(--sans); color:var(--ink);}
+    h1 {font-weight:500!important; letter-spacing:-.04em; font-size:clamp(2.6rem,5vw,4.6rem)!important; line-height:1.02!important;}
+    h2 {font-size:2rem!important; font-weight:500!important; letter-spacing:-.03em;}
+    h3 {font-size:1.35rem!important; font-weight:500!important; letter-spacing:-.01em;}
+    [data-testid="stCaptionContainer"] p {color:var(--muted); font-size:.8rem; line-height:1.5;}
     .masthead {display:flex; justify-content:space-between; align-items:center; gap:1rem;
-        padding:0 0 1.1rem; margin-bottom:1.6rem; border-bottom:1px solid var(--rule);}
-    .wordmark {font-weight:750; letter-spacing:.15em; font-size:.86rem;}
-    .masthead small,.eyebrow {font-family:Consolas,monospace; text-transform:uppercase;
-        font-size:.72rem; letter-spacing:.13em; color:var(--muted);}
-    .eyebrow {margin:0 0 .8rem;}
-    .deck {max-width:32rem; font-size:1.03rem; line-height:1.65; color:var(--muted); margin:1rem 0 1.6rem;}
-    .atlas-heading {display:flex; justify-content:space-between; border-top:1px solid var(--rule);
-        padding-top:.8rem; margin:.5rem 0 .5rem; font-size:.75rem; letter-spacing:.1em; color:var(--muted);}
+        padding:0 0 1rem; margin-bottom:1.6rem; border-bottom:1px solid var(--rule);}
+    .wordmark {font-weight:700; letter-spacing:.16em; font-size:.84rem;}
+    .wordmark i {display:inline-block; width:.62rem; height:.62rem; border-radius:50%; margin-right:.6rem;
+        background:linear-gradient(90deg,var(--ink) 50%,#39424b 50%); vertical-align:-1px;}
+    .masthead small,.eyebrow,.atlas-heading {font-family:var(--mono); text-transform:uppercase;
+        font-size:.7rem; letter-spacing:.14em; color:var(--muted);}
+    .eyebrow {margin:0 0 .8rem; color:var(--sun);}
+    .deck {max-width:32rem; font-size:1.05rem; line-height:1.6; color:var(--muted); margin:1rem 0 1.6rem;}
+    .atlas-heading {display:flex; justify-content:space-between; border-top:1px solid var(--rule); padding-top:.8rem; margin:.5rem 0;}
     .legend {display:flex; flex-wrap:wrap; gap:1.2rem; font-size:.8rem; color:var(--muted); margin:.6rem 0;}
     .legend b {font-size:1rem; margin-right:.3rem;}
     .result-line {padding:.7rem 0; border-bottom:1px solid var(--rule); color:var(--muted);}
-    .result-line strong {color:var(--ink);}
-    [data-testid="stForm"] {border:1px solid var(--rule); border-radius:3px; padding:1.25rem; background:#fffefa;}
-    [data-baseweb="input"], [data-baseweb="select"]>div {background:#eef1e9!important; color:var(--ink)!important; border-radius:3px!important;}
-    input {color:var(--ink)!important;}
+    .result-line strong {color:var(--ink); font-family:var(--mono); font-weight:500;}
+    .verdict {font-family:var(--mono); font-size:.78rem; letter-spacing:.08em; text-transform:uppercase;
+        padding:.55rem .8rem; border-left:3px solid var(--pass); background:var(--panel); color:var(--ink); margin:.4rem 0 1.1rem;}
+    .verdict.no {border-left-color:var(--pick);}
+    .gauge {margin:0 0 1.15rem;}
+    .g-top {display:flex; justify-content:space-between; align-items:baseline;}
+    .g-label {font-family:var(--mono); font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);}
+    .g-val {font-family:var(--mono); font-size:2.5rem; font-weight:500; letter-spacing:-.04em; line-height:1.1;}
+    .g-bar {position:relative; height:10px; background:#1d252d; margin:.35rem 0 .4rem;}
+    .g-bar i {position:absolute; inset:0 auto 0 0; display:block;}
+    .g-bar b {position:absolute; top:-5px; bottom:-5px; width:2px; background:var(--ink);}
+    .g-bar u {position:absolute; top:0; bottom:0; width:1px; background:var(--muted); opacity:.7;}
+    .g-note {font-size:.8rem; color:var(--muted);} .g-note em {font-style:normal; color:var(--ink); font-family:var(--mono);}
+    .stats {display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); margin:.2rem 0 1rem;}
+    .stats div {padding:.7rem .6rem .7rem 0;} .stats div+div {padding-left:.8rem; border-left:1px solid var(--rule);}
+    .stats small {display:block; font-family:var(--mono); font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);}
+    .stats span {font-family:var(--mono); font-size:1.2rem;}
+    [data-testid="stForm"] {border:1px solid var(--rule); border-radius:2px; padding:1.25rem; background:var(--panel);}
     [data-testid="stMetric"] {border-top:1px solid var(--rule); padding:.8rem 0 .2rem;}
-    [data-testid="stMetricLabel"] p {font-size:.76rem; color:var(--muted);}
-    [data-testid="stMetricValue"] {font-family:Georgia,serif; font-size:2.05rem; letter-spacing:-.025em;}
+    [data-testid="stMetricLabel"] p {font-family:var(--mono); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);}
+    [data-testid="stMetricValue"] {font-family:var(--mono); font-size:1.7rem; letter-spacing:-.03em; color:var(--ink);}
     [data-testid="stButton"] button,[data-testid="stFormSubmitButton"] button {
-        border-radius:3px; min-height:2.8rem; transition:transform 140ms ease-out,opacity 140ms ease-out;}
-    button[kind^="primary"] {background:#284b3f!important; border-color:#284b3f!important;}
-    button[kind^="primary"] p {color:#fff!important;}
-    [data-testid="stSlider"] [role="slider"] {background:#346b5b!important;}
-    [data-testid="stSlider"] [data-testid="stThumbValue"] {color:#346b5b!important;}
-    button[kind="secondary"] {background:#faf9f5; color:var(--ink); border-color:#aab7ac;}
+        border-radius:2px; min-height:2.8rem; font-family:var(--mono); letter-spacing:.06em;
+        transition:transform 140ms ease-out,opacity 140ms ease-out;}
+    button[kind^="primary"] {background:var(--sun)!important; border-color:var(--sun)!important;}
+    button[kind^="primary"] p {color:#14100a!important; font-weight:500;}
+    button[kind="secondary"] {background:transparent; color:var(--ink); border-color:#46525e;}
     button:active {transform:scale(.985);}
-    button:focus-visible,input:focus-visible {outline:2px solid #346b5b!important; outline-offset:3px;}
+    button:focus-visible,input:focus-visible {outline:2px solid var(--sun)!important; outline-offset:3px;}
     [data-testid="stRadio"] [role="radiogroup"] {gap:.3rem; padding:.3rem 0 .8rem; border-bottom:1px solid var(--rule);}
-    [data-testid="stRadio"] label {padding:.45rem .7rem; border-radius:3px;}
-    [data-testid="stRadio"] label:has(input:checked) {background:#e1e9de;}
-    [data-testid="stAlert"] {border-radius:3px;}
-    [data-testid="stExpander"] {border-radius:3px; border-color:var(--rule);}
+    [data-testid="stRadio"] label {padding:.45rem .7rem; border-radius:2px;}
+    [data-testid="stRadio"] label:has(input:checked) {background:#1d252d;}
+    [data-testid="stAlert"],[data-testid="stExpander"] {border-radius:2px;}
     @media (hover:hover) and (pointer:fine) {button:hover {opacity:.86;}}
     @media (prefers-reduced-motion:reduce) {*,*::before,*::after {
         animation:none!important; transition:none!important; scroll-behavior:auto!important;}}
     @media (max-width:760px) {
         [data-testid="stMainBlockContainer"],.main .block-container {padding:4rem 1rem 2rem;}
         .masthead {align-items:flex-start;} .masthead small {max-width:9rem;text-align:right;}
-        h1 {font-size:3rem!important;} h2 {font-size:1.75rem!important;}
-        [data-testid="stMetricValue"] {font-size:1.7rem;}
+        h1 {font-size:2.8rem!important;} h2 {font-size:1.7rem!important;}
+        .stats {grid-template-columns:repeat(2,1fr);} .g-val {font-size:2rem;}
     }
     </style>""", unsafe_allow_html=True)
 
 
+def gauge(label: str, colour: str, value: float, worst: float | None, slip: int, limit: float) -> str:
+    """One read-out bar. Values come from the planner; this only draws them."""
+    mark = note = ""
+    if slip and worst is not None:
+        mark = f'<b style="left:calc({worst:.1%} - 1px)"></b>'
+        note = f'<div class="g-note">Worst case if the landing slips ±{slip} days: <em>{worst:.0%}</em></div>'
+    return (f'<div class="gauge"><div class="g-top"><span class="g-label">{label}</span>'
+            f'<span class="g-val" style="color:{colour}">{value:.0%}</span></div>'
+            f'<div class="g-bar"><i style="width:{value:.1%};background:{colour}"></i>'
+            f'<u style="left:{limit:.1%}" title="Your limit"></u>{mark}</div>{note}</div>')
+
+
 def masthead() -> None:
-    st.markdown('<div class="masthead"><span class="wordmark">LUNAR / LANDING</span>'
+    st.markdown('<div class="masthead"><span class="wordmark"><i></i>LUNAR LANDING NAVIGATOR</span>'
                 '<small>South pole atlas · Space Apps 2026</small></div>', unsafe_allow_html=True)
 
 
@@ -171,9 +200,9 @@ def fmt_hours(hours, up_now: bool, what: str) -> str:
 def dark_layout(fig: go.Figure, height: int) -> go.Figure:
     fig.update_layout(
         height=height, margin=dict(l=75, r=20, t=55, b=55), paper_bgcolor=BG, plot_bgcolor=BG,
-        font=dict(color="#385249", family="Arial, sans-serif", size=12),
+        font=dict(color="#b7bec4", family="Space Grotesk, Segoe UI, Arial, sans-serif", size=12),
         legend=dict(orientation="h", y=1.16, x=0),
-        hoverlabel=dict(bgcolor="#fffefa", font_color="#203631"),
+        hoverlabel=dict(bgcolor=PANEL, font_color=INK, bordercolor=RULE),
         transition=dict(duration=0),
     )
     return fig
@@ -236,7 +265,7 @@ def polar_map(ranked: pd.DataFrame, selected: str, overview: bool = False) -> go
         fig.add_trace(go.Scatter(x=r * np.sin(ang), y=r * np.cos(ang), mode="lines",
                                  line=dict(color="rgba(211,225,219,.18)", width=1), hoverinfo="skip", showlegend=False))
         fig.add_annotation(x=0, y=-r, text=f"{-lat}°S", showarrow=False, yshift=-8,
-                           font=dict(color="#dfe8e1", size=10), bgcolor="rgba(16,41,35,.72)", borderpad=1)
+                           font=dict(color="#dfe8e1", size=10), bgcolor="rgba(11,14,17,.78)", borderpad=1)
     for lon in range(0, 360, 30):
         a = math.radians(lon)
         fig.add_trace(go.Scatter(x=[0, max_r * math.sin(a)], y=[0, max_r * math.cos(a)], mode="lines",
@@ -244,11 +273,11 @@ def polar_map(ranked: pd.DataFrame, selected: str, overview: bool = False) -> go
     for text, x, y, xs, ys in (("0° (towards Earth)", 0, max_r, 0, 12), ("90°E", max_r, 0, 22, 0),
                                ("90°W", -max_r, 0, -22, 0), ("180°", 0, -max_r, 0, -22)):
         fig.add_annotation(x=x, y=y, text=text, showarrow=False, xshift=xs, yshift=ys,
-                           font=dict(color="#f4f4e9", size=11), bgcolor="rgba(16,41,35,.72)", borderpad=2)
+                           font=dict(color="#f4f4e9", size=11), bgcolor="rgba(11,14,17,.78)", borderpad=2)
 
     colours = [PICK if r.site == selected else (PASS if r.passes else FAIL) for r in ranked.itertuples()]
     if overview:
-        colours = ["#c2cdbd"] * len(ranked)
+        colours = [SUN] * len(ranked)
     custom = ranked[["site"]].values if overview else np.stack(
         [ranked["site"], ranked["sun_window"], ranked["earth_window"], ranked["slope_mean_deg"], ranked["score"]], axis=-1)
     if selected:
@@ -259,7 +288,7 @@ def polar_map(ranked: pd.DataFrame, selected: str, overview: bool = False) -> go
     fig.add_trace(go.Scatter(
         x=ranked["x_km"], y=ranked["y_km"], mode="markers",
         text=[str(v) for v in ranked["rank"]], textfont=dict(color="#0e211e", size=11),
-        marker=dict(size=8 if overview else 12, color=colours, line=dict(color="#faf9f5", width=1)),
+        marker=dict(size=8 if overview else 12, color=colours, line=dict(color=BG, width=1.5)),
         customdata=custom,
         hovertemplate="<b>%{customdata[0]}</b><extra></extra>" if overview else ("<b>%{customdata[0]}</b><br>Sunlight in mission: %{customdata[1]:.0%}<br>"
                        "Earth contact in mission: %{customdata[2]:.0%}<br>Mean slope: %{customdata[3]:.1f}°<br>"
@@ -277,12 +306,12 @@ def polar_map(ranked: pd.DataFrame, selected: str, overview: bool = False) -> go
             ax, ay = label_offsets.get(row.site, (16, -16))
             fig.add_annotation(x=row.x_km, y=row.y_km, text=str(row.rank), showarrow=True,
                                ax=ax, ay=ay, arrowhead=0, arrowwidth=1, arrowcolor=colour,
-                               bgcolor="#11241f", bordercolor=colour, borderpad=3,
+                               bgcolor=BG, bordercolor=colour, borderpad=3,
                                font=dict(color="#f4f4e9", size=11), captureevents=False)
     pad = max_r * 1.15
     dark_layout(fig, 520 if overview else 560)
-    fig.update_layout(paper_bgcolor="#102923", plot_bgcolor="#102923", font_color="#cfdbce",
-                      margin=dict(l=20, r=20, t=35, b=35), dragmode="pan", clickmode="event+select",
+    fig.update_layout(paper_bgcolor=BG, plot_bgcolor=BG, font_color="#cfd5da",
+                      margin=dict(l=0, r=0, t=30, b=30), dragmode="pan", clickmode="event+select",
                       uirevision="polar-atlas", selectionrevision=selected,
                       xaxis=dict(visible=False, range=[-pad, pad]),
                       yaxis=dict(visible=False, range=[-pad, pad], scaleanchor="x", scaleratio=1))
@@ -304,7 +333,7 @@ def panorama(lookup: planner.Lookup, site: str, tl: pd.DataFrame, frame: int = 0
     fig.add_trace(go.Scatter(x=sk["azimuth_deg"], y=[floor] * len(sk), mode="lines",
                              line=dict(width=0), hoverinfo="skip", showlegend=False))
     fig.add_trace(go.Scatter(x=sk["azimuth_deg"], y=sk["terrain_el_deg"], mode="lines", fill="tonexty",
-                             line=dict(color="#93a1b5", width=1.5), fillcolor=GROUND, name="Terrain skyline",
+                             line=dict(color="#7c8791", width=1.5), fillcolor=GROUND, name="Terrain skyline",
                              hovertemplate="Azimuth %{x}°<br>Skyline %{y:.2f}°<extra></extra>"))
     for body, colour, label in (("sun", SUN, "Sun"), ("earth", EARTH, "Earth")):
         up = tl[f"{body}_up"]
@@ -326,8 +355,8 @@ def panorama(lookup: planner.Lookup, site: str, tl: pd.DataFrame, frame: int = 0
     dark_layout(fig, 380)
     fig.update_xaxes(title="Direction (azimuth, clockwise from lunar north)", range=[0, 360],
                      tickvals=[0, 90, 180, 270, 360], ticktext=["N 0°", "E 90°", "S 180°", "W 270°", "N 360°"],
-                     gridcolor="#dce1d8")
-    fig.update_yaxes(title="Elevation (degrees)", gridcolor="#dce1d8", zerolinecolor="#77877c")
+                     gridcolor=RULE)
+    fig.update_yaxes(title="Elevation (degrees)", gridcolor=RULE, zerolinecolor="#55616d")
     return fig
 
 
@@ -367,14 +396,14 @@ def margin_chart(tl: pd.DataFrame) -> go.Figure:
         fig.add_trace(go.Scatter(x=tl["time_utc"], y=tl[f"{body}_margin"], mode="lines",
                                  line=dict(color=colour, width=2), name=label,
                                  hovertemplate=label + " %{x|%d %b %H:%M} UTC<br>%{y:.2f}° above skyline<extra></extra>"))
-    fig.add_hline(y=0, line=dict(color="#6c7e72", width=1, dash="dash"))
+    fig.add_hline(y=0, line=dict(color="#7c8791", width=1, dash="dash"))
     ecl = tl[tl["eclipse"] > 0]
     if len(ecl):
         fig.add_vrect(x0=ecl["time_utc"].iloc[0], x1=ecl["time_utc"].iloc[-1], fillcolor="#e63946",
                       opacity=0.25, line_width=0, annotation_text="eclipse", annotation_position="top left")
     dark_layout(fig, 300)
-    fig.update_xaxes(title="Time (UTC)", gridcolor="#dce1d8")
-    fig.update_yaxes(title="Degrees above the terrain skyline", gridcolor="#dce1d8")
+    fig.update_xaxes(title="Time (UTC)", gridcolor=RULE)
+    fig.update_yaxes(title="Degrees above the terrain skyline", gridcolor=RULE)
     return fig
 
 
@@ -382,15 +411,15 @@ def date_heatmap(scan: pd.DataFrame, order: list[str], landing_day: dt.date, col
     grid = scan.pivot(index="site", columns="date", values=column).loc[order]
     fig = go.Figure(go.Heatmap(
         z=grid.values, x=[pd.Timestamp(d) for d in grid.columns], y=grid.index, zmin=0, zmax=1,
-        colorscale=[[0, "#edf0e8"], [0.5, "#98b9a5"], [0.95, "#34765b"], [1, "#164435"]],
+        colorscale=[[0, "#11161b"], [0.5, "#2f4a57"], [0.95, "#8fc7bd"], [1, "#f6efcf"]],
         colorbar=dict(title="share", tickformat=".0%"),
         hovertemplate="%{y}<br>Landing %{x|%d %b %Y}<br>" + title + ": %{z:.0%}<extra></extra>"))
     if grid.columns[0] <= landing_day <= grid.columns[-1]:
         fig.add_vline(x=pd.Timestamp(landing_day), line=dict(color=PICK, width=2))
     dark_layout(fig, 430)
-    fig.update_layout(title=dict(text=title, font=dict(color="#203631", size=15)), margin=dict(l=10, r=10, t=45, b=10))
-    fig.update_yaxes(automargin=True, tickfont=dict(size=11, color="#203631"))
-    fig.update_xaxes(tickformat="%b %Y", dtick="M2", tickfont=dict(size=11, color="#203631"), automargin=True)
+    fig.update_layout(title=dict(text=title, font=dict(color=INK, size=15)), margin=dict(l=10, r=10, t=45, b=10))
+    fig.update_yaxes(automargin=True, tickfont=dict(size=11, color=INK))
+    fig.update_xaxes(tickformat="%b %Y", dtick="M2", tickfont=dict(size=11, color=INK), automargin=True)
     return fig
 
 
@@ -430,30 +459,30 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
     st.subheader(f"#{row.rank}  {row.site}")
     st.caption(f"{abs(row.lat):.3f}°S, {abs(row.lon):.3f}°{'E' if row.lon >= 0 else 'W'} · "
                f"surface height {row.height_m:,.0f} m")
+    slip = limits["slip_days"]
     if row.passes:
-        st.success(f"Passes all five limits · Provisional score {row.score:.2f}")
+        st.markdown(f'<div class="verdict">Meets all five limits · provisional score {row.score:.2f}</div>',
+                    unsafe_allow_html=True)
     else:
-        st.warning("Not recommended on this date: " + row.fail_reasons + ".")
+        st.markdown('<div class="verdict no">Not recommended on this date</div>', unsafe_allow_html=True)
+        st.caption("Why: " + row.fail_reasons + ".")
 
     def short(hours, up_now, what):
         return fmt_hours(hours, up_now, what).replace(" d ", "d ").replace(" h", "h").replace(f"{what} hidden at landing", "hidden")
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Sunlight", f"{row.sun_window:.0%}",
-              help="Share of the mission with any part of the Sun above the terrain skyline.")
-    c2.metric("Earth contact", f"{row.earth_window:.0%}",
-              help="Share of the mission with any part of Earth above the terrain skyline.")
-    c3.metric("Mean slope", f"{row.slope_mean_deg:.1f}°", help=f"Within 120 m. Steepest point: {row.slope_max_deg:.1f}°.")
+    st.markdown(
+        gauge("Sunlight in mission", SUN, row.sun_window, row.sun_window_worst, slip, limits["min_sun_window"])
+        + gauge("Earth contact in mission", EARTH, row.earth_window, row.earth_window_worst, slip, limits["min_earth_window"])
+        + '<div class="stats">'
+        + f'<div><small>Mean slope</small><span>{row.slope_mean_deg:.1f}°</span></div>'
+        + f'<div><small>Sunset in</small><span>{short(row.hours_to_sunset, row.sun_up_at_landing, "Sun")}</span></div>'
+        + f'<div><small>Earthset in</small><span>{short(row.hours_to_earthset, row.earth_up_at_landing, "Earth")}</span></div>'
+        + f'<div><small>Sun height</small><span>{row.sun_el_at_landing:+.1f}°</span></div></div>',
+        unsafe_allow_html=True)
     if row.eclipse_hours > 0:
         st.warning(f"Lunar eclipse: {row.eclipse_hours:.0f} h. Not subtracted from the sunlight ratio.")
-    st.caption(ESTIMATE_NOTE)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Sunset in", short(row.hours_to_sunset, row.sun_up_at_landing, "Sun"),
-              help="Time from landing until the Sun next goes behind terrain. 'hidden' means it is already hidden at landing.")
-    c2.metric("Earthset in", short(row.hours_to_earthset, row.earth_up_at_landing, "Earth"),
-              help="Time from landing until Earth next goes behind terrain.")
-    c3.metric("Sun height", f"{row.sun_el_at_landing:+.1f}°", help="Sun elevation at landing, relative to a level horizon.")
-    slip = limits["slip_days"]
+    st.caption("Share of the mission with any part of the disc above the terrain skyline. Thin line: your limit. "
+               "Slope is the mean within 120 m. " + ESTIMATE_NOTE)
     if slip:
         st.markdown(f"**If the landing slips by up to {slip} days:** sunlight could fall to "
                     f"**{row.sun_window_worst:.0%}** and Earth contact to **{row.earth_window_worst:.0%}**. "
@@ -581,7 +610,7 @@ def page_sites() -> None:
     elif view == "Compare dates":
         st.header("A different date. A different outlook.")
         st.write("How each site would do for the same mission length on every landing date. "
-                 "The orange line is the chosen date.")
+                 "The orange line is the chosen date; brighter is better.")
         years = [2027, 2028, 2029, 2030]
         year = st.radio("Year", years, horizontal=True, index=years.index(landing_dt().year))
         scan = query("date_scan", window, hour_utc=landing_dt().hour)
@@ -621,10 +650,10 @@ def page_sites() -> None:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=ctl["time_utc"], y=ctl["sun_el"], line=dict(color=SUN, width=2), name="Sun"))
         fig.add_trace(go.Scatter(x=ctl["time_utc"], y=ctl["earth_el"], line=dict(color=EARTH, width=2), name="Earth"))
-        fig.add_hline(y=0, line=dict(color="#6c7e72", width=1, dash="dash"))
+        fig.add_hline(y=0, line=dict(color="#7c8791", width=1, dash="dash"))
         dark_layout(fig, 320)
-        fig.update_xaxes(title="Time (UTC)", gridcolor="#dce1d8")
-        fig.update_yaxes(title="Elevation above a level horizon (degrees)", gridcolor="#dce1d8")
+        fig.update_xaxes(title="Time (UTC)", gridcolor=RULE)
+        fig.update_yaxes(title="Elevation above a level horizon (degrees)", gridcolor=RULE)
         st.plotly_chart(fig, width="stretch", config={"displayModeBar": False}, theme=None)
 
     st.caption("Data: NASA LRO LOLA visibility maps and elevation models (PDS Geosciences Node), Artemis III "

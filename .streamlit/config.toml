@@ -1,10 +1,13 @@
-# AI-generated visual theme by OpenAI Codex, 2026-11-15.
+# AI-generated visual theme. First version by OpenAI Codex; dark "night side" redesign by Claude (Anthropic), 2026-11-15.
 [theme]
-base = "light"
-primaryColor = "#346b5b"
-backgroundColor = "#faf9f5"
-secondaryBackgroundColor = "#edf0e8"
-textColor = "#203631"
+base = "dark"
+primaryColor = "#f0a43a"
+backgroundColor = "#0b0e11"
+secondaryBackgroundColor = "#141a20"
+textColor = "#e8e6df"
+
+[client]
+toolbarMode = "minimal"
 
 [browser]
 gatherUsageStats = false
