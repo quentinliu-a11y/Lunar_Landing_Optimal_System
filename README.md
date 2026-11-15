@@ -152,5 +152,5 @@ Team_of_AEers
 |---|---|---|
 | Qiming | @quentinliu-a11y | System architecture and optimisation |
 | Surani | @amansurani92 | Solar power & comms |
-| Ratnesh | | Computing resources; finding data and resources |
-| Zhehao | | Computing resources; finding data and resources |
+| Ratnesh | @p8hjjrw6dz-ctrl | Computing resources; finding data and resources |
+| Zhehao | @5zhor | Computing resources; finding data and resources |
