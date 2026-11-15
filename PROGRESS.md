@@ -83,6 +83,7 @@ List everything here as you use it. The submission form asks for all of it.
 - Fonts: Cormorant Garamond, IBM Plex Sans, IBM Plex Mono (Google Fonts, SIL Open Font License).
 - Lander slope figures: Wikipedia "IM-1" (Nova-C designed to stay upright on slopes of 10° or more, quoting Intuitive Machines' CTO); NASA OIG report IG-26-004 (tilt tolerance not to exceed 8° for NASA's human landing systems; Starship height 171 ft).
 - `assets/icons/*.svg`: Lucide icons (ISC license), added by a team member; not used by the pages yet.
+- Star catalogue: HYG database (David Nash; Hipparcos, Yale Bright Star and Gliese catalogues; CC BY-SA 2.5) as packaged in d3-celestial `data/stars.6.json` (Olaf Frohn, BSD-3-Clause), converted to `docs/data/stars.json` (5,044 stars to magnitude 6). Used in the 3D sky (oriented with the IAU lunar rotation model; checked against `src/ephemeris.py`) and in the tour's star field.
 - `docs/Lunar Landing Site Simulator (1).html`: teammate's 3D scene (three.js, MIT license, embedded in the file). On 15 Nov Claude replaced its mock sites, Sun/Earth model and horizon with the team's data, switched to airless lighting, and restyled it.
 
 ### AI tools used and for what

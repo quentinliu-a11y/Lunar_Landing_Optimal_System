@@ -339,6 +339,7 @@
                 <span><i class="swatch earth"></i> Earth — the dish tracks it for comms</span>
                 <span><i class="swatch line-sun"></i> Sun path over the mission</span>
                 <span><i class="swatch line-earth"></i> Earth path (libration)</span>
+                <span>Stars: real positions (HYG catalogue) for this site and hour</span>
                 <span>Thin ring = this site's NASA LOLA skyline at its true angles; ridges are shaped from it</span>
               </div>
             </div>
@@ -465,7 +466,7 @@ c3.metric("Earth link", "DIRECT" if r["earth_visible"] else "NO LINE OF SIGHT")<
       </section>
 
       <footer class="sources">
-        <p><strong>What is real here:</strong> the Sun and Earth directions for every hour (ERFA ephemeris, IAU lunar rotation model; within 0.01° of NASA JPL Horizons), the terrain skyline around each site from NASA LRO LOLA elevation models (LDEM_85S_40M and LDEM_75S_120M, 2 m above the surface), and the sunlit / Earth-in-view status, which uses the same calibrated rule as the analysis app. Exported by <span class="mono">src/export_sim_data.py</span>.</p>
+        <p><strong>What is real here:</strong> the Sun and Earth directions for every hour (ERFA ephemeris, IAU lunar rotation model; within 0.01° of NASA JPL Horizons), the star field (HYG catalogue: Hipparcos, Yale Bright Star and Gliese, positions turned with the same IAU lunar rotation model), the terrain skyline around each site from NASA LRO LOLA elevation models (LDEM_85S_40M and LDEM_75S_120M, 2 m above the surface), and the sunlit / Earth-in-view status, which uses the same calibrated rule as the analysis app. Exported by <span class="mono">src/export_sim_data.py</span>.</p>
         <p><strong>What is illustrative:</strong> the ground surface, craters and rocks near the lander, the lander model, and the power figure (a 2 m² upright, Sun-facing panel with 30% cells; zero whenever the Sun is behind terrain or in eclipse). Ridges at the scene edge are shaped from the real skyline but not to scale.</p>
         <p>3D scene first built by a team member with AI assistance; connected to the team's data and restyled by Claude (Anthropic), 15 Nov 2026.</p>
       </footer>
@@ -1244,6 +1245,74 @@ if __name__ == "__main__":
         G.scene.add(G.skyline);
       }
 
+
+      /* ---------------- real star field ----------------
+         Star positions from the HYG catalogue (docs/data/stars.json), turned into this site's sky with the same
+         IAU (WGCCRE 2009) lunar rotation model as src/ephemeris.py. On the airless Moon stars are visible day and night. */
+      function moonRotation(ms) {
+        var jd = ms / 86400000 + 2440587.5 + 69.184 / 86400, d = jd - 2451545.0, T = d / 36525, R = Math.PI / 180;
+        var E = [125.045 - 0.0529921 * d, 250.089 - 0.1059842 * d, 260.008 + 13.0120009 * d, 176.625 + 13.3407154 * d,
+                 357.529 + 0.9856003 * d, 311.589 + 26.4057084 * d, 134.963 + 13.0649930 * d, 276.617 + 0.3287146 * d,
+                 34.226 + 1.7484877 * d, 15.134 - 0.1589763 * d, 119.743 + 0.0036096 * d, 239.961 + 0.1643573 * d,
+                 25.053 + 12.9590088 * d];
+        var s = E.map(function (e) { return Math.sin(e * R); }), c = E.map(function (e) { return Math.cos(e * R); });
+        var ra = 269.9949 + 0.0031 * T - 3.8787 * s[0] - 0.1204 * s[1] + 0.0700 * s[2] - 0.0172 * s[3] + 0.0072 * s[5] - 0.0052 * s[9] + 0.0043 * s[12];
+        var dec = 66.5392 + 0.0130 * T + 1.5419 * c[0] + 0.0239 * c[1] - 0.0278 * c[2] + 0.0068 * c[3] - 0.0029 * c[5] + 0.0009 * c[6] + 0.0008 * c[9] - 0.0009 * c[12];
+        var w = 38.3213 + 13.17635815 * d - 1.4e-12 * d * d + 3.5610 * s[0] + 0.1208 * s[1] - 0.0642 * s[2] + 0.0158 * s[3] + 0.0252 * s[4]
+              - 0.0066 * s[5] - 0.0047 * s[6] - 0.0046 * s[7] + 0.0028 * s[8] + 0.0052 * s[9] + 0.0040 * s[10] + 0.0019 * s[11] - 0.0044 * s[12];
+        function rz(a) { var C = Math.cos(a), S = Math.sin(a); return [[C, S, 0], [-S, C, 0], [0, 0, 1]]; }
+        function rx(a) { var C = Math.cos(a), S = Math.sin(a); return [[1, 0, 0], [0, C, S], [0, -S, C]]; }
+        function mul(A, B) { return A.map(function (r) { return [0, 1, 2].map(function (j) { return r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]; }); }); }
+        return mul(mul(rz((w % 360) * R), rx(Math.PI / 2 - dec * R)), rz(Math.PI / 2 + ra * R));
+      }
+      /* ICRF -> scene axes (x east, y up, z south) at a site */
+      function skyMatrix(ms, latDeg, lonDeg) {
+        var R = Math.PI / 180, f = latDeg * R, l = lonDeg * R;
+        var east = [-Math.sin(l), Math.cos(l), 0], up = [Math.cos(f) * Math.cos(l), Math.cos(f) * Math.sin(l), Math.sin(f)];
+        var north = [-Math.sin(f) * Math.cos(l), -Math.sin(f) * Math.sin(l), Math.cos(f)];
+        var L = [east, up, north.map(function (v) { return -v; })], M = moonRotation(ms);
+        return L.map(function (r) { return [0, 1, 2].map(function (j) { return r[0] * M[0][j] + r[1] * M[1][j] + r[2] * M[2][j]; }); });
+      }
+      function starAzEl(raDeg, decDeg, ms, latDeg, lonDeg) {   // used by the checks
+        var R = Math.PI / 180, u = [Math.cos(decDeg * R) * Math.cos(raDeg * R), Math.cos(decDeg * R) * Math.sin(raDeg * R), Math.sin(decDeg * R)];
+        var A = skyMatrix(ms, latDeg, lonDeg), x = A[0][0] * u[0] + A[0][1] * u[1] + A[0][2] * u[2],
+            y = A[1][0] * u[0] + A[1][1] * u[1] + A[1][2] * u[2], z = A[2][0] * u[0] + A[2][1] * u[1] + A[2][2] * u[2];
+        return { az: (Math.atan2(x, -z) / R + 360) % 360, el: Math.asin(Math.max(-1, Math.min(1, y))) / R };
+      }
+      var STARS = null;
+      function buildRealStars() {
+        if (!G || !STARS) return;
+        if (G.stars) G.stars.visible = false;                 // the earlier decorative random stars
+        var groups = [[-2, 1.5, 3.4], [1.5, 3.5, 2.3], [3.5, 9, 1.35]];
+        G.realStars = new THREE.Group(); G.realStars.matrixAutoUpdate = false;
+        groups.forEach(function (g) {
+          var pos = [], col = [];
+          STARS.forEach(function (st) {
+            var m = st[2] / 100; if (m < g[0] || m >= g[1]) return;
+            var ra = st[0] / 100 * Math.PI / 180, de = st[1] / 100 * Math.PI / 180, bv = st[3] / 100;
+            pos.push(1500 * Math.cos(de) * Math.cos(ra), 1500 * Math.cos(de) * Math.sin(ra), 1500 * Math.sin(de));
+            var t = Math.max(-0.3, Math.min(1.8, bv)), r, gg, b;
+            if (t < 0.4) { r = 0.68 + 0.8 * (t + 0.3); gg = 0.8 + 0.4 * (t + 0.3); b = 1; }
+            else { r = 1; gg = 1 - 0.28 * (t - 0.4); b = 1 - 0.5 * (t - 0.4); }
+            var k = Math.max(0.28, Math.min(1, Math.pow(10, -0.4 * (m - 1.2))));
+            col.push(Math.min(1, r) * k, Math.min(1, gg) * k, Math.max(0, b) * k);
+          });
+          var geo = new THREE.BufferGeometry();
+          geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+          geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+          G.realStars.add(new THREE.Points(geo, new THREE.PointsMaterial({ size: g[2], sizeAttenuation: false, vertexColors: true,
+            transparent: true, depthWrite: false, fog: false, toneMapped: false })));
+        });
+        G.scene.add(G.realStars);
+        updateStars(currentMs());
+      }
+      function updateStars(ms) {
+        if (!G || !G.realStars || !state.site) return;
+        var A = skyMatrix(ms, state.site.lat, state.site.lon);
+        G.realStars.matrix.set(A[0][0], A[0][1], A[0][2], 0, A[1][0], A[1][1], A[1][2], 0, A[2][0], A[2][1], A[2][2], 0, 0, 0, 0, 1);
+        G.realStars.matrixWorldNeedsUpdate = true;
+      }
+
       /* update the 3D scene from the simulation state */
       function updateScene(sp, ep, sunlit, evis, power) {
         if (!G) return;
@@ -1397,6 +1466,7 @@ if __name__ == "__main__":
 
         updateMoon(ms);
         updateScene(sp, ep, sunlit, evis, power);
+        updateStars(ms);
       }
 
       function renderSiteFacts() {
@@ -1568,7 +1638,8 @@ if __name__ == "__main__":
           Array.prototype.forEach.call(els["site-pills"].children, function (c) { c.setAttribute("aria-pressed", c.dataset.id == pick.id ? "true" : "false"); });
           renderSiteFacts(); render();
           setTimeout(function () {
-            try { initGL(); rebuildSkyline(); rebuildTrails(); render(); }
+            try { initGL(); rebuildSkyline(); rebuildTrails(); render();
+              fetch(DATA_BASE + "stars.json").then(function (r) { return r.json(); }).then(function (j) { STARS = j.stars; buildRealStars(); }).catch(function () {}); }
             catch (err) {
               window.__glFailed = true;
               els["gl-error"].style.display = "flex";
