@@ -56,6 +56,14 @@ Changing the date is instant: all Sun and Earth positions for 2027–2030 are co
 
 Exact files, links and other references are listed in `PROGRESS.md`.
 
+### Challenge and official data sources
+
+- Challenge: [Lunar Landing Site Navigator](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/) — 2026 NASA Space Apps Challenge
+- [NASA JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) — Sun and Earth ephemeris (DE441); API: https://ssd.jpl.nasa.gov/api/horizons.api
+- [Quickmap](https://quickmap.lroc.asu.edu/) — LRO terrain and imagery
+- [Moon Trek](https://trek.nasa.gov/moon/) — LRO terrain, imagery and Artemis III region outlines
+- [LOLA illumination and elevation data, PDS Geosciences Node](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/extras/illumination/img/) — visibility maps and elevation models
+
 ## How we know it is right
 
 - **Sun and Earth positions** agree with JPL Horizons to within 0.002° in elevation and 0.008° in azimuth at 10 test points (`tests/test_ephemeris.py`).
