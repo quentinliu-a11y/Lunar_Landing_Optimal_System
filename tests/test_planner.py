@@ -109,11 +109,24 @@ def test_known_lunar_eclipses_are_detected():
 
 def test_custom_site_at_the_pole_and_equator():
     polar, tl = planner.custom_site(-89.9, 0.0, LANDING, 14)
-    assert polar["terrain_included"] is False and len(tl) == 14 * 24 + 1
+    assert polar["terrain_included"] is True and len(tl) == 14 * 24 + 1      # inside the LOLA terrain grid
+    flat, _ = planner.custom_site(-89.9, 0.0, LANDING, 14, use_terrain=False)
+    assert flat["terrain_included"] is False and flat["sun_window"] >= polar["sun_window"]
     assert abs(polar["max_sun_el_window"]) < 2.0       # Sun hugs the horizon near the pole
     equator, _ = planner.custom_site(0.67, 23.47, dt.datetime(2028, 1, 5), 14)
+    assert equator["terrain_included"] is False                 # outside the grid: flat horizon
     assert equator["max_sun_el_window"] > 80           # Sun passes nearly overhead
     assert equator["earth_window"] == 1.0              # near side: Earth always up
+
+
+def test_terrain_grid_matches_named_sites():
+    """The 500 m LOLA grid reproduces the 13 sites' heights and, roughly, their 40/120 m skylines."""
+    import terrain
+    from sites import load_sites
+    for r in load_sites().itertuples():
+        sky, h = terrain.skyline(r.lat, r.lon)
+        assert abs(h - r.height_m) < 60, r.site
+        assert np.sqrt(((sky - r.skyline) ** 2).mean()) < 2.5, r.site
 
 
 if __name__ == "__main__":

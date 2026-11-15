@@ -83,8 +83,8 @@ class InterfaceTests(unittest.TestCase):
         app.radio(key="workspace").set_value("Custom coordinates").run()
         self.assertFalse(app.exception)
         self.assertEqual(len(app.number_input), 2)
-        self.assertEqual(len(app.get("plotly_chart")), 1)
-        self.assertTrue(any("not available yet" in w.value for w in app.warning))
+        self.assertEqual(len(app.get("plotly_chart")), 2)          # skyline panorama + elevation over time
+        self.assertTrue(any("Terrain included" in w.value for w in app.info))
 
     def test_selection_and_hour_scrubbing(self):
         app = self.sites()

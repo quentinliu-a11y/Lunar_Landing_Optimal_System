@@ -537,6 +537,13 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
               "complex in view, as a share of all mission hours.")
     st.markdown("".join(gauge(f"DSN {n} sees the Moon", EARTH, v, v, 0, 0) for n, v in gl["per_station"].items()),
                 unsafe_allow_html=True)
+    with st.expander("Why Earth's rotation does not change these results"):
+        st.write("Earth spinning on its axis does not move Earth in the lunar sky: where Earth appears from the site depends "
+                 "only on where the Moon is in its orbit and how the Moon is oriented, and both are modelled hour by hour "
+                 "(ERFA ephemeris and the IAU lunar rotation model, checked against NASA JPL Horizons within 0.002°). "
+                 "Earth is visible as a whole disc whichever side faces the Moon. What Earth's rotation does change is which "
+                 "antenna on Earth faces the Moon. That is shown above: NASA's three DSN complexes, about 120° apart in "
+                 "longitude, are modelled with Earth's rotation (IAU 2006/2000A), and between them the Moon is almost always in view.")
     st.caption("The Moon has no weather; rain at the antennas on Earth weakens high-rate Ka-band links. Climatology, not a "
                "forecast: a wet day is counted as lost Ka for all its hours (conservative). Space weather (solar flares, "
                "particle storms) can also disrupt links and is not modelled. Not part of the ranking score.")
@@ -736,14 +743,42 @@ def page_sites() -> None:
             lon = c2.number_input("East longitude (degrees, west is negative)", -180.0, 360.0, 0.0, 0.5, format="%.3f", key="custom_lon")
             st.form_submit_button("Evaluate coordinates", type="primary")
         summary, ctl = custom_conditions(lat, lon, landing_dt(), window)
-        st.warning("Flat-horizon estimate, terrain not included. Real terrain hides the Sun and Earth more "
-                   "often, so these figures are optimistic. Terrain and slope: not available yet. "
-                   "Eclipse hours: not available yet for custom coordinates; sunlight ratios do not subtract eclipses.")
+        if summary["terrain_included"]:
+            st.info(f"Terrain included: skyline computed from a NASA LOLA elevation grid (500 m pixels, terrain out to 150 km); "
+                    f"surface height {summary['height_m']:,.0f} m. Coarser than the 13 named sites and not calibrated: for those "
+                    "sites it differs from our calibrated results by about 10 percentage points on average, more when the Sun or "
+                    "Earth grazes the ridge line. Slope and eclipse hours are not computed for custom points.")
+        else:
+            st.warning("Outside the terrain grid (about 80°S to the pole): flat-horizon estimate, terrain not included. "
+                       "Real terrain hides the Sun and Earth more often, so these figures are optimistic.")
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Sunlight in mission", f"{summary['sun_window']:.0%}")
         m2.metric("Earth contact in mission", f"{summary['earth_window']:.0%}")
         m3.metric("Time to sunset", fmt_hours(summary["hours_to_sunset"], bool(ctl["sun_up"].iloc[0]), "Sun"))
         m4.metric("Time to Earthset", fmt_hours(summary["hours_to_earthset"], bool(ctl["earth_up"].iloc[0]), "Earth"))
+        m5, m6, m7, m8 = st.columns(4)
+        m5.metric("Longest darkness", f"{summary['longest_dark_h']:.0f} h")
+        m6.metric("Longest Earth blackout", f"{summary['longest_blackout_h']:.0f} h")
+        m7.metric("Highest Sun", f"{summary['max_sun_el_window']:.1f}°")
+        m8.metric("Surface height", f"{summary['height_m']:,.0f} m" if summary["terrain_included"] else "n/a")
+        if summary["terrain_included"]:
+            sky = summary["skyline"]
+            pano = go.Figure()
+            floor = float(min(sky.min(), ctl["sun_el"].min(), ctl["earth_el"].min())) - 1
+            pano.add_trace(go.Scatter(x=[0, 360], y=[floor, floor], mode="lines", line=dict(width=0), showlegend=False,
+                                      hoverinfo="skip"))
+            pano.add_trace(go.Scatter(x=list(range(361)), y=list(sky) + [sky[0]], fill="tonexty", mode="lines",
+                                      line=dict(color="#8c959c", width=1), fillcolor="rgba(40,48,58,.85)", name="Terrain skyline"))
+            pano.add_trace(go.Scatter(x=ctl["sun_az"] % 360, y=ctl["sun_el"], mode="markers",
+                                      marker=dict(size=3, color=np.where(ctl["sun_up"], SUN, "#5a4a30")), name="Sun (hourly)"))
+            pano.add_trace(go.Scatter(x=ctl["earth_az"] % 360, y=ctl["earth_el"], mode="markers",
+                                      marker=dict(size=3, color=np.where(ctl["earth_up"], EARTH, "#2c4058")), name="Earth (hourly)"))
+            dark_layout(pano, 300)
+            pano.update_xaxes(title="Direction (azimuth, clockwise from lunar north)", range=[0, 360], gridcolor=RULE,
+                              tickvals=[0, 90, 180, 270, 360], ticktext=["N 0°", "E 90°", "S 180°", "W 270°", "N"])
+            pano.update_yaxes(title="Elevation (degrees)", gridcolor=RULE)
+            st.plotly_chart(pano, width="stretch", config={"displayModeBar": False}, theme=None)
+            st.caption("Grey: terrain skyline from NASA LOLA. Bright dots: Sun or Earth above it (visible); dim dots: hidden.")
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=ctl["time_utc"], y=ctl["sun_el"], line=dict(color=SUN, width=2), name="Sun"))
         fig.add_trace(go.Scatter(x=ctl["time_utc"], y=ctl["earth_el"], line=dict(color=EARTH, width=2), name="Earth"))

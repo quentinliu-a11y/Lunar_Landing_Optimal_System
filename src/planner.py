@@ -389,15 +389,22 @@ def best_dates(lookup: Lookup, site: str, window_days: int, top: int = 5) -> pd.
     return pd.DataFrame([(p.date, p.sun_window, p.earth_window) for p in picked], columns=["date", "sun_window", "earth_window"])
 
 
-def custom_site(lat_deg: float, lon_deg: float, landing_utc: dt.datetime, window_days: int, height_m: float = 0.0):
-    """Conditions at any latitude/longitude, WITHOUT terrain.
+def custom_site(lat_deg: float, lon_deg: float, landing_utc: dt.datetime, window_days: int, height_m: float = 0.0,
+                use_terrain: bool = True):
+    """Conditions at any latitude/longitude.
 
-    The horizon is that of a smooth sphere, so results are an optimistic
-    approximation: label them "flat-horizon estimate, terrain not included".
+    Within about 300 km of the south pole (terrain.covered) the horizon is the terrain skyline from the
+    500 m LOLA grid (src/terrain.py; uncalibrated, coarser than the named sites). Elsewhere, or with
+    use_terrain=False, the horizon is that of a smooth sphere: an optimistic "flat-horizon estimate".
     Returns (summary dict, hourly timeline DataFrame).
     """
     if not -90.0 <= lat_deg <= 90.0:
         raise ValueError("Latitude must be between -90 and 90 degrees.")
+    sky = None
+    if use_terrain:
+        import terrain
+        if terrain.covered(lat_deg, lon_deg):
+            sky, height_m = terrain.skyline(lat_deg, lon_deg)
     n = int(window_days * 24 / STEP_HOURS)
     t0 = np.datetime64(landing_utc.replace(tzinfo=None), "ms")
     times = t0 + (np.arange(n + 1) * STEP_HOURS * 3_600_000).astype("timedelta64[ms]")
@@ -405,8 +412,13 @@ def custom_site(lat_deg: float, lon_deg: float, landing_utc: dt.datetime, window
     height_km = (height_m + MAST_HEIGHT_M) / 1000.0
     sun_az, sun_el, sun_dist = _az_el(to_sun, lat_deg, lon_deg, height_km)
     earth_az, earth_el, earth_dist = _az_el(to_earth, lat_deg, lon_deg, height_km)
-    sun_up = sun_el + np.degrees(np.arcsin(SUN_RADIUS_KM / sun_dist)) > 0.0
-    earth_up = earth_el + np.degrees(np.arcsin(EARTH_RADIUS_KM / earth_dist)) > 0.0
+    if sky is None:
+        sun_lim = earth_lim = 0.0
+    else:
+        az_grid, sk = np.arange(361.0), np.append(sky, sky[0])
+        sun_lim, earth_lim = np.interp(sun_az % 360, az_grid, sk), np.interp(earth_az % 360, az_grid, sk)
+    sun_up = sun_el + np.degrees(np.arcsin(SUN_RADIUS_KM / sun_dist)) > sun_lim
+    earth_up = earth_el + np.degrees(np.arcsin(EARTH_RADIUS_KM / earth_dist)) > earth_lim
     tl = pd.DataFrame(
         {"time_utc": times, "sun_el": sun_el, "sun_az": sun_az, "earth_el": earth_el, "earth_az": earth_az,
          "sun_up": sun_up, "earth_up": earth_up}
@@ -417,7 +429,8 @@ def custom_site(lat_deg: float, lon_deg: float, landing_utc: dt.datetime, window
         return float(idx[0] * STEP_HOURS) if idx.size else None  # None = stays up for the whole window
 
     summary = {
-        "lat": lat_deg, "lon": lon_deg, "terrain_included": False,
+        "lat": lat_deg, "lon": lon_deg, "terrain_included": sky is not None, "height_m": float(height_m),
+        "skyline": None if sky is None else sky,
         "sun_window": float(sun_up[:n].mean()), "earth_window": float(earth_up[:n].mean()),
         "longest_dark_h": float(_longest_false_run(sun_up[None, :n])[0]),
         "longest_blackout_h": float(_longest_false_run(earth_up[None, :n])[0]),
