@@ -270,6 +270,17 @@
         color:#fff;background:rgba(2,3,8,.8);border:1px solid rgba(242,178,92,.6);border-radius:5px;padding:1px 6px}
       @keyframes pmring{0%{transform:scale(.5);opacity:1}100%{transform:scale(1.6);opacity:0}}
       html.embed .wrap{padding-top:92px!important}
+
+      /* large play control in the 3D view */
+      .hud-tc{top:16px;left:50%;transform:translateX(-50%);pointer-events:auto}
+      .play-big{display:flex;align-items:center;gap:.7rem;min-height:0!important;padding:.75rem 1.5rem .75rem .9rem;border-radius:999px;cursor:pointer;
+        border:1px solid rgba(242,178,92,.7);background:rgba(10,12,18,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+        color:#fff;font:500 1rem 'IBM Plex Mono',monospace;letter-spacing:.08em;box-shadow:0 0 0 0 rgba(242,178,92,.5);animation:playpulse 2.2s ease-out infinite;transition:background .2s}
+      .play-big .ic{display:grid;place-items:center;width:2.4rem;height:2.4rem;border-radius:50%;background:#f2b25c;color:#1a1206;font-size:1rem}
+      .play-big:hover{background:rgba(242,178,92,.18)}
+      .play-big[aria-pressed=true]{animation:none;border-color:rgba(255,255,255,.3)}
+      @keyframes playpulse{0%{box-shadow:0 0 0 0 rgba(242,178,92,.45)}70%{box-shadow:0 0 0 16px rgba(242,178,92,0)}100%{box-shadow:0 0 0 0 rgba(242,178,92,0)}}
+      @media (prefers-reduced-motion:reduce){.play-big{animation:none}}
 </style>
   </head>
   <body>
@@ -337,6 +348,7 @@
                   <span class="chip">EARTH <b class="earthv" id="hud-earth">—</b> · <span id="hud-earth-st" class="off">—</span></span>
                   <span class="chip">PWR <b id="hud-pwr">—</b></span>
                 </div>
+                <div class="hud hud-tc"><button class="play-big" id="play-big" type="button" aria-pressed="false"><span class="ic">▶</span><span class="tx">Play mission</span></button></div>
                 <div class="hud hud-bl" role="group" aria-label="Camera views">
                   <button class="view-btn" type="button" data-view="orbit" aria-pressed="true">ORBIT</button>
                   <button class="view-btn" type="button" data-view="surface" aria-pressed="false">SURFACE</button>
@@ -772,11 +784,20 @@ if __name__ == "__main__":
       function isSunlit(site, ms) { return (flagAt(site, ms) & 1) > 0; }
       function isEarthVis(site, ms) { return (flagAt(site, ms) & 2) > 0; }
       function inEclipse(site, ms) { return (flagAt(site, ms) & 4) > 0; }
+      /* Smooth version for lighting only: blend the hourly flags so sunrise/sunset fade over the hour
+         (labels and statistics keep the hourly rule of the analysis app). */
+      function visFrac(site, ms, bit) {
+        var d = site.data; if (!d) return 0;
+        var h = hourAt(ms), i = Math.floor(h), f = h - i, a = (d.flags[i] & bit) ? 1 : 0, b = (d.flags[Math.min(i + 1, SIM.hours - 1)] & bit) ? 1 : 0;
+        if (d.flags[i] & 4) a = 0; if (d.flags[Math.min(i + 1, SIM.hours - 1)] & 4) b = 0;   // eclipse: no sunlight
+        return bit === 1 ? a + (b - a) * f : a + (b - a) * f;
+      }
       function solarPower(site, ms) {
-        if (!isSunlit(site, ms) || inEclipse(site, ms)) return 0;
+        var frac = visFrac(site, ms, 1);
+        if (frac <= 0) return 0;
         // Upright 2 m² panel turning to face the Sun (usual at the poles): output follows cos(elevation).
         var p = sunPos(site, ms);
-        return 1361 * Math.cos(p.el * Math.PI/180) * 2.0 * 0.30;
+        return 1361 * Math.cos(p.el * Math.PI/180) * 2.0 * 0.30 * frac;
       }
       function loadSite(site) {
         if (site.data) return Promise.resolve(site);
@@ -1398,21 +1419,22 @@ if __name__ == "__main__":
         var dayF = Math.max(0, Math.sin(Math.max(0, sp.el) * Math.PI / 180));
         var lit = sunlit ? Math.pow(dayF, 0.55) : 0;
         // No atmosphere: sunlight keeps full strength down to the horizon; grazing angle alone darkens flat ground.
-        G.sunLight.intensity = sunlit ? 3.4 : 0.05;
+        var sf = (G._sunFrac === undefined) ? (sunlit ? 1 : 0) : G._sunFrac;
+        G.sunLight.intensity = 0.05 + 3.35 * sf;
         G.sunLight.position.set(sd.x * 650, Math.max(4, sd.y * 650), sd.z * 650);
         G.sunLight.color.setHSL(0.09 + 0.035 * Math.min(1, Math.max(0, sp.el) / 40), 0.72, 0.72);
-        G.amb.intensity = sunlit ? 0.14 : 0.07;   // airless: shadows stay dark
-        G.sunGroup.children[1].material.opacity = sunlit ? 1 : 0.12;
+        G.amb.intensity = 0.07 + 0.07 * sf;   // airless: shadows stay dark
+        G.sunGroup.children[1].material.opacity = 0.12 + 0.88 * sf;
         // earthshine fill when Earth is up and the Sun is not
         G.earthShine.intensity = (!sunlit && evis) ? 0.5 : (evis ? 0.14 : 0.0);
         G.earthShine.position.set(ed.x * 200, Math.max(10, ed.y * 200), ed.z * 200);
         G.sunGroup.visible = sp.el > -14;
         G.earthGroup.visible = ep.el > -14;
         // floodlights on in darkness
-        var floodI = sunlit ? 0 : 260;
+        var floodI = 260 * Math.max(0, 1 - sf * 1.5);
         G.floods.forEach(function (f) {
           if (f.isSpotLight) f.intensity = floodI;
-          if (f.lampMat) f.lampMat.emissiveIntensity = sunlit ? 0 : 2.4;
+          if (f.lampMat) f.lampMat.emissiveIntensity = 2.4 * Math.max(0, 1 - sf * 1.5);
         });
         // dish tracks Earth
         var target = new THREE.Vector3(ed.x * 100, ed.y * 100 + 6.65, ed.z * 100);
@@ -1488,6 +1510,7 @@ if __name__ == "__main__":
         var sunlit = isSunlit(site, ms);
         var evis = isEarthVis(site, ms);
         var power = solarPower(site, ms);
+        if (G) G._sunFrac = visFrac(site, ms, 1);
 
         els["vp-title"].textContent = site.name;
         els["vp-clock"].textContent = fmtDateTime(ms) + "  ·  " + (state.offsetH < 0.5 ? "landing" : "+" + fmtDur(state.offsetH) + " after landing") + (inEclipse(site, ms) ? "  ·  lunar eclipse" : "");
@@ -1579,7 +1602,9 @@ if __name__ == "__main__":
       els["play-btn"].addEventListener("click", function () {
         state.playing = !state.playing;
         els["play-btn"].setAttribute("aria-pressed", state.playing ? "true" : "false");
-        els["play-btn"].textContent = state.playing ? "⏸ Pause" : "▶ Play lunar day";
+        els["play-btn"].textContent = state.playing ? "⏸ Pause" : "▶ Play mission";
+        var pb = document.getElementById("play-big");
+        if (pb) { pb.setAttribute("aria-pressed", state.playing ? "true" : "false"); pb.querySelector(".ic").textContent = state.playing ? "❚❚" : "▶"; pb.querySelector(".tx").textContent = state.playing ? "Pause" : "Play mission"; }
         if (state.playing) {
           timer = setInterval(function () {
             state.offsetH += state.speed * 0.05;
@@ -1589,6 +1614,7 @@ if __name__ == "__main__":
           }, 50);
         } else if (timer) { clearInterval(timer); timer = null; }
       });
+      document.getElementById("play-big").addEventListener("click", function () { els["play-btn"].click(); });
       /* camera view buttons */
       var VIEWS = {
         orbit:   { pos: [24, 13, 30],  tgt: [0, 3, 0] },
