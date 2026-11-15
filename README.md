@@ -8,7 +8,9 @@ Team entry for the 2026 NASA Space Apps Challenge, challenge [Lunar Landing Site
 >
 > **Full analysis app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/**
 >
-> Status, 15 November 2026: the calculation engine and the interface are complete, tested and deployed. Text for the project page is in `docs/submission.md`.
+> **Demo slides (PDF): https://quentinliu-a11y.github.io/Lunar_Landing_Optimal_System/demo/Lunar_Landing_Navigator_TeamOfAEers.pdf**
+>
+> Status, 15 November 2026: the calculation engine, the guided tour, the 3D site view and the analysis app are complete, tested and deployed. Text for the project page is in `docs/submission.md`.
 
 ## The problem
 
@@ -18,9 +20,15 @@ NASA's own tools hold the data, but comparing several sites across several dates
 
 ## What the tool does
 
-1. **Pick a landing date** and a mission length.
-2. **See every candidate site ranked for that date**, with the reason any site is ruled out.
-3. **Open a site** to see where the Sun and Earth are relative to its real terrain skyline, how long until sunset and Earthset, and how the site holds up if the landing moves.
+There are two ways in, built on the same results.
+
+**Guided tour** (`docs/index.html`, for anyone): a four-scene web page. The heading reads *f*(date, site, others) and fills in as you go.
+1. **Earth at night**, with today's day/night line computed for the current time.
+2. **Plan the landing**: date, 1–60 days on the surface, and the lander's slope limit (Nova-C class 10°, crewed lander 8°, or your own).
+3. **The south pole**: the 13 sites ranked for that plan, with plain-language verdicts for power, radio contact, ground slope and what happens if the date slips, and the nearest dates that work when a site fails. "Others" in the heading unfolds into these factors.
+4. **Stand at the site in 3D**: the Sun and Earth move along their real hourly paths for that site, the ridge follows its NASA LOLA skyline, the sky shows real stars and a NASA Blue Marble Earth turned for the hour, and sunlight casts long airless shadows. Buttons play the mission, follow the Sun or Earth from the lander, or go back and re-plan.
+
+**Analysis app** (`src/app.py`, Streamlit, for specialists): every number, chart and setting, including the sky panorama, visibility timelines, date heat maps, adjustable limits and weights, and custom coordinates.
 
 For each of the 13 Artemis III candidate regions it reports:
 
@@ -55,6 +63,8 @@ Changing the date is instant: all Sun and Earth positions for 2027–2030 are co
 | LROC WAC south-pole mosaic (LRO, NASA/GSFC/Arizona State University, via Moon Trek) | Background image of the map; display only |
 | Artemis III candidate region outlines (Moon Trek) | The list of candidate sites |
 | JPL Horizons (DE441) | Checking our Sun and Earth positions |
+| GIBS layers VIIRS Black Marble and Blue Marble Next Generation (NASA Worldview) | Earth at night and by day in the tour; Earth globe in the 3D view |
+| NASA images: full Moon over Artemis II at Pad 39B; SVS full-Moon render from LOLA data | Tour backgrounds |
 
 Exact files, links and other references are listed in `PROGRESS.md`.
 
@@ -73,6 +83,8 @@ Exact files, links and other references are listed in `PROGRESS.md`.
 - **Sun visibility** differs from NASA's map by 6.5 points on average and 17 at worst. Near the pole the Sun grazes the skyline, so tens of metres of position or terrain change the answer. We therefore shift each site's skyline by one constant so that our long-term average equals NASA's figure, and use that calibrated skyline for specific dates.
 - **Lunar eclipses** found by the tool in 2027–2030 fall on the dates of the known eclipses in that period.
 - The ranking rules are covered by `tests/test_planner.py`.
+- **The guided tour** reproduces the analysis app's ranking, pass/fail and slip worst case exactly in 162 checked combinations of date, mission length (1–60 days) and slope limit.
+- **The 3D view** uses the planner's hourly Sun/Earth directions and visibility directly; its readouts match `planner.timeline` hour by hour in the tested cases. Its star positions match our lunar rotation model to 0.0001°, and the Earth globe's subsolar point agrees with the standard almanac formula within 0.2°.
 - **The map image** is byte-for-byte the NASA Moon Trek export for the stated area, and is placed on the map at that same area; flipped or shifted copies do not match.
 
 ## Limits of the tool
@@ -82,6 +94,7 @@ Exact files, links and other references are listed in `PROGRESS.md`.
 - Sunlight is counted as yes or no; received power is not computed, and eclipse hours are reported but not subtracted.
 - Slope comes from a 40 m elevation model and says nothing about boulders or lander-leg-scale hazards.
 - Custom coordinates have no terrain and no slope.
+- In the 3D view the ground near the lander, the rocks, the lander model and the power figure are illustrative; the Sun, Earth, stars, skyline angles and visibility are computed.
 - Each region is represented by a single point, its best 60 m pixel for combined sunlight and Earth visibility.
 
 ## Run it
@@ -90,10 +103,17 @@ Needs Python 3.10 or newer.
 
 ```
 pip install -r requirements.txt
-streamlit run src/app.py
+streamlit run src/app.py                 # analysis app
+python -m http.server -d docs 8000       # guided tour and 3D view at http://localhost:8000
 python tests/test_ephemeris.py
 python tests/test_planner.py
 python tests/test_interface.py
+```
+
+After changing `src/planner.py` or `data/`, regenerate the files the web pages read:
+
+```
+cd src && python export_web_data.py && python export_sim_data.py
 ```
 
 ## Repository layout
@@ -103,7 +123,14 @@ python tests/test_interface.py
 | `src/ephemeris.py` | Sun and Earth direction at any point on the Moon |
 | `src/sites.py` | Candidate sites with long-term visibility, skyline and slope |
 | `src/planner.py` | Date-specific conditions, limits, ranking, stability, nearest dates, custom coordinates |
-| `src/app.py` | The interface (Streamlit): date page, ranked map, sky panorama, date comparison, custom coordinates |
+| `src/app.py` | Analysis app (Streamlit): date page, ranked map, sky panorama, date comparison, custom coordinates |
+| `src/export_web_data.py` | Exports daily Sun/Earth visibility per site to `docs/data/sites.json` for the guided tour |
+| `src/export_sim_data.py` | Exports hourly Sun/Earth directions, visibility and skylines to `docs/data/sky/` and `docs/data/sim_sites.json` for the 3D view |
+| `docs/index.html` | Guided tour (GitHub Pages) |
+| `docs/Lunar Landing Site Simulator (1).html` | 3D site view, opened from the tour |
+| `docs/data/` | Data files read by the web pages, including `stars.json` (HYG star catalogue) |
+| `docs/demo/` | Demo slides (PowerPoint and PDF) |
+| `docs/submission.md` | Text for the Space Apps project page |
 | `data/` | Processed NASA data: skylines, calibration, slopes, visibility statistics |
 | `tests/` | Checks against JPL Horizons, of the ranking rules, and of the interface |
 | `docs/design-principles.md` | Design decisions, limits and measured figures |

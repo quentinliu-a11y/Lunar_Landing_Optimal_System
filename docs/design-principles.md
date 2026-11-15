@@ -9,7 +9,7 @@ AI-assisted document: drafted by Claude (Anthropic) from team decisions and the 
 - A planning tool used on Earth, in a web browser, by people choosing where and when to land. It is not flight software and does not run on the lander. **Decided**
 - Date first: the user picks a landing date, sees the conditions for that date, and is taken to a map of recommended landing sites. **Decided**
 - Recommendations come from ranking a fixed list of named candidate sites, not from scoring every map pixel. **Decided**
-- Responses to a date change should appear within a second or two. Heavy calculations are done in advance and saved. **Proposed**
+- Responses to a date change should appear within a second or two. Heavy calculations are done in advance and saved. **Decided** (lookup table built at start-up; the web pages read precomputed exports)
 
 ## 2. Factors
 
@@ -18,8 +18,8 @@ AI-assisted document: drafted by Claude (Anthropic) from team decisions and the 
 | Sunlight ratio | Yes | Decided (top 3) |
 | Earth communication availability | Yes | Decided (top 3) |
 | Flatness (slope) | No | Decided (top 3) |
-| Longest continuous darkness | Yes | Proposed |
-| Longest communication blackout | Yes | Proposed |
+| Longest continuous darkness | Yes | Shown, not a limit or score factor |
+| Longest communication blackout | Yes | Shown, not a limit or score factor |
 | Surface roughness, distance to permanently shadowed regions, surface temperature, mean solar elevation | Mixed | Proposed |
 
 ## 3. What the real data says (Measured)
@@ -77,10 +77,10 @@ Two kinds of limit, because the data in section 3 rules out a single 95% rule:
 | Long-term Earth visibility | 18.6-year average | ≥ 50% | Same |
 | Mission-window sunlight | Mission window after the chosen landing date | ≥ 95% | Team target. Checked: with a 14-day window, 955 of 18,993 site-and-date combinations in 2027–2030 (5.0%) meet this together with the Earth limit |
 | Mission-window Earth visibility | Same window | ≥ 95% | Same check |
-| Slope | Fixed; mean slope within 120 m of the site | ≤ 10° | Proposed default, adjustable. Measured mean slopes range from 2.8° (Haworth) to 7.9° (Connecting Ridge); Connecting Ridge reaches 16.5° at its steepest point within 120 m |
+| Slope | Fixed; mean slope within 120 m of the site | ≤ 10° | Default, adjustable. Tour presets: Nova-C class 10° (IM-1), crewed lander 8° (NASA OIG IG-26-004 tilt limit), or custom. Measured mean slopes range from 2.8° (Haworth) to 7.9° (Connecting Ridge); Connecting Ridge reaches 16.5° at its steepest point within 120 m |
 
-- Default mission window: 14 days. **Proposed**
-- When no site passes on a date, the tool says so and points to the nearest date on which one does. **Proposed**
+- Default mission window: 14 days; user-set 1–60 days. **Decided**
+- When no site passes on a date, the tool says so and points to the nearest date on which one does. **Decided, implemented**
 - Date-specific check (terrain included, calibrated to the NASA long-term values): every one of the 13 sites reaches 95%/95% on some dates, from 14 dates (Faustini Rim A) to 155 (Nobile Rim 1) out of 1,461. Lowering both limits to 90% gives 1,436 combinations, 80% gives 2,644.
 
 ## 5. Scoring
@@ -96,7 +96,7 @@ Applied to sites that pass the limits. **Proposed**
 
 ## 6. Interface
 
-**Proposed**
+**Implemented** in the analysis app; the guided tour and 3D view (see README) add a plain-language path for non-specialists.
 
 - True top-down polar map from real LOLA terrain, with sites as ranked, colour-coded markers.
 - Horizon panorama for the selected site: the 360° terrain skyline with the Sun's and Earth's paths drawn over it. Earth and Sun must appear near the horizon, as they really do at the pole.
@@ -105,4 +105,4 @@ Applied to sites that pass the limits. **Proposed**
 
 ## 7. Technology
 
-**Proposed**: Python with Streamlit for the app, Plotly for the map and charts, hosted from this repository. Demo as a 7-slide deck or a video of at most 30 seconds.
+**Decided**: Python engine; Streamlit + Plotly analysis app on Streamlit Community Cloud; static HTML/JavaScript guided tour and three.js 3D view on GitHub Pages; demo as a 7-slide deck (`docs/demo/`).

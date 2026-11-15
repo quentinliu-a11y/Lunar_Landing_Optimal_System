@@ -1,6 +1,11 @@
 # Interface between the logic and the visual design
 
-AI-assisted document: written by Claude (Anthropic), 2026-11-14.
+AI-assisted document: written by Claude (Anthropic), 2026-11-14; updated 2026-11-15.
+
+> **Update, 15 Nov:** this contract covers the Streamlit analysis app (`src/app.py`). The guided tour (`docs/index.html`) and the 3D view read exported files instead of calling Python:
+> - `docs/data/sites.json` (from `src/export_web_data.py`): per site, base64 uint8 hours of Sun and Earth visibility for each UTC day from 2027-01-01. A mission of *w* days from day *d* is the sum of days *d* … *d*+*w*−1 divided by 24*w*; the page applies the same limits and score as `planner.rank_for_date`.
+> - `docs/data/sim_sites.json` and `docs/data/sky/<id>.bin` (from `src/export_sim_data.py`): site facts and skylines; hourly int16 Sun/Earth azimuth and elevation (hundredths of a degree, azimuth stored as az − 180) followed by one uint8 visibility flag per hour (bit 0 Sun, bit 1 Earth, bit 2 eclipse).
+> - `docs/data/stars.json`: HYG star catalogue to magnitude 6.
 
 The work is split in two:
 

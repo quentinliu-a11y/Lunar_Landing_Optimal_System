@@ -98,7 +98,9 @@ Exact URLs and request formats are in `docs/space-apps-2026-reference.md`, secti
 | `AGENTS.md` | This file |
 | `PROGRESS.md` | Task board, decisions log, references and AI-use log |
 | `docs/space-apps-2026-reference.md` | Challenge, rules and data-source notes |
-| `src/` | Code |
+| `src/` | Code: engine (`ephemeris.py`, `sites.py`, `planner.py`), analysis app (`app.py`), exports for the web pages (`export_web_data.py`, `export_sim_data.py`) |
+| `docs/index.html`, `docs/Lunar Landing Site Simulator (1).html`, `docs/data/` | Guided tour and 3D view (GitHub Pages) and the data they read. Never put calculations here that are not exported from `src/planner.py`; re-run both export scripts after changing the planner or `data/` |
+| `docs/demo/` | Demo slides |
 | `data/` | Small processed data; `data/raw/` is ignored by git |
 
 - Before starting: read `PROGRESS.md`, take one task, set its status to `doing` with your owner's name.

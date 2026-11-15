@@ -13,7 +13,7 @@ At the lunar south pole the Sun and Earth stay within a few degrees of the horiz
 
 ## Link to demo
 
-[Public link to the 7-slide demo]
+https://quentinliu-a11y.github.io/Lunar_Landing_Optimal_System/demo/Lunar_Landing_Navigator_TeamOfAEers.pdf
 
 ## Link to project
 
@@ -33,6 +33,8 @@ Full analysis app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 **Limits we want judges to know.** Results are estimates. Our uncalibrated terrain result differed from NASA's long-term Sun visibility by 6.5 percentage points on average, so each site's skyline is adjusted by one constant so that its 18.6-year average equals NASA's published value. Eclipse hours are reported but not subtracted from the sunlight share. "Earth visible" means any part of Earth's disc is above the terrain; it does not guarantee a link to a particular ground station. Custom coordinates use a flat horizon without terrain. The 10° slope limit is a default chosen by the team, not a NASA requirement.
 
+**3D site view.** From the tour, the chosen site opens in 3D for the chosen date and mission. The Sun and Earth move along their computed hourly paths, the ridge around the lander follows the site's NASA LOLA skyline, real stars (HYG catalogue) and a NASA Blue Marble Earth are placed for the exact hour, and sunlight casts long shadows with no atmosphere to soften them. Users can play the mission, follow the Sun or Earth from the lander, and watch the Sun drop behind the terrain when the data says it does. The ground near the lander and the lander model are illustrative and labelled as such.
+
 **Two ways in.** A guided tour for non-specialists (a web page that flies from Earth to the lunar south pole, with plain-language verdicts) and a full analysis app with every chart and setting. Both use the same results; the tour's ranking was checked to match the analysis app in 162 date, mission-length and slope cases.
 
 **Tools.** Python, Streamlit, Plotly, NumPy, pandas, pyerfa; HTML, CSS and JavaScript for the tour.
@@ -47,6 +49,7 @@ Full analysis app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 - NASA GIBS (Global Imagery Browse Services): VIIRS Black Marble night lights and Blue Marble Next Generation, shown with the day/night line computed for the current time.
 - NASA images: full Moon over Artemis II at Launch Pad 39B (1 Feb 2026); NASA Scientific Visualization Studio full-Moon render from LRO LOLA data.
 - NASA Moon Trek and LROC QuickMap were used to explore the data.
+- Star positions: HYG database (Hipparcos, Yale Bright Star and Gliese catalogues), via the open-source d3-celestial project.
 
 ## References
 
