@@ -28,7 +28,7 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 15 | Interactive polar atlas visual redesign | OpenAI Codex | done | Based on main f778f41; authentic NASA LROC mosaic, true-position clickable map, zoom/pan, hourly horizon explorer, lazy views and cached planner calls. 8 UI checks, 11 planner checks and Horizons checks passed; desktop and 390px browser layouts inspected. Merged and deployed 15 Nov. |
 
 | 16 | Guided tour web page (four scenes from the team's storyboard) | Claude (for Qiming) | done | `docs/index.html` on GitHub Pages; ranking matches `planner.rank_for_date` in 162 checked cases; NASA imagery from GIBS and images.nasa.gov |
-| 17 | 3D site scene | team member (JamieLEO) | done | `docs/Lunar Landing Site Simulator (1).html`, labelled illustrative; embedded as scene IV and restyled from the tour page |
+| 17 | 3D site scene | team member (JamieLEO), Claude | done | `docs/Lunar Landing Site Simulator (1).html`: now uses the team's 13 sites, hourly Sun/Earth directions and visibility from the planner (`src/export_sim_data.py`, `docs/data/sky/`), and each site's LOLA skyline; readouts match `planner.timeline` hour by hour in tested cases; ground surface and lander illustrative |
 | 18 | Lander presets with sources | team (helper research) | done | Nova-C 10° (IM-1, Wikipedia), crewed lander tilt 8° (NASA OIG IG-26-004); Blue Ghost slope not published |
 
 ## Proposed split for three people
@@ -83,7 +83,7 @@ List everything here as you use it. The submission form asks for all of it.
 - Fonts: Cormorant Garamond, IBM Plex Sans, IBM Plex Mono (Google Fonts, SIL Open Font License).
 - Lander slope figures: Wikipedia "IM-1" (Nova-C designed to stay upright on slopes of 10° or more, quoting Intuitive Machines' CTO); NASA OIG report IG-26-004 (tilt tolerance not to exceed 8° for NASA's human landing systems; Starship height 171 ft).
 - `assets/icons/*.svg`: Lucide icons (ISC license), added by a team member; not used by the pages yet.
-- `docs/Lunar Landing Site Simulator (1).html`: teammate's 3D scene, labelled in it as an illustrative mock model; embedded as scene IV with that label.
+- `docs/Lunar Landing Site Simulator (1).html`: teammate's 3D scene (three.js, MIT license, embedded in the file). On 15 Nov Claude replaced its mock sites, Sun/Earth model and horizon with the team's data, switched to airless lighting, and restyled it.
 
 ### AI tools used and for what
 - Claude (Anthropic), 15 Nov: cinematic web front end `docs/index.html` (four scenes from the team's storyboard) and `src/export_web_data.py`, which exports the planner's results to `docs/data/sites.json`; checked that the page ranks exactly as `planner.rank_for_date` in 45 date/mission/slope cases. Star field and gradients are drawn in code; no AI-generated pictures.

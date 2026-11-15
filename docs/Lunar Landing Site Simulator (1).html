@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
     <link rel="icon" href="data:," />
-    <title>Lunar Landing Site Simulator — 3D</title>
+    <title>Lunar Landing Navigator — 3D site view</title>
+    <script>if(/[?&]embed=1/.test(location.search))document.documentElement.classList.add("embed")</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
     <style>
       button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
       * { box-sizing: border-box; }
@@ -215,7 +216,42 @@
         .hud-br { display: none; }
         #gl-wrap { min-height: 300px; }
       }
-    </style>
+    
+      /* ===== Theme matching the guided tour (Claude, Anthropic, 15 Nov 2026) ===== */
+      :root{--bg:#020308;--bg-2:rgba(255,255,255,.045);--surface:rgba(12,16,26,.55);--surface-2:rgba(12,16,26,.55);
+        --ink:#ece8df;--muted:#a7afb8;--faint:#6f7a86;--line:rgba(255,255,255,.12);--line-2:rgba(255,255,255,.18);
+        --sun:#f2b25c;--sun-deep:#f2b25c;--earth:#76b6ff;--earth-deep:#76b6ff;--good:#8fe3b4}
+      body{background:radial-gradient(1200px 600px at 70% -10%,rgba(60,90,160,.18),transparent 60%),#020308!important}
+      html.embed body{background:transparent!important}
+      .wrap{max-width:1480px!important;display:flex;flex-direction:column;padding:24px 3vw 60px!important}
+      html.embed .wrap{padding:24px 3vw 120px!important}
+      html.embed header.top{display:none}
+      .wrap>section.panel:nth-of-type(n+3){display:none!important}
+      html.embed .wrap>section.panel:nth-of-type(2){order:1;margin-top:0}
+      html.embed .wrap>section.panel:nth-of-type(1){order:2}
+      footer.sources{order:3}
+      h1{font-family:'Cormorant Garamond','Times New Roman',serif!important;font-weight:400!important;font-size:clamp(2.2rem,4.4vw,3.6rem)!important;letter-spacing:.005em!important}
+      h1 .thin{font-style:italic}
+      .panel{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:16px!important;
+        backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);box-shadow:0 30px 80px rgba(0,0,0,.45)}
+      .stage-grid{grid-template-columns:minmax(0,1fr) 300px!important}
+      @media (max-width:900px){.stage-grid{grid-template-columns:1fr!important}}
+      .viewport{border-radius:12px!important;border:1px solid var(--line)!important;box-shadow:0 0 60px rgba(118,182,255,.08)}
+      #gl-wrap{aspect-ratio:16/8.2!important;min-height:52vh!important}
+      .side-card{background:rgba(255,255,255,.035)!important;border:1px solid var(--line)!important;border-radius:12px!important}
+      .side-card h3,.field label,.lab,.m-lab{font-family:'IBM Plex Mono',monospace!important;font-weight:400!important;font-size:.66rem!important;letter-spacing:.22em!important;text-transform:uppercase;color:var(--muted)!important}
+      .h-site{font-family:'Cormorant Garamond','Times New Roman',serif!important;font-weight:400!important;font-size:1.8rem!important;letter-spacing:.01em!important}
+      .m-val{font-family:'IBM Plex Mono',monospace!important;font-weight:500!important}
+      .metric{background:rgba(255,255,255,.035)!important;border:1px solid var(--line)!important;border-radius:12px!important}
+      .pill,.btn,select,input[type=date],.view-btn{border-radius:999px!important;font-family:'IBM Plex Mono',monospace!important;font-size:.76rem!important;letter-spacing:.05em}
+      .pill[aria-pressed=true]{background:rgba(242,178,92,.16)!important;color:#fff!important;border-color:var(--sun)!important}
+      .btn{background:var(--sun)!important;border-color:var(--sun)!important;color:#1a1206!important}
+      .btn.secondary{background:rgba(255,255,255,.04)!important;color:var(--ink)!important;border-color:rgba(255,255,255,.28)!important}
+      .badge{border-radius:999px!important}
+      .badge.data{border-color:rgba(143,227,180,.5);color:var(--good)}
+      input[type=range]{accent-color:#f2b25c!important}
+      footer.sources{font-size:12.5px!important;color:var(--muted)}
+</style>
   </head>
   <body>
     <div class="wrap">
@@ -224,16 +260,16 @@
         <div class="kicker-row">
           <span class="badge">NASA SPACE APPS 2026 · LUNAR LANDING SITE NAVIGATOR</span>
           <span class="badge live">● REAL-TIME 3D SCENE</span>
-          <span class="badge warn">ILLUSTRATIVE MOCK MODEL — NOT REAL EPHEMERIS</span>
+          <span class="badge data">SUN · EARTH · SKYLINE FROM OUR NASA-BASED MODEL</span>
+          <span class="badge warn">GROUND SURFACE ILLUSTRATIVE</span>
         </div>
-        <h1>Lunar Landing Site Simulator <span class="thin">— in 3D</span></h1>
+        <h1>Stand at the landing site <span class="thin">— in 3D</span></h1>
         <p class="lede">
-          Not a chart — the site itself, in 3D. You are standing next to the lander on realistic-looking
-          lunar terrain, procedurally sculpted for each site: craters, rim ridges, scattered rocks. Scrub
-          or play through one lunar day (29.53 Earth days) and the <strong>Sun physically sweeps the
-          sky</strong>, throwing real moving shadows across the regolith, while the <strong>Earth hangs in
-          the black sky</strong> — low over the horizon at the polar sites — wobbling with libration. Watch
-          the light, the power and the comms link change with it. <strong>Drag to look around.</strong>
+          Pick one of the 13 Artemis III candidate regions and a landing date, then play the mission. The
+          <strong>Sun and Earth move along their real paths</strong> for that site (computed with ERFA and checked
+          against NASA JPL Horizons), and the <strong>ridge around the lander follows the site's NASA LOLA terrain
+          skyline</strong>. "Sunlit" and "link to Earth" use the same rule as our analysis app. The ground near the
+          lander, the rocks and the lander are illustrative. <strong>Drag to look around.</strong>
         </p>
       </header>
 
@@ -245,8 +281,8 @@
             <div class="site-pills" id="site-pills" role="group" aria-labelledby="site-lab"></div>
           </div>
           <div class="field">
-            <label for="date-input">Start date (UTC)</label>
-            <input type="date" id="date-input" value="2026-11-15" />
+            <label for="date-input">Landing date (UTC, 00:00)</label>
+            <input type="date" id="date-input" value="2028-01-01" min="2027-01-01" max="2030-12-31" />
           </div>
           <div class="field">
             <label for="speed-select">Playback speed</label>
@@ -259,7 +295,7 @@
           <div class="field">
             <span class="lab">&nbsp;</span>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn" id="play-btn" type="button" aria-pressed="false">▶ Play lunar day</button>
+              <button class="btn" id="play-btn" type="button" aria-pressed="false">▶ Play mission</button>
               <button class="btn secondary" id="reset-btn" type="button">Reset time</button>
             </div>
           </div>
@@ -274,7 +310,7 @@
               <div id="gl-wrap">
                 <canvas id="gl" aria-label="Interactive 3D view of the landing site: lunar terrain, a lander, the Sun and the Earth moving through the sky"></canvas>
                 <div class="hud hud-tl">
-                  <div class="h-site" id="vp-title">Shackleton Crater Rim</div>
+                  <div class="h-site" id="vp-title">Loading site…</div>
                   <div class="h-clock" id="vp-clock">—</div>
                 </div>
                 <div class="hud hud-tr">
@@ -288,35 +324,35 @@
                   <button class="view-btn" type="button" data-view="lander" aria-pressed="false">LANDER</button>
                   <button class="view-btn" type="button" data-view="top" aria-pressed="false">TOP-DOWN</button>
                 </div>
-                <div class="hud hud-br">drag to orbit · scroll / pinch to zoom<br />dashed arcs = Sun path &amp; Earth libration loop</div>
+                <div class="hud hud-br">drag to orbit · scroll / pinch to zoom<br />dashed arcs = Sun and Earth paths over the mission</div>
                 <div id="gl-error" role="alert"></div>
               </div>
               <div class="legend">
                 <span><i class="swatch sun"></i> Sun — drives light, shadow &amp; power</span>
                 <span><i class="swatch earth"></i> Earth — the dish tracks it for comms</span>
-                <span><i class="swatch line-sun"></i> Sun path over the lunar day</span>
-                <span><i class="swatch line-earth"></i> Earth libration loop</span>
-                <span>Terrain ridges = this site's horizon profile, extruded into 3D</span>
+                <span><i class="swatch line-sun"></i> Sun path over the mission</span>
+                <span><i class="swatch line-earth"></i> Earth path (libration)</span>
+                <span>Thin ring = this site's NASA LOLA skyline at its true angles; ridges are shaped from it</span>
               </div>
             </div>
 
             <div class="timeline">
               <div class="tl-head">
                 <span class="tl-now" id="tl-now">—</span>
-                <span class="tl-note">Scrub through one lunar day from the start date</span>
+                <span class="tl-note" id="tl-note">Scrub through the mission from the landing date</span>
               </div>
-              <input type="range" id="time-slider" min="0" max="708.7" step="0.25" value="96" aria-label="Time within the lunar day, in hours from the start date" />
-              <div class="tl-ticks"><span>Day 0</span><span>+7 days</span><span>+14 days</span><span>+21 days</span><span>+29.5 days</span></div>
+              <input type="range" id="time-slider" min="0" max="336" step="0.25" value="0" aria-label="Time since landing, in hours" />
+              <div class="tl-ticks" id="tl-ticks"><span>Landing</span><span></span><span></span><span></span><span>End</span></div>
             </div>
           </div>
 
           <div>
             <div class="side-card">
-              <h3>Site location — near-side view</h3>
+              <h3>Site location — Moon from Earth</h3>
               <div class="moonbox">
                 <svg id="moonmap" viewBox="0 0 260 260" width="220" height="220" role="img" aria-label="Map of the Moon's near side showing the candidate landing sites"></svg>
               </div>
-              <p style="font-size:12px; margin:0;">Gold dot = sub-solar point right now. Sites past the limb (far side from Earth) are dimmed.</p>
+              <p style="font-size:12px; margin:0;">Gold dot = selected site. All 13 candidates sit near the south pole, at the bottom edge of the disc.</p>
             </div>
             <div class="side-card">
               <h3>Site file</h3>
@@ -343,7 +379,7 @@
           <div class="metric">
             <div class="m-lab"><i class="dot sun"></i> Solar power (est.)</div>
             <div class="m-val" id="m-power">—</div>
-            <div class="m-sub">2 m² array · 30% cells · 1,361 W/m², scaled by sin(elevation)</div>
+            <div class="m-sub">Illustrative: 2 m² upright panel turning to face the Sun · 30% cells · 1,361 W/m²</div>
             <span class="status off" id="m-power-status">—</span>
           </div>
           <div class="metric">
@@ -422,8 +458,9 @@ c3.metric("Earth link", "DIRECT" if r["earth_visible"] else "NO LINE OF SIGHT")<
       </section>
 
       <footer class="sources">
-        <p><strong>Honesty note:</strong> the 3D scene is a realistic-looking mock, not survey data — terrain is procedurally sculpted from each site's horizon profile, and every number comes from the simplified model in the Python code: circular-orbit geometry, a fixed 1.54° solar declination wobble, libration as two sine waves. For demonstrating the situation at a landing site, not for mission planning.</p>
-        <p><strong>Official sources to swap in:</strong> NASA JPL Horizons for real Sun/Earth ephemeris (<a href="https://ssd.jpl.nasa.gov/horizons" target="_blank" rel="noopener">ssd.jpl.nasa.gov/horizons</a>), LROC Quickmap and NASA Moon Trek for LRO imagery and terrain, and LOLA (Lunar Orbiter Laser Altimeter) topography for real terrain meshes — replace <span class="mono">horizon_elevation()</span> and the position functions, and the rest of the pipeline stays the same.</p>
+        <p><strong>What is real here:</strong> the Sun and Earth directions for every hour (ERFA ephemeris, IAU lunar rotation model; within 0.01° of NASA JPL Horizons), the terrain skyline around each site from NASA LRO LOLA elevation models (LDEM_85S_40M and LDEM_75S_120M, 2 m above the surface), and the sunlit / Earth-in-view status, which uses the same calibrated rule as the analysis app. Exported by <span class="mono">src/export_sim_data.py</span>.</p>
+        <p><strong>What is illustrative:</strong> the ground surface, craters and rocks near the lander, the lander model, and the power figure (a 2 m² upright, Sun-facing panel with 30% cells; zero whenever the Sun is behind terrain or in eclipse). Ridges at the scene edge are shaped from the real skyline but not to scale.</p>
+        <p>3D scene first built by a team member with AI assistance; connected to the team's data and restyled by Claude (Anthropic), 15 Nov 2026.</p>
       </footer>
 
     </div>
@@ -686,76 +723,40 @@ if __name__ == "__main__":
       var EPOCH = Date.UTC(2000, 0, 6, 18, 14);
       var CYCLE_H = SYNODIC * 24;
 
-      var SITES = [
-        { id: "shackleton", name: "Shackleton Crater Rim", lat: -89.90, lon: 129.50, region: "Lunar south pole",
-          base: -1.8, peaks: [[40,35,2.2],[150,25,3.0],[260,40,1.6],[330,20,2.4]], seed: 11, rugged: 1.25,
-          horizonNote: "Elevated rim — horizon mostly below 0°, peaks to ~1.2°",
-          desc: "Rim points near the pole are famous for near-continuous sunlight — the Sun circles the horizon instead of rising and setting, so brief dips behind rim peaks are the only 'nights'. In the 3D scene, watch it skim the ridge line all day.",
-          note: "Watch the Earth: from the pole it rolls along the horizon, so the comms window opens and closes with libration." },
-        { id: "malapert", name: "Malapert Massif", lat: -86.04, lon: 2.70, region: "South polar highlands",
-          base: -0.6, peaks: [[90,30,1.6],[200,45,2.4],[310,25,1.2]], seed: 23, rugged: 1.0,
-          horizonNote: "Elevated massif, ridge to ~1.8° in the south-west",
-          desc: "A high massif ~120 km from the pole, long proposed as a landing and relay site: elevated terrain buys longer sunlight stretches and a better view of Earth than the surrounding floor.",
-          note: "Its longitude near 0° keeps Earth high enough for long direct-to-Earth windows." },
-        { id: "degerlache", name: "de Gerlache Crater Rim", lat: -88.50, lon: -87.20, region: "Lunar south pole",
-          base: -1.2, peaks: [[20,28,3.2],[140,38,2.2],[250,22,3.8]], seed: 37, rugged: 1.5,
-          horizonNote: "Rugged rim, peaks to ~2.6°",
-          desc: "Another polar rim candidate with long illumination, but a rougher horizon: taller rim peaks carve the sunlight into shorter, broken stretches than at Shackleton — in 3D you can see the ridge shadows bite.",
-          note: "Compare its sunlight bar with Shackleton's — same latitude band, different terrain, different power story." },
-        { id: "nobile", name: "Nobile Crater Rim", lat: -85.20, lon: 53.50, region: "South polar highlands",
-          base: -0.8, peaks: [[70,40,2.0],[190,30,3.0],[300,35,1.6]], seed: 41, rugged: 1.1,
-          horizonNote: "Rim peaks to ~2.2°",
-          desc: "A south-polar crater rim in the region targeted by several recent robotic landing attempts — a realistic middle case between the extreme pole and the equatorial sites.",
-          note: "Earth sits low here; terrain decides whether a given week has a comms window at all." },
-        { id: "tranquillitatis", name: "Mare Tranquillitatis", lat: 8.50, lon: 31.40, region: "Equatorial near side (Apollo 11)",
-          base: 0.2, peaks: [[120,30,0.8],[280,35,0.6]], seed: 53, rugged: 0.35,
-          horizonNote: "Nearly flat mare, <1° obstructions",
-          desc: "The Apollo 11 site as a control case: textbook behaviour — a ~14-Earth-day day followed by a ~14-day night, and Earth nearly overhead the whole time. The 3D terrain is a flat mare plain, true to the place.",
-          note: "Great comms, brutal power problem: any mission here must survive a two-week night or land at dawn." }
-      ];
-
+      var SIM = { start: Date.UTC(2027, 0, 1), hours: 0 };
+      var SITES = [];
+      var DATA_BASE = (document.currentScript && document.currentScript.dataset.base) || "data/";
       function daysSince(ms) { return (ms - EPOCH) / 86400000; }
       function norm180(a) { return ((a + 180) % 360 + 360) % 360 - 180; }
-      function elevAz(latDeg, declDeg, hDeg) {
-        var lat = latDeg * Math.PI/180, dec = declDeg * Math.PI/180, h = hDeg * Math.PI/180;
-        var east = -Math.cos(dec) * Math.sin(h);
-        var north = Math.sin(dec) * Math.cos(lat) - Math.cos(dec) * Math.cos(h) * Math.sin(lat);
-        var up = Math.sin(dec) * Math.sin(lat) + Math.cos(dec) * Math.cos(h) * Math.cos(lat);
-        up = Math.max(-1, Math.min(1, up));
-        return { el: Math.asin(up) * 180/Math.PI, az: (Math.atan2(east, north) * 180/Math.PI + 360) % 360 };
+      function hourAt(ms) { return Math.max(0, Math.min(SIM.hours - 1.001, (ms - SIM.start) / 3600000)); }
+      function lerpAz(a, b, f) { var d = ((b - a + 540) % 360) - 180; return (a + d * f + 360) % 360; }
+      function skyPos(site, ms, k) {
+        var d = site.data; if (!d) return { el: 0, az: 0 };
+        var h = hourAt(ms), i = Math.floor(h), f = h - i, r = d.rec, a = 4 * i + k, b = 4 * (i + 1) + k;
+        return { az: lerpAz(r[a] / 100 + 180, r[b] / 100 + 180, f), el: (r[a + 1] + (r[b + 1] - r[a + 1]) * f) / 100 };
       }
-      function sunPos(site, ms) {
-        var d = daysSince(ms);
-        var decl = 1.54 * Math.sin(2*Math.PI * d / SOLAR_YEAR + 2.26);
-        var frac = ((d / SYNODIC) % 1 + 1) % 1;
-        var subLon = 180 - 360 * frac;
-        return elevAz(site.lat, decl, norm180(site.lon - subLon));
-      }
-      function sunDeclSubLon(ms) {
-        var d = daysSince(ms);
-        var frac = ((d / SYNODIC) % 1 + 1) % 1;
-        return { decl: 1.54 * Math.sin(2*Math.PI * d / SOLAR_YEAR + 2.26), subLon: 180 - 360 * frac };
-      }
-      function earthPos(site, ms) {
-        var d = daysSince(ms);
-        var libLat = 6.68 * Math.sin(2*Math.PI * d / DRACONIC + 1.1);
-        var libLon = 7.87 * Math.sin(2*Math.PI * d / ANOMAL + 0.4);
-        return elevAz(site.lat, libLat, norm180(site.lon - libLon));
-      }
+      function sunPos(site, ms) { return skyPos(site, ms, 0); }
+      function earthPos(site, ms) { return skyPos(site, ms, 2); }
+      /* Terrain skyline (NASA LOLA), degrees, linear between whole azimuths. */
       function horizonEl(site, az) {
-        var h = site.base;
-        for (var i = 0; i < site.peaks.length; i++) {
-          var diff = norm180(az - site.peaks[i][0]);
-          h += site.peaks[i][2] * Math.exp(-Math.pow(diff / site.peaks[i][1], 2));
-        }
-        return h;
+        var a = ((az % 360) + 360) % 360, i = Math.floor(a), f = a - i, k = site.skyline;
+        return (k[i] + (k[(i + 1) % 360] - k[i]) * f) / 100;
       }
-      function isSunlit(site, ms) { var p = sunPos(site, ms); return p.el > horizonEl(site, p.az); }
-      function isEarthVis(site, ms) { var p = earthPos(site, ms); return p.el > horizonEl(site, p.az); }
+      /* Visibility exactly as in src/planner.py: hourly flags exported from the lookup. */
+      function flagAt(site, ms) { var d = site.data; return d ? d.flags[Math.round(hourAt(ms))] : 0; }
+      function isSunlit(site, ms) { return (flagAt(site, ms) & 1) > 0; }
+      function isEarthVis(site, ms) { return (flagAt(site, ms) & 2) > 0; }
+      function inEclipse(site, ms) { return (flagAt(site, ms) & 4) > 0; }
       function solarPower(site, ms) {
+        if (!isSunlit(site, ms) || inEclipse(site, ms)) return 0;
+        // Upright 2 m² panel turning to face the Sun (usual at the poles): output follows cos(elevation).
         var p = sunPos(site, ms);
-        if (p.el <= horizonEl(site, p.az)) return 0;
-        return 1361 * Math.sin(p.el * Math.PI/180) * 2.0 * 0.30;
+        return 1361 * Math.cos(p.el * Math.PI/180) * 2.0 * 0.30;
+      }
+      function loadSite(site) {
+        if (site.data) return Promise.resolve(site);
+        return fetch(DATA_BASE + "sky/" + site.id + ".bin").then(function (r) { if (!r.ok) throw new Error("data " + r.status); return r.arrayBuffer(); })
+          .then(function (buf) { site.data = { rec: new Int16Array(buf, 0, SIM.hours * 4), flags: new Uint8Array(buf, SIM.hours * 8, SIM.hours) }; return site; });
       }
       function fractionTrue(site, startMs, hours, stepH, pred) {
         var steps = Math.floor(hours / stepH), hits = 0;
@@ -798,7 +799,7 @@ if __name__ == "__main__":
       }
 
       /* ---------------- state ---------------- */
-      var state = { site: SITES[0], startMs: Date.UTC(2026, 10, 15), offsetH: 96, playing: false, speed: 12 };
+      var state = { site: null, startMs: Date.UTC(2028, 0, 1), offsetH: 0, spanH: 14 * 24, playing: false, speed: 12 };
       var els = {};
       ["site-pills","date-input","speed-select","play-btn","reset-btn","time-slider","tl-now","vp-title","vp-clock",
        "f-lat","f-lon","f-region","f-horizon","f-desc","f-note",
@@ -888,8 +889,8 @@ if __name__ == "__main__":
           }
         }
         // distant horizon ridge ring — the site's own horizon profile, in metres
-        var ridgeBase = 7 + Math.max(0, site.base + 1.8) * 5;
-        var ridge = (ridgeBase + Math.max(0, horizonEl(site, az) - site.base) * 16 + 3.5 * n(5.1, 1.7, 0.03)) * Math.max(0.4, site.rugged);
+        var ridgeBase = 3;
+        var ridge = ridgeBase + Math.max(0, horizonEl(site, az) - site.base) * 9 + 1.5 * n(5.1, 1.7, 0.03);
         var ring = Math.max(0, Math.min(1, (r - 150) / 110));
         h = h * (1 - ring * 0.55) + ridge * ring * ring;
         // flat landing pad
@@ -915,7 +916,7 @@ if __name__ == "__main__":
         }
         geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
         geo.computeVertexNormals();
-        var mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.97, metalness: 0.0, flatShading: false });
+        var mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.97, metalness: 0.0, flatShading: false, envMapIntensity: 0.12 });
         var mesh = new THREE.Mesh(geo, mat);
         mesh.receiveShadow = true; mesh.castShadow = false;
         return mesh;
@@ -1045,7 +1046,7 @@ if __name__ == "__main__":
 
         var pmrem = new THREE.PMREMGenerator(renderer);
         var envTex = null;
-        try { envTex = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture; scene.environment = envTex; } catch (e) { envTex = null; }
+        try { envTex = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture; scene.environment = envTex; scene.environmentIntensity = 0.1; /* airless: almost no fill light */ } catch (e) { envTex = null; }
 
         var camera = new THREE.PerspectiveCamera(55, 1.6, 0.1, 3000);
         camera.position.set(24, 13, 30);
@@ -1068,7 +1069,7 @@ if __name__ == "__main__":
         sunLight.shadow.camera.near = 10; sunLight.shadow.camera.far = 700;
         sunLight.shadow.bias = -0.0006;
         scene.add(sunLight); scene.add(sunLight.target);
-        var amb = new THREE.AmbientLight(0x2a3644, 0.5);
+        var amb = new THREE.AmbientLight(0x2a3644, 0.16);
         scene.add(amb);
         var earthShine = new THREE.DirectionalLight(0x7fa8e0, 0);
         scene.add(earthShine); scene.add(earthShine.target);
@@ -1185,7 +1186,7 @@ if __name__ == "__main__":
 
       function trailPoints(site, startMs, posFn, stepH, radius) {
         var pts = [];
-        var steps = Math.floor(CYCLE_H / stepH);
+        var steps = Math.floor(state.spanH / stepH);
         for (var i = 0; i <= steps; i++) {
           var p = posFn(site, startMs + i * stepH * 3600000);
           var d = dirFromAzEl(p.az, p.el);
@@ -1211,7 +1212,16 @@ if __name__ == "__main__":
         G.terrain = fresh;
         G.scene.add(fresh);
         G.scatterRocks(state.site);
+        rebuildSkyline();
         rebuildTrails();
+      }
+      function rebuildSkyline() {
+        if (!G) return;
+        if (G.skyline) { G.scene.remove(G.skyline); G.skyline.geometry.dispose(); }
+        var pts = [];
+        for (var a = 0; a <= 360; a += 1) { var d = dirFromAzEl(a, horizonEl(state.site, a)); pts.push(new THREE.Vector3(d.x * 400, d.y * 400 + 2, d.z * 400)); }
+        G.skyline = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x8fe3b4, transparent: true, opacity: 0.75 }));
+        G.scene.add(G.skyline);
       }
 
       /* update the 3D scene from the simulation state */
@@ -1224,8 +1234,9 @@ if __name__ == "__main__":
         // sunlight: intensity follows elevation; long warm light near the horizon
         var dayF = Math.max(0, Math.sin(Math.max(0, sp.el) * Math.PI / 180));
         var lit = sunlit ? Math.pow(dayF, 0.55) : 0;
-        G.sunLight.intensity = 0.12 + lit * 3.1;
-        G.sunLight.position.set(sd.x * 320, Math.max(6, sd.y * 320), sd.z * 320);
+        // No atmosphere: sunlight keeps full strength down to the horizon; grazing angle alone darkens flat ground.
+        G.sunLight.intensity = sunlit ? 3.4 : 0.05;
+        G.sunLight.position.set(sd.x * 320, Math.max(2.5, sd.y * 320), sd.z * 320);
         G.sunLight.color.setHSL(0.09 + 0.035 * Math.min(1, Math.max(0, sp.el) / 40), 0.72, 0.72);
         G.amb.intensity = sunlit ? 0.34 + lit * 0.3 : 0.13;
         // earthshine fill when Earth is up and the Sun is not
@@ -1267,7 +1278,7 @@ if __name__ == "__main__":
         return n;
       }
       var moonRefs = {};
-      (function buildMoon() {
+      function buildMoon() {
         var svg = els.moonmap, cx = 130, cy = 130, R = 108;
         mk("circle", { cx: cx, cy: cy, r: R, fill: "#39424d", stroke: "#5d6b7a", "stroke-width": 1.2 }, svg);
         [-60, -30, 0, 30, 60].forEach(function (lon) {
@@ -1296,7 +1307,7 @@ if __name__ == "__main__":
         var cap = mk("text", { x: cx, y: cy + R + 18, "text-anchor": "middle", fill: "#5d7186", "font-size": 11,
                                "font-family": "IBM Plex Mono, monospace" }, svg);
         cap.textContent = "NEAR SIDE · CENTRED ON 0° / 0°";
-      })();
+      }
       function updateMoon(ms) {
         var cx = 130, cy = 130, R = 108;
         SITES.forEach(function (s) {
@@ -1304,16 +1315,11 @@ if __name__ == "__main__":
           if (s === state.site) { d.setAttribute("fill", "#ffb84d"); d.setAttribute("r", 7); }
           else { d.setAttribute("fill", "#aeb9c6"); d.setAttribute("r", 5); }
         });
-        var info = sunDeclSubLon(ms);
-        var x = cx + R * Math.cos(info.decl * Math.PI/180) * Math.sin(info.subLon * Math.PI/180);
-        var y = cy - R * Math.sin(info.decl * Math.PI/180);
-        moonRefs.sunDot.setAttribute("cx", x); moonRefs.sunDot.setAttribute("cy", y);
-        var far = Math.cos(info.decl * Math.PI/180) * Math.cos(info.subLon * Math.PI/180) < 0;
-        moonRefs.sunDot.setAttribute("opacity", far ? 0.3 : 1);
+        moonRefs.sunDot.setAttribute("display", "none");
       }
 
       /* ---------------- comparison ---------------- */
-      function renderComparison() {
+      function renderComparison() { return; /* panel hidden: its mock score is not used */
         var html = "";
         SITES.forEach(function (s) {
           var sunF = fractionTrue(s, state.startMs, CYCLE_H, 1, isSunlit);
@@ -1335,12 +1341,12 @@ if __name__ == "__main__":
       function render() {
         var site = state.site, ms = currentMs();
         var sp = sunPos(site, ms), ep = earthPos(site, ms);
-        var sunlit = sp.el > horizonEl(site, sp.az);
-        var evis = ep.el > horizonEl(site, ep.az);
+        var sunlit = isSunlit(site, ms);
+        var evis = isEarthVis(site, ms);
         var power = solarPower(site, ms);
 
         els["vp-title"].textContent = site.name;
-        els["vp-clock"].textContent = fmtDateTime(ms) + "  ·  +" + fmtDur(state.offsetH) + " into the lunar day";
+        els["vp-clock"].textContent = fmtDateTime(ms) + "  ·  " + (state.offsetH < 0.5 ? "landing" : "+" + fmtDur(state.offsetH) + " after landing") + (inEclipse(site, ms) ? "  ·  lunar eclipse" : "");
         els["tl-now"].textContent = fmtDateTime(ms);
 
         els["hud-sun"].textContent = fmtDeg(sp.el);
@@ -1352,7 +1358,7 @@ if __name__ == "__main__":
         els["m-sun-el"].textContent = fmtDeg(sp.el);
         els["m-sun-az"].textContent = "Azimuth " + fmtAz(sp.az) + " · horizon here " + horizonEl(site, sp.az).toFixed(1) + "°";
         var ss = els["m-sun-status"];
-        ss.textContent = sunlit ? "● SUNLIT" : "● IN DARKNESS / SHADOW";
+        ss.textContent = inEclipse(site, ms) ? "● LUNAR ECLIPSE" : sunlit ? "● SUNLIT" : "● SUN BEHIND TERRAIN";
         ss.className = "status " + (sunlit ? "on" : "off");
         els["m-power"].textContent = Math.round(power) + " W";
         var ps = els["m-power-status"];
@@ -1373,7 +1379,7 @@ if __name__ == "__main__":
       }
 
       function renderSiteFacts() {
-        var s = state.site;
+        var s = state.site; if (!s) return;
         els["f-lat"].textContent = fmtLat(s.lat);
         els["f-lon"].textContent = fmtLon(s.lon);
         els["f-region"].textContent = s.region;
@@ -1383,24 +1389,35 @@ if __name__ == "__main__":
       }
 
       /* ---------------- controls wiring ---------------- */
-      SITES.forEach(function (s) {
-        var b = document.createElement("button");
-        b.type = "button"; b.className = "pill"; b.textContent = s.name;
-        b.setAttribute("aria-pressed", s === state.site ? "true" : "false");
-        b.addEventListener("click", function () {
+      function selectSite(s) {
+        return loadSite(s).then(function () {
           state.site = s;
-          Array.prototype.forEach.call(els["site-pills"].children, function (c) { c.setAttribute("aria-pressed", "false"); });
-          b.setAttribute("aria-pressed", "true");
-          rebuildTerrain(); renderSiteFacts(); renderComparison(); render();
+          Array.prototype.forEach.call(els["site-pills"].children, function (c) { c.setAttribute("aria-pressed", c.dataset.id == s.id ? "true" : "false"); });
+          rebuildTerrain(); renderSiteFacts(); render();
         });
-        els["site-pills"].appendChild(b);
-      });
+      }
+      function setSpan(days) {
+        state.spanH = days * 24;
+        els["time-slider"].max = state.spanH;
+        var t = els["tl-ticks"].children;
+        for (var i = 0; i < 5; i++) t[i].textContent = i === 0 ? "Landing" : "+" + (Math.round(days * i / 4 * 10) / 10) + " days";
+        els["tl-note"].textContent = "Scrub through the " + days + "-day mission from the landing date";
+      }
+      function buildPills() {
+        SITES.forEach(function (s) {
+          var b = document.createElement("button");
+          b.type = "button"; b.className = "pill"; b.textContent = s.name; b.dataset.id = s.id;
+          b.setAttribute("aria-pressed", "false");
+          b.addEventListener("click", function () { selectSite(s); });
+          els["site-pills"].appendChild(b);
+        });
+      }
       els["date-input"].addEventListener("change", function () {
         var v = els["date-input"].value;
         if (!v) return;
         var parts = v.split("-");
-        state.startMs = Date.UTC(+parts[0], +parts[1] - 1, +parts[2]);
-        rebuildTrails(); renderComparison(); render();
+        state.startMs = Math.max(Date.UTC(2027, 0, 1), Math.min(Date.UTC(2030, 11, 31), Date.UTC(+parts[0], +parts[1] - 1, +parts[2])));
+        rebuildTrails(); render();
       });
       els["time-slider"].addEventListener("input", function () {
         state.offsetH = parseFloat(els["time-slider"].value);
@@ -1420,7 +1437,7 @@ if __name__ == "__main__":
         if (state.playing) {
           timer = setInterval(function () {
             state.offsetH += state.speed * 0.05;
-            if (state.offsetH >= CYCLE_H) state.offsetH -= CYCLE_H;
+            if (state.offsetH >= state.spanH) state.offsetH = 0;
             els["time-slider"].value = state.offsetH;
             render();
           }, 50);
@@ -1477,23 +1494,39 @@ if __name__ == "__main__":
       });
 
       /* ---------------- init + frame loop ---------------- */
-      els["time-slider"].max = CYCLE_H.toFixed(1);
-      renderSiteFacts();
-      renderComparison();
-      render();
-      /* Start WebGL after first paint so the page itself loads instantly;
-         the telemetry above is already live before the scene fades in. */
-      setTimeout(function () {
-        try {
-          initGL();
-          rebuildTrails();
-          render();
-        } catch (err) {
-          window.__glFailed = true;
-          els["gl-error"].style.display = "flex";
-          els["gl-error"].textContent = "The 3D scene could not start on this device (" + err.message + "). The telemetry, timeline, moon map and site comparison still run the same simulation.";
-        }
-      }, 40);
+      ["tl-note", "tl-ticks"].forEach(function (id) { els[id] = document.getElementById(id); });
+      fetch(DATA_BASE + "sim_sites.json").then(function (r) { return r.json(); }).then(function (meta) {
+        SIM.hours = meta.hours; SIM.start = Date.parse(meta.start_utc);
+        SITES = meta.sites.map(function (m) {
+          var lo = Math.min.apply(null, m.skyline_cdeg) / 100, hi = Math.max.apply(null, m.skyline_cdeg) / 100;
+          return { id: m.id, name: m.name, lat: m.lat, lon: m.lon, skyline: m.skyline_cdeg, base: lo, rugged: 1.0, seed: 11 + m.id * 7,
+            region: "Artemis III candidate region",
+            horizonNote: "Skyline " + lo.toFixed(1) + "° to " + hi.toFixed(1) + "° (NASA LOLA)",
+            desc: "Over NASA's 18.6-year record the Sun is visible here " + Math.round(m.sun_long_term * 100) + "% of the time and Earth " + Math.round(m.earth_long_term * 100) + "%.",
+            note: "Mean slope " + m.slope_mean_deg.toFixed(1) + "° within 120 m (steepest " + m.slope_max_deg.toFixed(1) + "°); " + m.height_m.toLocaleString("en") + " m above the reference sphere." };
+        });
+        var q = new URLSearchParams(location.search);
+        var pick = SITES.filter(function (s) { return s.name === q.get("site"); })[0] || SITES[0];
+        var start = q.get("start"); if (start && /^\d{4}-\d{2}-\d{2}$/.test(start)) { els["date-input"].value = start; var pp = start.split("-"); state.startMs = Date.UTC(+pp[0], +pp[1] - 1, +pp[2]); }
+        var days = parseInt(q.get("days"), 10); setSpan(days >= 1 && days <= 60 ? days : 14);
+        buildMoon(); buildPills();
+        return loadSite(pick).then(function () {
+          state.site = pick;
+          Array.prototype.forEach.call(els["site-pills"].children, function (c) { c.setAttribute("aria-pressed", c.dataset.id == pick.id ? "true" : "false"); });
+          renderSiteFacts(); render();
+          setTimeout(function () {
+            try { initGL(); rebuildSkyline(); rebuildTrails(); render(); }
+            catch (err) {
+              window.__glFailed = true;
+              els["gl-error"].style.display = "flex";
+              els["gl-error"].textContent = "The 3D scene could not start on this device (" + err.message + "). The readouts below still use the same data.";
+            }
+          }, 40);
+        });
+      }).catch(function (err) {
+        els["gl-error"].style.display = "flex";
+        els["gl-error"].textContent = "Site data could not be loaded (" + err.message + ").";
+      });
 
       var lastFrame = 0;
       function frameLoop(ts) {
