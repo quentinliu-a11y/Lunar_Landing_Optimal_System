@@ -28,7 +28,7 @@ There are two ways in, built on the same results.
 3. **The south pole**: the 13 sites ranked for that plan, with plain-language verdicts for power, radio contact, ground slope and what happens if the date slips, and the nearest dates that work when a site fails. "Others" in the heading unfolds into these factors.
 4. **Stand at the site in 3D**: the Sun and Earth move along their real hourly paths for that site, the ridge follows its NASA LOLA skyline, the sky shows real stars and a NASA Blue Marble Earth turned for the hour, and sunlight casts long airless shadows. Buttons play the mission, follow the Sun or Earth from the lander, or go back and re-plan.
 
-**Analysis app** (`src/app.py`, Streamlit, for specialists): every number, chart and setting, including the sky panorama, visibility timelines, date heat maps, adjustable limits and weights, and custom coordinates.
+**Analysis app** (`src/app.py`, Streamlit, for specialists): every number, chart and setting, including the sky panorama, visibility timelines, date heat maps, adjustable limits and weights, custom coordinates, an 18-measure site table with CSV download, and the Earth side of the link: which NASA Deep Space Network complex sees the Moon and how often rain at the antennas may weaken a Ka-band link (climatology, not a forecast).
 
 For each of the 13 Artemis III candidate regions it reports:
 

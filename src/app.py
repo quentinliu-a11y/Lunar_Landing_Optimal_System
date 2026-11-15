@@ -26,6 +26,10 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+import warnings
+
+import erfa
+import groundlink
 import planner
 from sites import MOON_RADIUS_M, load_sites, rank_sites
 
@@ -87,6 +91,7 @@ def styles() -> None:
     .g-bar u {position:absolute; top:0; bottom:0; width:1px; background:var(--muted); opacity:.7;}
     .g-note {font-size:.8rem; color:var(--muted);} .g-note em {font-style:normal; color:var(--ink); font-family:var(--mono);}
     .stats {display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); margin:.2rem 0 1rem;}
+    .stats.datascale {grid-template-columns:repeat(5,1fr);} .stats.datascale span {color:var(--sun);}
     .stats div {padding:.7rem .6rem .7rem 0;} .stats div+div {padding-left:.8rem; border-left:1px solid var(--rule);}
     .stats small {display:block; font-family:var(--mono); font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);}
     .stats span {font-family:var(--mono); font-size:1.2rem;}
@@ -130,9 +135,22 @@ def gauge(label: str, colour: str, value: float, worst: float | None, slip: int,
             f'<u style="left:{limit:.1%}" title="Your limit"></u>{mark}</div>{note}</div>')
 
 
+PAGES = "https://quentinliu-a11y.github.io/Lunar_Landing_Optimal_System/"
+SIM_PAGE = PAGES + "Lunar%20Landing%20Site%20Simulator%20(1).html"
+REPO = "https://github.com/quentinliu-a11y/Lunar_Landing_Optimal_System"
+LANDERS = {"Nova-C class · robotic, slopes ≤ 10°": 10, "Crewed lander · Starship HLS, tilt ≤ 8°": 8, "Custom limit": None}
+
+
 def masthead() -> None:
     st.markdown('<div class="masthead"><span class="wordmark"><i></i>LUNAR LANDING NAVIGATOR</span>'
-                '<small>South pole atlas · Space Apps 2026</small></div>', unsafe_allow_html=True)
+                f'<small><a href="{PAGES}" target="_blank">Guided tour</a> · '
+                f'<a href="{SIM_PAGE}" target="_blank">3D site view</a> · '
+                f'<a href="{REPO}" target="_blank">Code &amp; data</a></small></div>', unsafe_allow_html=True)
+
+
+def sim_link(site: str, start: dt.date, days: int) -> str:
+    from urllib.parse import quote
+    return f"{SIM_PAGE}?site={quote(site)}&start={start:%Y-%m-%d}&days={days}"
 
 
 @st.cache_data(show_spinner=False)
@@ -171,12 +189,30 @@ def get_lookup() -> planner.Lookup:
     return planner.build_lookup(FIRST_DAY, LAST_DAY)
 
 
+@st.cache_resource(show_spinner=False)
+def dsn_elevation() -> np.ndarray:
+    """(3, T) Moon elevation at the three DSN complexes for every lookup hour."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", erfa.ErfaWarning)   # future UTC: leap seconds not yet announced
+        return groundlink.moon_elevation(get_lookup().times)
+
+
+def ground_link(site: str, landing: dt.datetime, window: int) -> dict:
+    lk = get_lookup()
+    k = list(lk.sites["site"]).index(site)
+    i = planner._index(lk, landing)
+    j = i + window * 24 + 1
+    months = lk.times[i:j].astype("datetime64[M]").astype(int) % 12 + 1
+    return groundlink.link_summary(dsn_elevation()[:, i:j], months, lk.earth_up[k, i:j])
+
+
 def init_state() -> None:
     st.session_state.setdefault("step", 1)
     st.session_state.setdefault("landing_date", dt.date(2028, 1, 1))
     st.session_state.setdefault("landing_time", dt.time(0, 0))
     st.session_state.setdefault("window_days", 14)
     st.session_state.setdefault("selected_site", None)
+    st.session_state.setdefault("lander_idx", 0)
     # Retain these widget values when a different page/section is mounted.
     for key in list(st.session_state):
         if key.startswith(("criterion_", "custom_", "hour_")):
@@ -226,13 +262,23 @@ def page_date() -> None:
             time = c2.time_input("Landing time (UTC)", value=st.session_state.landing_time, step=3600)
             window = st.slider("Mission length on the surface (days)", 1, 60, st.session_state.window_days,
                                help="Visibility is assessed over this period after landing.")
+            lander = st.radio("Your lander", list(LANDERS), index=st.session_state.lander_idx,
+                              help="Nova-C: IM-1 design limit. Crewed: NASA's tilt limit for its human landers "
+                                   "(NASA OIG IG-26-004). Compared with each site's mean slope over 120 m (NASA LOLA).")
+            custom_slope = st.number_input("Custom maximum slope (degrees, used with Custom limit)", 1, 20,
+                                           int(st.session_state.get("criterion_slope", 10)))
             st.caption("2027–2030 · UTC throughout · Hourly estimates")
             submitted = st.form_submit_button("Find landing sites →", type="primary", width="stretch")
             if submitted:
                 if date is None or time is None:
                     st.error("Enter a landing date and time to continue.")
                 else:
-                    st.session_state.update(landing_date=date, landing_time=time, window_days=window, step=2)
+                    idx = list(LANDERS).index(lander)
+                    if idx != st.session_state.lander_idx or (LANDERS[lander] is None and custom_slope != st.session_state.get("custom_slope_used")):
+                        # Only a changed lander choice resets the slope limit; a limit set in the sidebar is kept otherwise.
+                        st.session_state.criterion_slope = int(LANDERS[lander] or custom_slope)
+                        st.session_state.custom_slope_used = custom_slope
+                    st.session_state.update(landing_date=date, landing_time=time, window_days=window, step=2, lander_idx=idx)
                     st.rerun()
         with st.expander("Why the landing date matters"):
             st.write("The Sun and Earth graze the polar horizon. A nearby ridge can hide either for days. "
@@ -457,6 +503,7 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
     window = st.session_state.window_days
 
     st.subheader(f"#{row.rank}  {row.site}")
+    st.link_button("Stand at this site in 3D ↗", sim_link(row.site, st.session_state.landing_date, window))
     st.caption(f"{abs(row.lat):.3f}°S, {abs(row.lon):.3f}°{'E' if row.lon >= 0 else 'W'} · "
                f"surface height {row.height_m:,.0f} m")
     slip = limits["slip_days"]
@@ -479,6 +526,20 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
         + f'<div><small>Earthset in</small><span>{short(row.hours_to_earthset, row.earth_up_at_landing, "Earth")}</span></div>'
         + f'<div><small>Sun height</small><span>{row.sun_el_at_landing:+.1f}°</span></div></div>',
         unsafe_allow_html=True)
+    gl = ground_link(row.site, landing_dt(), window)
+    st.markdown("**Earth side: ground stations and weather**")
+    g1, g2, g3 = st.columns(3)
+    g1.metric("X-band", f"{gl['x_band']:.0%}", help="Share of the hours Earth is in view from the site in which at "
+              "least one NASA Deep Space Network complex sees the Moon above 10°. X band (8.4 GHz) is barely affected by rain.")
+    g2.metric("Ka, weather", f"{gl['ka_weather']:.0%}", help="Same, weighted by the chance it is dry at a "
+              "complex in view (monthly precipitation days, climate normals). Ka band (32 GHz) loses margin in rain.")
+    g3.metric("High-rate, all hours", f"{gl['end_to_end']:.0%}", help="Earth in view from the site AND a dry DSN "
+              "complex in view, as a share of all mission hours.")
+    st.markdown("".join(gauge(f"DSN {n} sees the Moon", EARTH, v, v, 0, 0) for n, v in gl["per_station"].items()),
+                unsafe_allow_html=True)
+    st.caption("The Moon has no weather; rain at the antennas on Earth weakens high-rate Ka-band links. Climatology, not a "
+               "forecast: a wet day is counted as lost Ka for all its hours (conservative). Space weather (solar flares, "
+               "particle storms) can also disrupt links and is not modelled. Not part of the ranking score.")
     if row.eclipse_hours > 0:
         st.warning(f"Lunar eclipse: {row.eclipse_hours:.0f} h. Not subtracted from the sunlight ratio.")
     st.caption("Share of the mission with any part of the disc above the terrain skyline. Thin line: your limit. "
@@ -552,6 +613,13 @@ def page_sites() -> None:
         st.markdown(f'<div class="result-line"><strong>{passing} / {len(ranked)} sites meet your limits</strong>'
                     ' · Select a numbered location to inspect it.</div>', unsafe_allow_html=True)
     else:
+        others_ok = ranked[(ranked.sun_window >= limits["min_sun_window"]) & (ranked.slope_mean_deg <= limits["max_slope_deg"])]
+        step = int(others_ok.earth_window.max() * 100 // 5 * 5) if len(others_ok) else 0
+        if window >= 21:
+            st.info("For missions longer than about three weeks, no south-pole site keeps Earth in view 95% of the time: "
+                    "Earth's wobble in the lunar sky (libration, about 27 days) takes it below the horizon for part of every cycle.")
+        if 50 <= step < round(limits["min_earth_window"] * 100):
+            st.button(f"Accept Earth contact ≥ {step}%", on_click=lambda v=step: st.session_state.update(criterion_earth=v))
         near = query("nearest_passing_dates", landing_dt(), window, **limit_args(limits))
         near = near.dropna(subset=["days_to_nearest"]).sort_values("days_to_nearest")
         if len(near):
@@ -563,6 +631,19 @@ def page_sites() -> None:
         else:
             st.error("No site passes these limits on any date in 2027-2030. Loosen a limit in the sidebar.")
 
+    lk = get_lookup()
+    n_sites, n_hours = lk.sun_el.shape
+    st.markdown(
+        '<div class="stats datascale">'
+        f'<div><small>Candidate sites</small><span>{n_sites}</span></div>'
+        f'<div><small>Hourly time steps</small><span>{n_hours:,}</span></div>'
+        f'<div><small>Site-hours of Sun &amp; Earth geometry</small><span>{n_sites * n_hours:,}</span></div>'
+        f'<div><small>DSN station-hours</small><span>{3 * n_hours:,}</span></div>'
+        f'<div><small>Landing dates × lengths you can test</small><span>{(LAST_DAY - FIRST_DAY).days + 1:,} × 60</span></div>'
+        '</div>', unsafe_allow_html=True)
+    st.caption(f"Every result on this page is read from {n_sites * n_hours * 4:,} precomputed angles "
+               "(Sun and Earth elevation and azimuth per site and hour, 2027-2031), checked against NASA JPL Horizons, "
+               "with terrain skylines from NASA LOLA elevation models.")
     weights = limits["weights"] or dict(sunlight=1, earth=1, flatness=1)
     st.caption(f"Score weights · Sunlight {weights['sunlight']:g} · Earth contact {weights['earth']:g} · "
                f"Flatness {weights['flatness']:g}. Provisional weighted score. Edit in the criteria sidebar (top left).")
@@ -591,12 +672,21 @@ def page_sites() -> None:
         horizon_explorer(site, window, landing_dt())
 
         st.subheader("All candidate sites")
-        table = ranked[["rank", "site", "score", "sun_window", "earth_window", "slope_mean_deg",
-                        "sun_window_worst", "earth_window_worst", "eclipse_hours", "passes", "fail_reasons"]].rename(columns={
+        full = ranked.copy()
+        links = [ground_link(n, landing_dt(), window) for n in full.site]
+        full["ka_weather"] = [g["ka_weather"] for g in links]
+        full["high_rate"] = [g["end_to_end"] for g in links]
+        table = full[["rank", "site", "score", "sun_window", "earth_window", "high_rate", "slope_mean_deg", "slope_max_deg",
+                      "sun_window_worst", "earth_window_worst", "longest_dark_h", "longest_blackout_h", "eclipse_hours",
+                      "max_sun_el_window", "sun_long_term", "earth_long_term", "passes", "fail_reasons"]].rename(columns={
             "rank": "Rank", "site": "Site", "score": "Score", "sun_window": "Sunlight",
-            "earth_window": "Earth contact", "slope_mean_deg": "Slope (°)",
-            "sun_window_worst": "Sunlight if slipped", "earth_window_worst": "Contact if slipped",
-            "eclipse_hours": "Eclipse (h)", "passes": "Passes", "fail_reasons": "Why not"})
+            "earth_window": "Earth contact", "high_rate": "High-rate link (weather)", "slope_mean_deg": "Slope (°)",
+            "slope_max_deg": "Steepest (°)", "sun_window_worst": "Sunlight if slipped", "earth_window_worst": "Contact if slipped",
+            "longest_dark_h": "Longest dark (h)", "longest_blackout_h": "Longest blackout (h)", "eclipse_hours": "Eclipse (h)",
+            "max_sun_el_window": "Max Sun height (°)", "sun_long_term": "Sun, 18.6-yr", "earth_long_term": "Earth, 18.6-yr",
+            "passes": "Passes", "fail_reasons": "Why not"})
+        st.caption(f"{len(table)} sites × {len(table.columns)} measures for a landing on {landing_dt():%d %b %Y %H:%M} UTC, "
+                   f"{window} days. Scroll sideways for all columns.")
         bar = dict(format="percent", min_value=0, max_value=1)
         st.dataframe(table, hide_index=True, width="stretch", column_config={
             "Score": st.column_config.NumberColumn(format="%.2f"),
@@ -605,7 +695,14 @@ def page_sites() -> None:
             "Sunlight if slipped": st.column_config.ProgressColumn(**bar),
             "Contact if slipped": st.column_config.ProgressColumn(**bar),
             "Slope (°)": st.column_config.NumberColumn(format="%.1f"),
+            "Steepest (°)": st.column_config.NumberColumn(format="%.1f"),
+            "High-rate link (weather)": st.column_config.ProgressColumn(**bar),
+            "Sun, 18.6-yr": st.column_config.ProgressColumn(**bar),
+            "Earth, 18.6-yr": st.column_config.ProgressColumn(**bar),
+            "Max Sun height (°)": st.column_config.NumberColumn(format="%.1f"),
         })
+        st.download_button("Download all measures (CSV)", full.drop(columns=["x_km", "y_km"], errors="ignore").to_csv(index=False),
+                           file_name=f"lunar_sites_{landing_dt():%Y%m%d}_{window}d.csv", mime="text/csv")
 
     elif view == "Compare dates":
         st.header("A different date. A different outlook.")
@@ -657,7 +754,8 @@ def page_sites() -> None:
         st.plotly_chart(fig, width="stretch", config={"displayModeBar": False}, theme=None)
 
     st.caption("Data: NASA LRO LOLA visibility maps and elevation models (PDS Geosciences Node), Artemis III "
-               "candidate regions (Moon Trek). Sun and Earth positions checked against NASA JPL Horizons.")
+               "candidate regions (Moon Trek). Sun and Earth positions checked against NASA JPL Horizons. "
+               "Built by Team_of_AEers with help from Claude (Anthropic) and OpenAI Codex; no AI-generated imagery.")
 
 
 init_state()

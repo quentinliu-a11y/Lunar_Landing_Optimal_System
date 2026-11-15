@@ -32,6 +32,7 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 19 | Tour heading f(date, site, others) with step highlight and unfolding factors | Claude (for Qiming) | done | Team storyboard idea |
 | 20 | Real star field (HYG catalogue) in the tour and the 3D view | Claude (for Qiming) | done | 3D star positions checked against `src/ephemeris.py` (0.0001°) |
 | 21 | Realistic 3D: airless lighting and shadows, regolith texture, NASA Blue Marble Earth turned for the hour, Face Sun / Face Earth views, Play and Re-plan buttons, smooth sunrise/sunset | Claude (for Qiming) | done | Earth orientation checked against the almanac subsolar point (0.2°) |
+| 22 | Analysis app: links to tour/3D/code, lander picker, long-mission (libration) explanation with "accept best Earth contact", 3D button per site, data-scale strip, 18-column site table with CSV download, DSN ground stations and weather (`src/groundlink.py`) | Claude (for Qiming) | done | DSN Moon elevations match astropy within 0.001° (3 complexes, 48 hours, Jan 2028); 20 tests pass; pages checked in headless Chromium. Ground link is an extra indicator, not part of the score |
 | 18 | Lander presets with sources | team (helper research) | done | Nova-C 10° (IM-1, Wikipedia), crewed lander tilt 8° (NASA OIG IG-26-004); Blue Ghost slope not published |
 
 ## Proposed split for three people
@@ -77,6 +78,7 @@ List everything here as you use it. The submission form asks for all of it.
 - Visual workflow: https://github.com/houxin0010/distinctive-ai-design and https://github.com/emilkowalski/skills (`emil-design-eng`, `animation-performance`). Existing Streamlit/Plotly stack; no new application dependencies. Playwright with local Edge and Streamlit AppTest used for validation. Real orbital imagery only; no generated media or NASA branding.
 - Task 13: existing Python interpreter and standard-library `math`, `ast`, and `pathlib` for analytical checks; OpenAI Codex web search for primary-source documentation. No new runtime dependencies. USGS projection reference and NASA Earth-label retrieval were attempted but unavailable; neither supports a new verified result.
 - Python libraries: Streamlit, Plotly, pandas, NumPy, PyERFA (see `requirements.txt`). PyERFA supplies the Earth and Moon position routines `epv00` and `moon98`.
+- Ground link (`src/groundlink.py`): NASA Deep Space Network complexes Goldstone, Madrid and Canberra (approximate antenna coordinates, 10° mask). Monthly precipitation days: Barstow CA, NOAA 1991–2020 normals (≥ 0.01 in); Madrid Cuatro Vientos, AEMET normals (≥ 1 mm); Canberra Airport, Bureau of Meteorology 1991–2010 averages (≥ 0.2 mm), all read from the Wikipedia climate tables citing those agencies. Cross-checked with astropy (validation only, not a dependency).
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
 ### Web front end resources (15 Nov)
@@ -91,6 +93,7 @@ List everything here as you use it. The submission form asks for all of it.
 - `docs/Lunar Landing Site Simulator (1).html`: teammate's 3D scene (three.js, MIT license, embedded in the file). On 15 Nov Claude replaced its mock sites, Sun/Earth model and horizon with the team's data, switched to airless lighting, and restyled it.
 
 ### AI tools used and for what
+- Claude (Anthropic), 15 Nov night: analysis-app update (task 22) and `src/groundlink.py` (DSN visibility of the Moon and rain climatology for Ka-band links).
 - Claude (Anthropic), 15 Nov evening: tour heading animation, real star field, 3D realism and camera views, the 7-slide demo deck (`docs/demo/`, built with pptxgenjs from screenshots of our own tool; slide backgrounds from the NASA ISS photograph iss073e0982679 (Milky Way above airglow, 25 Oct 2025, images.nasa.gov); no AI-generated images), and this documentation update.
 - Claude (Anthropic), 15 Nov: cinematic web front end `docs/index.html` (four scenes from the team's storyboard) and `src/export_web_data.py`, which exports the planner's results to `docs/data/sites.json`; checked that the page ranks exactly as `planner.rank_for_date` in 45 date/mission/slope cases. Star field and gradients are drawn in code; no AI-generated pictures.
 - Claude (Anthropic): visual redesign of the interface on 15 Nov (dark theme, Sun amber / Earth blue throughout, site read-out bars marking the worst case if the landing slips). Layout, flow and all numbers unchanged; fonts Space Grotesk and IBM Plex Mono (Google Fonts, SIL Open Font License).
