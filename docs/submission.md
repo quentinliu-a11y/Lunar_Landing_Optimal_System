@@ -18,7 +18,8 @@ At the lunar south pole the Sun and Earth stay within a few degrees of the horiz
 ## Link to project
 
 https://github.com/quentinliu-a11y/Lunar_Landing_Optimal_System
-Live app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
+Guided tour (start here): https://quentinliu-a11y.github.io/Lunar_Landing_Optimal_System/
+Full analysis app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 ## Detailed description
 
@@ -32,7 +33,9 @@ Live app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 **Limits we want judges to know.** Results are estimates. Our uncalibrated terrain result differed from NASA's long-term Sun visibility by 6.5 percentage points on average, so each site's skyline is adjusted by one constant so that its 18.6-year average equals NASA's published value. Eclipse hours are reported but not subtracted from the sunlight share. "Earth visible" means any part of Earth's disc is above the terrain; it does not guarantee a link to a particular ground station. Custom coordinates use a flat horizon without terrain. The 10° slope limit is a default chosen by the team, not a NASA requirement.
 
-**Tools.** Python, Streamlit, Plotly, NumPy, pandas, pyerfa.
+**Two ways in.** A guided tour for non-specialists (a web page that flies from Earth to the lunar south pole, with plain-language verdicts) and a full analysis app with every chart and setting. Both use the same results; the tour's ranking was checked to match the analysis app in 45 date, mission-length and slope cases.
+
+**Tools.** Python, Streamlit, Plotly, NumPy, pandas, pyerfa; HTML, CSS and JavaScript for the tour.
 
 ## NASA data
 
@@ -41,6 +44,8 @@ Live app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 - Artemis III candidate landing regions (NASA Moon Trek): the list and positions of sites.
 - LROC WAC south-pole mosaic (NASA/GSFC/Arizona State University, via NASA Moon Trek): map background.
 - NASA JPL Horizons: independent check of Sun and Earth positions.
+- NASA GIBS (Global Imagery Browse Services): VIIRS Black Marble night lights and Blue Marble Next Generation, shown with the day/night line computed for the current time.
+- NASA images: full Moon over Artemis II at Launch Pad 39B (1 Feb 2026); NASA Scientific Visualization Studio full-Moon render from LRO LOLA data.
 - NASA Moon Trek and LROC QuickMap were used to explore the data.
 
 ## References
@@ -55,7 +60,8 @@ Live app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 We used AI tools and disclose them here and in the repository (`PROGRESS.md`, "AI tools used and for what"; AI-written files carry a comment saying so).
 
-- Claude (Anthropic): wrote and tested the calculation code, reviewed the interface, redesigned its visual style, drafted the documentation, this text and the demo slides.
+- Claude (Anthropic): wrote and tested the calculation code, reviewed the interface, redesigned its visual style, built the guided-tour web page from the team's storyboard, drafted the documentation, this text and the demo slides.
 - OpenAI Codex: built the first version of the interface and wrote the derivations in `docs/physics-and-coordinates.md`.
+- The illustrative 3D scene (scene IV of the tour) was built by a team member with AI assistance; it is labelled in the page as an illustrative model.
 - The concept, the choice of factors and limits, and all decisions were made by the team, who directed and reviewed the AI work.
 - No AI-generated images, video or audio are used. NASA imagery is shown unaltered and no NASA logos are used.

@@ -257,7 +257,7 @@ a{color:inherit}
 <!-- IV. 3D site -->
 <section class="scene" id="s-site" aria-label="3D site view">
   <iframe id="sim" title="Illustrative 3D lunar site scene" loading="lazy"></iframe>
-  <div class="bar4 glass"><p><b id="simsite"></b> · Illustrative 3D scene built by our team: procedural terrain and its own simplified Sun model, not the computed results above.</p>
+  <div class="bar4 glass"><p><b id="simsite"></b> · Illustrative 3D scene built by our team: procedural terrain and its own simplified Sun model; it does not show our computed results.</p>
     <button class="btn" id="back3">← Back to sites</button></div>
 </section>
 
@@ -487,7 +487,8 @@ function toSite(){guardRun(async()=>{
   cam.style.transformOrigin=`${mk.left+mk.width/2}px ${mk.top+mk.height/2}px`;
   $('#panel').classList.remove('show');
   await anim(cam,[{transform:'scale(1)',opacity:1},{transform:'scale(9)',opacity:0}],1500,'cubic-bezier(.7,0,.84,0)');
-  const f=$('#sim'); if(!f.src)f.src='Lunar%20Landing%20Site%20Simulator%20(1).html';
+  const f=$('#sim'); if(!f.src){f.src='Lunar%20Landing%20Site%20Simulator%20(1).html';
+    f.addEventListener('load',()=>{try{const c=f.contentDocument.querySelector('canvas');c&&c.scrollIntoView({block:'center'})}catch(e){}},{once:true})}
   $('#simsite').textContent=s.name; show(3);
   cam.getAnimations().forEach(a=>a.cancel());
 })}
