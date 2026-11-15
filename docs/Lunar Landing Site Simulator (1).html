@@ -919,6 +919,16 @@ if __name__ == "__main__":
         var mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.97, metalness: 0.0, flatShading: false, envMapIntensity: 0.12 });
         var mesh = new THREE.Mesh(geo, mat);
         mesh.receiveShadow = true; mesh.castShadow = false;
+        // Shadow caster for the ground near the lander only (craters, rims, undulations). The edge ridges are
+        // exaggerated and must not shade the site: whether the Sun is visible comes from the data, not the mesh.
+        var cgeo = new THREE.PlaneGeometry(300, 300, 110, 110);
+        cgeo.rotateX(-Math.PI / 2);
+        var cp = cgeo.attributes.position;
+        for (var c = 0; c < cp.count; c++) cp.setY(c, terrainHeight(site, cp.getX(c), cp.getZ(c)) + 0.02);
+        cgeo.computeVertexNormals();
+        var caster = new THREE.Mesh(cgeo, new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
+        caster.castShadow = true; caster.receiveShadow = false; caster.renderOrder = -1;
+        mesh.add(caster);
         return mesh;
       }
 
@@ -1063,11 +1073,12 @@ if __name__ == "__main__":
         // lights
         var sunLight = new THREE.DirectionalLight(0xffe3b3, 3);
         sunLight.castShadow = true;
-        sunLight.shadow.mapSize.set(2048, 2048);
-        sunLight.shadow.camera.left = -70; sunLight.shadow.camera.right = 70;
-        sunLight.shadow.camera.top = 70; sunLight.shadow.camera.bottom = -70;
-        sunLight.shadow.camera.near = 10; sunLight.shadow.camera.far = 700;
-        sunLight.shadow.bias = -0.0006;
+        // Shadows over the whole terrain: craters, rims and ridges shade the ground in grazing polar light.
+        sunLight.shadow.mapSize.set(4096, 4096);
+        sunLight.shadow.camera.left = -170; sunLight.shadow.camera.right = 170;
+        sunLight.shadow.camera.top = 170; sunLight.shadow.camera.bottom = -170;
+        sunLight.shadow.camera.near = 1; sunLight.shadow.camera.far = 1400;
+        sunLight.shadow.bias = -0.0005; sunLight.shadow.normalBias = 0.04;
         scene.add(sunLight); scene.add(sunLight.target);
         var amb = new THREE.AmbientLight(0x2a3644, 0.16);
         scene.add(amb);
@@ -1208,7 +1219,7 @@ if __name__ == "__main__":
         var old = G.terrain;
         var fresh = buildTerrainMesh(state.site);
         G.scene.remove(old);
-        old.geometry.dispose(); old.material.dispose();
+        old.traverse(function (o) { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
         G.terrain = fresh;
         G.scene.add(fresh);
         G.scatterRocks(state.site);
@@ -1236,7 +1247,7 @@ if __name__ == "__main__":
         var lit = sunlit ? Math.pow(dayF, 0.55) : 0;
         // No atmosphere: sunlight keeps full strength down to the horizon; grazing angle alone darkens flat ground.
         G.sunLight.intensity = sunlit ? 3.4 : 0.05;
-        G.sunLight.position.set(sd.x * 320, Math.max(2.5, sd.y * 320), sd.z * 320);
+        G.sunLight.position.set(sd.x * 650, Math.max(4, sd.y * 650), sd.z * 650);
         G.sunLight.color.setHSL(0.09 + 0.035 * Math.min(1, Math.max(0, sp.el) / 40), 0.72, 0.72);
         G.amb.intensity = sunlit ? 0.34 + lit * 0.3 : 0.13;
         // earthshine fill when Earth is up and the Sun is not
