@@ -33,7 +33,7 @@ a{color:inherit}
 .glass{background:var(--glass);border:1px solid var(--glass-line);border-radius:16px;
   backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
   box-shadow:0 30px 80px rgba(0,0,0,.45)}
-.credit{position:absolute;left:24px;bottom:16px;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:rgba(236,232,223,.55);max-width:60vw}
+.credit{position:absolute;left:24px;bottom:16px;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:rgba(236,232,223,.55);max-width:min(60vw,calc(100vw - 33rem))}
 .credit a{color:inherit}
 .btn{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.04);border-radius:999px;
   padding:.85rem 1.6rem;font-family:var(--mono);font-size:.78rem;letter-spacing:.24em;text-transform:uppercase;
@@ -72,7 +72,7 @@ a{color:inherit}
 
 /* ---------- scene 2: launch pad ---------- */
 #s-pad .bg{position:absolute;inset:-4%;background:linear-gradient(180deg,#0a0f22 0%,#1c1a33 45%,#4a2f2a 72%,#120d0b 100%)}
-#s-pad .bg img{width:100%;height:100%;object-fit:cover;object-position:38% 40%;display:block}
+#s-pad .bg img{width:100%;height:100%;object-fit:cover;object-position:82% 35%;display:block}
 #s-pad .bg.noimg img{display:none}
 #s-pad .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(2,3,8,.15) 0%,rgba(2,3,8,.25) 45%,rgba(2,3,8,.78) 100%)}
 #s-pad .intro{position:absolute;left:6vw;top:16vh;max-width:34rem}
@@ -101,7 +101,7 @@ a{color:inherit}
   box-shadow:0 0 80px rgba(200,210,230,.12),inset -30px -20px 60px rgba(0,0,0,.55)}
 #moon img{width:104%;height:104%;margin:-2%;object-fit:cover;display:block}
 #moon.noimg img{display:none}
-#pole{position:absolute;--w:min(84vh,calc(100vw - 4vw - 22rem - 3vw - 28rem - 2rem));left:calc(4vw + 22rem + (100vw - 4vw - 22rem - 3vw - 28rem - var(--w)) / 2);top:50%;width:var(--w);height:var(--w);transform:translateY(-50%);opacity:0}
+#pole{position:absolute;--w:min(86vh,calc(100vw - 3vw - 28rem - 6vw));left:calc(3vw + (100vw - 3vw - 28rem - 6vw - var(--w)) / 2);top:50%;width:var(--w);height:var(--w);transform:translateY(-50%);opacity:0}
 #pole .disc{position:absolute;inset:0;border-radius:50%;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.12),0 0 120px rgba(160,190,255,.10)}
 #pole .disc img{width:100%;height:100%;object-fit:cover;display:block;filter:contrast(1.05) brightness(.92)}
 #pole .ring{position:absolute;border:1px solid rgba(255,255,255,.12);border-radius:50%;pointer-events:none}
@@ -118,8 +118,10 @@ a{color:inherit}
 .mk .tip{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);white-space:nowrap;font-size:.78rem;background:rgba(2,3,8,.85);
   border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px 8px;opacity:0;pointer-events:none;transition:opacity .2s}
 .mk:hover .tip,.mk:focus-visible .tip{opacity:1}
-#poleinfo{inset:auto;left:4vw;top:10vh;width:min(21rem,30vw)}
-#poleinfo .title{font-size:clamp(2rem,3.6vw,3.2rem)}
+#poleinfo{inset:auto;left:3vw;top:9vh;width:min(19rem,27vw);text-shadow:0 0 14px #020308,0 0 4px #020308;z-index:2}
+#poleinfo .summary{display:none}
+@media (min-width:1500px){#poleinfo .summary{display:block}}
+#poleinfo .title{font-size:clamp(1.7rem,2.8vw,3rem)}
 #poleinfo .summary{font-family:var(--mono);font-size:.78rem;color:var(--muted);margin-top:.6rem;line-height:1.7}
 #poleinfo .summary b{color:var(--ink);font-weight:500}
 #poleinfo .back{margin-top:.9rem;padding:.55rem 1rem;font-size:.66rem}
@@ -166,6 +168,7 @@ a{color:inherit}
 
 #flash{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(170,205,255,.9),rgba(40,70,140,.6) 60%,rgba(2,3,8,0));opacity:0;z-index:15}
 #loading{position:fixed;inset:auto 0 40% 0;text-align:center;font-family:var(--mono);font-size:.72rem;letter-spacing:.3em;color:var(--muted);text-transform:uppercase;z-index:16;display:none}
+@media (max-width:1280px){#s-pad .intro p{display:none}#s-pad .intro{max-width:calc(100vw - 32rem - 10vw)}#s-pad .intro .title{font-size:clamp(2rem,4vw,3.2rem)}}
 @media (max-width:820px){
   #s-pad .intro{top:9vh;left:6vw;right:6vw} #s-pad .intro p{display:none}
   #plan{top:auto;bottom:3vh;transform:none;right:4vw;left:4vw;width:auto}
@@ -456,6 +459,7 @@ $('#go').onclick=()=>guardRun(async()=>{
   state.dayIdx=Math.max(0,Math.min(state.data.n_days-1,d));
   const padCam=scenes[1].querySelector('.cam');
   anim($('#plan'),[{opacity:1},{opacity:0,transform:'translateY(-40%)'}],600);
+  const intro=scenes[1].querySelector('.intro');anim(intro,[{opacity:1},{opacity:0}],500);
   warpT=1;
   await anim(padCam,[{transform:'translateY(0) scale(1)',opacity:1},{transform:'translateY(60%) scale(.85)',opacity:0}],1500,'cubic-bezier(.7,0,.84,0)');
   show(2); renderResults();
@@ -471,7 +475,7 @@ $('#go').onclick=()=>guardRun(async()=>{
   pole.style.opacity=1; await a1; moonwrap.style.opacity=0;
   $('#poleinfo').style.opacity=1;$('#panel').classList.add('show');
   pole.getAnimations().forEach(a=>a.cancel());
-  $('#plan').getAnimations().forEach(a=>a.cancel());padCam.getAnimations().forEach(a=>a.cancel());
+  $('#plan').getAnimations().forEach(a=>a.cancel());padCam.getAnimations().forEach(a=>a.cancel());intro.getAnimations().forEach(a=>a.cancel());
 });
 
 // III -> II
