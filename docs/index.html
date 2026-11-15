@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- AI-generated: cinematic front end written by Claude (Anthropic), 2026-11-15, from the team's storyboard.
      All site numbers come from docs/data/sites.json, exported by src/export_web_data.py from src/planner.py.
-     Background art is NASA imagery loaded from NASA servers (GIBS, images.nasa.gov; credits on each scene); the star field and gradients are drawn in code. -->
+     Background art is NASA imagery loaded from NASA servers (GIBS, images.nasa.gov; credits on each scene); star positions come from the HYG catalogue (docs/data/stars.json); gradients are drawn in code. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -46,10 +46,26 @@ a{color:inherit}
 .btn.solid{background:var(--sun);color:#1a1206;border-color:var(--sun)}
 .btn.solid:hover{background:#f7c27a}
 .btn:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--pick);outline-offset:3px}
-/* progress rail */
-#rail{position:fixed;top:22px;left:50%;transform:translateX(-50%);display:flex;gap:1.6rem;z-index:20;
-  font-family:var(--mono);font-size:.64rem;letter-spacing:.26em;text-transform:uppercase;color:var(--faint);transition:opacity .6s}
-#rail span.on{color:var(--ink)} #rail span b{font-weight:400;color:var(--sun);margin-right:.5em}
+/* formula header: f(date, site, others) */
+#formula{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:20;display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:.3rem .15em;
+  white-space:nowrap;font-family:var(--serif);font-size:1.45rem;color:var(--muted);transition:opacity .6s;width:max-content;max-width:min(980px,calc(100vw - 300px));
+  padding:.25rem 1rem;border-radius:999px;background:rgba(2,3,8,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#formula .fn{font-style:italic;font-size:1.7rem;color:var(--ink);margin-right:.05em}
+#formula .br,#formula .cm{color:var(--faint)} #formula .cm{margin-right:.35em}
+#formula .slot{font-style:italic;transition:color .5s}
+#formula .slot.set{font-style:normal;color:var(--ink);font-family:var(--mono);font-size:.9rem;letter-spacing:.02em;
+  padding:.1rem .45rem;border:1px solid rgba(242,178,92,.45);border-radius:6px;background:rgba(242,178,92,.08);animation:pop .5s ease}
+#formula .others{display:inline-flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:.3rem .35em}
+#formula .term{display:inline-block;font-style:normal;font-family:var(--mono);font-size:.72rem;color:var(--ink);opacity:0;transform:translateY(-6px);
+  animation:unfold .45s cubic-bezier(.16,1,.3,1) forwards;padding:.05rem .4rem;border-radius:5px;border:1px solid rgba(255,255,255,.14)}
+#formula .term b{font-weight:500} #formula .term .s{color:var(--sun)} #formula .term .e{color:var(--earth)}
+#formula .term.bad{border-color:rgba(255,138,107,.55)} #formula .term.ok{border-color:rgba(143,227,180,.45)}
+#f-res{margin-left:.45em;font-family:var(--mono);font-size:.82rem;color:var(--ink);opacity:0;transition:opacity .5s .9s}
+#f-res.show{opacity:1} #f-res b{color:var(--good);font-weight:500} #f-res b.no{color:var(--bad)}
+#formula .term i.lbl{font-style:normal}
+@media (max-width:1280px){#formula .term i.lbl{display:none} #formula{font-size:1.2rem} #poleinfo{top:17vh} #panel{top:16vh}}
+@keyframes unfold{to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:none;opacity:1}}
 #expert{position:fixed;top:18px;right:22px;z-index:20;font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;
   text-transform:uppercase;color:var(--muted);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:2px}
 #expert:hover{color:var(--ink)}
@@ -128,14 +144,14 @@ a{color:inherit}
 .mk .tip{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);white-space:nowrap;font-size:.78rem;background:rgba(2,3,8,.85);
   border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px 8px;opacity:0;pointer-events:none;transition:opacity .2s}
 .mk:hover .tip,.mk:focus-visible .tip{opacity:1}
-#poleinfo{inset:auto;left:3vw;top:9vh;width:min(19rem,27vw);text-shadow:0 0 14px #020308,0 0 4px #020308;z-index:2}
+#poleinfo{inset:auto;left:3vw;top:15vh;width:min(19rem,27vw);text-shadow:0 0 14px #020308,0 0 4px #020308;z-index:2}
 #poleinfo .summary{display:none}
 @media (min-width:1500px){#poleinfo .summary{display:block}}
 #poleinfo .title{font-size:clamp(1.7rem,2.8vw,3rem)}
 #poleinfo .summary{font-family:var(--mono);font-size:.78rem;color:var(--muted);margin-top:.6rem;line-height:1.7}
 #poleinfo .summary b{color:var(--ink);font-weight:500}
 #poleinfo .back{margin-top:.9rem;padding:.55rem 1rem;font-size:.66rem}
-#panel{position:absolute;right:3vw;top:9vh;bottom:6vh;width:min(27rem,92vw);display:flex;flex-direction:column;opacity:0;transform:translateX(20px);transition:opacity .5s,transform .5s}
+#panel{position:absolute;right:3vw;top:14vh;bottom:6vh;width:min(27rem,92vw);display:flex;flex-direction:column;opacity:0;transform:translateX(20px);transition:opacity .5s,transform .5s}
 #panel.show{opacity:1;transform:none}
 #panel .head{padding:1.3rem 1.4rem .8rem;border-bottom:1px solid var(--glass-line)}
 #panel .head .count{font-family:var(--serif);font-size:1.6rem}
@@ -185,7 +201,7 @@ a{color:inherit}
   #pole{--w:88vw;left:6vw;width:88vw;height:88vw;transform:translateY(-78%)}
   #poleinfo{width:auto;right:6vw}
   #panel{top:auto;height:44vh;left:3vw;right:3vw;width:auto;bottom:2vh}
-  #poleinfo{top:6vh} #rail{display:none}
+  #poleinfo{top:6vh} #formula{font-size:1rem;top:8px;max-width:calc(100vw - 20px)} #formula .term{display:none} #expert{display:none}
   .credit{max-width:calc(100vw - 48px);bottom:8px} #s-moon .credit{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -193,7 +209,7 @@ a{color:inherit}
 </head>
 <body>
 <canvas id="stars" aria-hidden="true"></canvas>
-<nav id="rail" aria-label="Progress"><span data-s="0" class="on"><b>I</b>Earth</span><span data-s="1"><b>II</b>Launch</span><span data-s="2"><b>III</b>Moon</span><span data-s="3"><b>IV</b>Site</span></nav>
+<div id="formula" aria-live="polite"><i class="fn">f</i><span class="br">(</span><span class="slot" id="f-date">date</span><span class="cm">,</span><span class="slot" id="f-site">site</span><span class="cm">,</span><span class="slot others" id="f-others"><span class="dots">others</span></span><span class="br">)</span><span id="f-res"></span></div>
 <a id="expert" href="https://lunar-landing-navigator-team-of-aeers.streamlit.app/" target="_blank" rel="noopener">Expert mode ↗</a>
 
 <!-- I. Earth at night -->
@@ -267,7 +283,7 @@ a{color:inherit}
     <ol id="list"></ol>
     <div id="detail"></div>
   </aside>
-  <p class="credit">South-pole map: NASA/GSFC/Arizona State University, LROC WAC mosaic via NASA Moon Trek · Sites: NASA Artemis III candidate regions · Results: NASA LRO LOLA terrain, checked against JPL Horizons<span id="cr-moon"></span></p>
+  <p class="credit">South-pole map: NASA/GSFC/Arizona State University, LROC WAC mosaic via NASA Moon Trek · Sites: NASA Artemis III candidate regions · Results: NASA LRO LOLA terrain, checked against JPL Horizons · Stars: real positions, HYG catalogue<span id="cr-moon"></span></p>
 </section>
 
 <!-- IV. 3D site -->
@@ -298,7 +314,18 @@ const state = { scene: 0, dayIdx: 365, win: 14, slope: 10, lander: 'Nova-C class
 const sc = $('#stars'), sx = sc.getContext('2d');
 let W = 0, H = 0, DPR = Math.min(2, devicePixelRatio || 1);
 function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-const R = rng(20261115), STARS = Array.from({length:900},()=>({x:R(),y:R(),z:R(),b:.35+.65*R(),t:R()*6.28}));
+// Real stars (HYG catalogue, docs/data/stars.json), azimuthal-equidistant view centred on the southern Milky Way (Crux / Carina).
+let STARS=[];
+fetch('data/stars.json').then(r=>r.json()).then(j=>{
+  const D=Math.PI/180,a0=190*D,d0=-60*D,sd0=Math.sin(d0),cd0=Math.cos(d0);
+  STARS=j.stars.map((st,i)=>{const a=st[0]/100*D,d=st[1]/100*D,m=st[2]/100,bv=st[3]/100;
+    const cc=sd0*Math.sin(d)+cd0*Math.cos(d)*Math.cos(a-a0),c=Math.acos(Math.max(-1,Math.min(1,cc)));if(c>80*D)return null;
+    const k=c<1e-6?1:c/Math.sin(c),X=k*Math.cos(d)*Math.sin(a-a0),Y=k*(cd0*Math.sin(d)-sd0*Math.cos(d)*Math.cos(a-a0));
+    const t=Math.max(-.3,Math.min(1.8,bv));let r,g,b;if(t<.4){r=.68+.8*(t+.3);g=.8+.4*(t+.3);b=1}else{r=1;g=1-.28*(t-.4);b=1-.5*(t-.4)}
+    return {X,Y,m,col:`${Math.round(255*Math.min(1,r))},${Math.round(255*Math.min(1,g))},${Math.round(255*Math.max(0,b))}`,
+      a:Math.min(1,.18+.9*Math.pow(10,-.4*(m-2))),sz:Math.max(.55,2.7-m*.36),d:.4+(6-m)*.28,t:(i*2.399)%6.283};
+  }).filter(Boolean);
+}).catch(()=>{});
 function resize(){W=innerWidth;H=innerHeight;sc.width=W*DPR;sc.height=H*DPR;sx.setTransform(DPR,0,0,DPR,0,0)}
 addEventListener('resize',resize);resize();
 let mx=0,my=0,tx=0,ty=0,warp=0,warpT=0;
@@ -306,14 +333,15 @@ addEventListener('pointermove',e=>{tx=(e.clientX/W-.5)*2;ty=(e.clientY/H-.5)*2})
 function frame(ts){
   mx+=(tx-mx)*.06;my+=(ty-my)*.06;warp+=(warpT-warp)*.05;
   sx.clearRect(0,0,W,H);
-  const cx=W/2,cy=H/2;
+  const cx=W/2,cy=H/2,scale=Math.hypot(W,H)/2/(62*Math.PI/180);
   for(const s of STARS){
-    const d=.3+s.z*1.7;
-    let x=s.x*W-(reduce?0:mx*d*10), y=s.y*H-(reduce?0:my*d*10);
-    const a=s.b*(.75+.25*Math.sin(ts/900+s.t));
-    sx.globalAlpha=a;sx.fillStyle='#fff';
-    if(warp>.02){const k=warp*d*.12;sx.strokeStyle='rgba(220,230,255,'+a+')';sx.lineWidth=d*.6;sx.beginPath();sx.moveTo(x,y);sx.lineTo(x+(x-cx)*k,y+(y-cy)*k);sx.stroke()}
-    else{sx.fillRect(x,y,d*.7,d*.7)}
+    const d=s.d;
+    let x=cx-s.X*scale-(reduce?0:mx*d*10), y=cy-s.Y*scale-(reduce?0:my*d*10);
+    if(x<-20||x>W+20||y<-20||y>H+20)continue;
+    const a=s.a*(.82+.18*Math.sin(ts/900+s.t));
+    sx.globalAlpha=a;
+    if(warp>.02){const k=warp*d*.12;sx.strokeStyle='rgba('+s.col+','+a+')';sx.lineWidth=s.sz*.7;sx.beginPath();sx.moveTo(x,y);sx.lineTo(x+(x-cx)*k,y+(y-cy)*k);sx.stroke()}
+    else{sx.fillStyle='rgb('+s.col+')';sx.beginPath();sx.arc(x,y,s.sz*.5,0,6.283);sx.fill()}
   }
   sx.globalAlpha=1;
   if(!reduce){const act=document.querySelector('.scene.on');if(act)act.querySelectorAll('.px').forEach(p=>{const k=+p.dataset.depth||0;p.style.transform=`translate3d(${-mx*k}px,${-my*k}px,0)`})}
@@ -443,14 +471,35 @@ function select(name){
     <div class="actions"><button class="btn solid" id="to3d">Enter the site in 3D →</button><a class="btn" href="${STREAMLIT}" target="_blank" rel="noopener">Full analysis ↗</a></div>
     <p class="fine-print">Share of the mission with any part of the Sun's or Earth's disc above this site's terrain skyline, from NASA LRO LOLA elevation models, each site calibrated to NASA's 18.6-year averages. Estimates; eclipses not subtracted. Earth in view does not guarantee a link to a particular ground station.</p>`;
   $('#detail h3').textContent=s.name;
+  setFormula(r);
   $('#to3d').onclick=()=>toSite();
+}
+
+// ---------------------------------------------------------------- formula header
+// f(date, site, others): fills in as the user chooses; "others" unfolds into the factors behind the ranking.
+function setFormula(r){
+  const fd=$('#f-date'),fs=$('#f-site'),fo=$('#f-others'),res=$('#f-res');
+  if(!r||!state.data){fd.textContent='date';fs.textContent='site';fd.className=fs.className='slot';fo.innerHTML='<span class="dots">others</span>';res.className='';res.innerHTML='';fo.dataset.key='';return}
+  fd.textContent=fmtDay(state.dayIdx);fd.className='slot set';
+  fs.textContent=r.s.name;fs.className='slot set';
+  const key=r.s.name+state.dayIdx+state.win+state.slope;if(fo.dataset.key===key)return;fo.dataset.key=key;
+  const terms=[
+    [`<span class="s">☉</span> <i class="lbl">sunlight </i><b>${pct(r.sun)}</b>`, r.sun>=.95],
+    [`<span class="e">⊕</span> <i class="lbl">Earth </i><b>${pct(r.earth)}</b>`, r.earth>=.95],
+    [`△ <i class="lbl">slope </i><b>${r.s.slope_mean_deg.toFixed(1)}°</b>`, r.s.slope_mean_deg<=state.slope],
+    [`⧗ <i class="lbl">if slipped </i><b>${pct(Math.min(r.sw,r.ew))}</b>`, r.stable],
+    [`◷ <b>${state.win} d</b><i class="lbl"> on surface</i>`, true],
+    [`⌖ <i class="lbl">lander </i><b>≤${state.slope}°</b>`, true]];
+  fo.innerHTML=terms.map(([t,ok],i)=>`<span class="term ${ok?'ok':'bad'}" style="animation-delay:${.15+i*.12}s">${t}</span>`).join('<span class="cm">,</span>');
+  res.className='';void res.offsetWidth;
+  res.innerHTML=`= ${r.score.toFixed(2)} · <b class="${r.pass?'':'no'}">${r.pass?'works':'not recommended'}</b>`;res.className='show';
 }
 
 // ---------------------------------------------------------------- scene changes
 const scenes=['#s-earth','#s-pad','#s-moon','#s-site'].map(q=>$(q));
 function show(i){scenes.forEach((s,k)=>s.classList.toggle('on',k===i));state.scene=i;
-  document.querySelectorAll('#rail span').forEach(r=>r.classList.toggle('on',+r.dataset.s===i));
-  $('#rail').style.opacity=$('#expert').style.opacity=i===3?0:1;$('#expert').style.pointerEvents=i===3?'none':'';}
+  $('#formula').style.opacity=$('#expert').style.opacity=i===3?0:1;$('#expert').style.pointerEvents=i===3?'none':'';
+  if(i<2)setFormula(null);}
 const anim=(el,kf,ms,ease='cubic-bezier(.65,0,.35,1)')=>reduce?Promise.resolve():el.animate(kf,{duration:ms,easing:ease,fill:'forwards'}).finished;
 const wait=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
 let busy=false;
