@@ -9,23 +9,27 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 
 | # | Task | Owner | Status | Notes |
 |---|---|---|---|---|
-| 1 | Agree on concept and scope (sites, date range, factors) | | todo | |
-| 2 | Choose 4–6 preset south-pole sites | | todo | |
+| 1 | Agree on concept and scope (sites, date range, factors) | Qiming | done | Date-first tool; 2027–2030; sunlight, Earth contact, flatness, plus slip stability |
+| 2 | Choose preset south-pole sites | Qiming | done | The 13 NASA Artemis III candidate regions |
 | 3 | Ephemeris pipeline: Sun and Earth elevation over time for one site (flat horizon) | Claude (for Qiming) | done | `src/ephemeris.py`; checked against JPL Horizons at 10 points, within 0.002° elevation |
 | 4 | Terrain horizon for preset sites, precomputed | Claude (for Qiming) | done | `data/terrain_horizons.txt` (13 sites), `data/horizon_calibration.json`. Before calibration: Earth visibility within 0.5 points of NASA at 9 of 13 sites; Sun differs 6.5 points on average, 17 at worst |
 | 5 | Metrics per scenario (sunlit %, longest darkness, Earth visible %, longest blackout) | Claude (for Qiming) | done | `src/planner.py`, terrain skyline included; ran for 2027–2030 |
-| 6 | Weighted score, ranking and Pareto set | Claude (for Qiming) | doing | Done in `src/planner.py`: five limits, three-factor weighted score, slip stability columns, nearest passing dates, best dates per site, custom coordinates (no terrain), eclipse detection; 8 checks in `tests/test_planner.py` pass. Not done: weight ingredients, Pareto set |
-| 7 | App: scenario comparison view and timelines | Claude (for Qiming) | done | `src/app.py`: two-step flow, ranked map, site panel, sky panorama, visibility timeline, custom coordinates. Run locally in headless Chrome with no errors; every control exercised in an automated run. Not deployed |
+| 6 | Weighted score and ranking | Claude (for Qiming) | done | Done in `src/planner.py`: five limits, three-factor weighted score, slip stability columns, nearest passing dates, best dates per site, custom coordinates (no terrain), eclipse detection; 11 checks in `tests/test_planner.py` pass. Not done (dropped for time): Pareto set |
+| 7 | App: scenario comparison view and timelines | Claude (for Qiming) | done | `src/app.py`: two-step flow, ranked map, site panel, sky panorama, visibility timeline, custom coordinates. Deployed: https://lunar-landing-navigator-team-of-aeers.streamlit.app/ |
 | 8 | Site × date heatmap (robustness to delay) | Claude (for Qiming) | done | "Compare dates" tab in `src/app.py`; slip worst case shown per site |
-| 9 | Demo: 7 slides or 30-second video, in English | | todo | Hard limits |
-| 10 | Project page text: summary, description, NASA data, references, AI use | | todo | |
+| 9 | Demo: 7 slides or 30-second video, in English | Claude (for Qiming) | doing | 7-slide deck drafted (Claude Slides); needs a public link |
+| 10 | Project page text: summary, description, NASA data, references, AI use | Claude (for Qiming) | done | `docs/submission.md`; team to review and paste |
 | 11 | Make all links public and test them in a private window | | todo | |
 | 12 | Submit for judging | | todo | |
 
 | 13 | Derive physical geometry and coordinate transformations | OpenAI Codex | done | `docs/physics-and-coordinates.md`: 24 projection round trips, cardinal directions, ENU bases, curvature and pixel-centre checks passed; no date-specific NASA-tool comparison. |
 | 14 | Audit raw-raster pixel registration and recompute site coordinates if needed | Claude (for Qiming) | done | Confirmed: the first analysis used a half-pixel-shifted transform (+30 m in x, -30 m in y). Site coordinates were recomputed from the raw rasters with NASA's pixel-centre convention, x=(c-2528.5)*60, y=(2528.5-r)*60, and are stored in `data/terrain_horizons.txt`, which the code uses. `data/a3_region_visibility_stats.json` keeps the earlier coordinates (about 42 m off) and is marked as superseded for positions; its visibility values are unaffected. |
 
-| 15 | Interactive polar atlas visual redesign | OpenAI Codex | done | Based on main f778f41; authentic NASA LROC mosaic, true-position clickable map, zoom/pan, hourly horizon explorer, lazy views and cached planner calls. 8 UI checks, 11 planner checks and Horizons checks passed; desktop and 390px browser layouts inspected. Not deployed. |
+| 15 | Interactive polar atlas visual redesign | OpenAI Codex | done | Based on main f778f41; authentic NASA LROC mosaic, true-position clickable map, zoom/pan, hourly horizon explorer, lazy views and cached planner calls. 8 UI checks, 11 planner checks and Horizons checks passed; desktop and 390px browser layouts inspected. Merged and deployed 15 Nov. |
+
+| 16 | Guided tour web page (four scenes from the team's storyboard) | Claude (for Qiming) | done | `docs/index.html` on GitHub Pages; ranking matches `planner.rank_for_date` in 162 checked cases; NASA imagery from GIBS and images.nasa.gov |
+| 17 | 3D site scene | team member (JamieLEO) | done | `docs/Lunar Landing Site Simulator (1).html`, labelled illustrative; embedded as scene IV and restyled from the tour page |
+| 18 | Lander presets with sources | team (helper research) | done | Nova-C 10° (IM-1, Wikipedia), crewed lander tilt 8° (NASA OIG IG-26-004); Blue Ghost slope not published |
 
 ## Proposed split for three people
 
@@ -77,6 +81,8 @@ List everything here as you use it. The submission form asks for all of it.
 - NASA image "Full Moon Rising Over Full Artemis II Stack at Launch Pad 39B", 1 Feb 2026, images.nasa.gov (Artemis II at the pad Full Snow Moon 02012026_3).
 - NASA Scientific Visualization Studio "Full Moon" render from LRO LOLA data, images.nasa.gov (GSFC_20171208_Archive_e001861).
 - Fonts: Cormorant Garamond, IBM Plex Sans, IBM Plex Mono (Google Fonts, SIL Open Font License).
+- Lander slope figures: Wikipedia "IM-1" (Nova-C designed to stay upright on slopes of 10° or more, quoting Intuitive Machines' CTO); NASA OIG report IG-26-004 (tilt tolerance not to exceed 8° for NASA's human landing systems; Starship height 171 ft).
+- `assets/icons/*.svg`: Lucide icons (ISC license), added by a team member; not used by the pages yet.
 - `docs/Lunar Landing Site Simulator (1).html`: teammate's 3D scene, labelled in it as an illustrative mock model; embedded as scene IV with that label.
 
 ### AI tools used and for what

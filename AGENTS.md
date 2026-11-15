@@ -37,13 +37,13 @@ Scoring factors:
 | – | Longest communication blackout | Worst single period without Earth in view | Proposed, not decided |
 | – | Mean solar elevation, surface roughness, distance to permanently shadowed regions, surface temperature | Secondary factors | Proposed, not decided |
 
-Not decided yet (ask a human before assuming):
+Decided since (15 Nov):
 
-- Programming language, framework and hosting for the app
-- How factors are weighted and combined into one score
-- The time window after landing that the ratios are computed over
-- Which of the proposed factors are included
-- Final list of candidate sites
+- Stack: Python calculation engine (`src/`), Streamlit analysis app (`src/app.py`, deployed on Streamlit Community Cloud) and a static guided tour (`docs/index.html`, GitHub Pages) that reads `docs/data/sites.json` exported by `src/export_web_data.py`. Re-run the export after any change to `src/planner.py` or `data/`.
+- Score: equal weights by default; users can change them in the analysis app.
+- Mission window: chosen by the user, 1–60 days from the landing time.
+- Sites: the 13 Artemis III candidate regions.
+- Factors: sunlight, Earth contact and flatness as limits and score; slip stability (±14 days) shown separately.
 
 ## 3. Domain facts you must get right
 

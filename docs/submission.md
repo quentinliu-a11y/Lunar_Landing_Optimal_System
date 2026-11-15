@@ -33,7 +33,7 @@ Full analysis app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 **Limits we want judges to know.** Results are estimates. Our uncalibrated terrain result differed from NASA's long-term Sun visibility by 6.5 percentage points on average, so each site's skyline is adjusted by one constant so that its 18.6-year average equals NASA's published value. Eclipse hours are reported but not subtracted from the sunlight share. "Earth visible" means any part of Earth's disc is above the terrain; it does not guarantee a link to a particular ground station. Custom coordinates use a flat horizon without terrain. The 10° slope limit is a default chosen by the team, not a NASA requirement.
 
-**Two ways in.** A guided tour for non-specialists (a web page that flies from Earth to the lunar south pole, with plain-language verdicts) and a full analysis app with every chart and setting. Both use the same results; the tour's ranking was checked to match the analysis app in 45 date, mission-length and slope cases.
+**Two ways in.** A guided tour for non-specialists (a web page that flies from Earth to the lunar south pole, with plain-language verdicts) and a full analysis app with every chart and setting. Both use the same results; the tour's ranking was checked to match the analysis app in 162 date, mission-length and slope cases.
 
 **Tools.** Python, Streamlit, Plotly, NumPy, pandas, pyerfa; HTML, CSS and JavaScript for the tour.
 

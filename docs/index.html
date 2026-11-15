@@ -36,7 +36,7 @@ a{color:inherit}
 .glass{background:var(--glass);border:1px solid var(--glass-line);border-radius:16px;
   backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
   box-shadow:0 30px 80px rgba(0,0,0,.45)}
-.credit{position:absolute;left:24px;bottom:16px;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:rgba(236,232,223,.55);max-width:min(60vw,calc(100vw - 33rem))}
+.credit{position:absolute;left:24px;bottom:16px;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:rgba(236,232,223,.55);max-width:min(60vw,max(16rem,calc(100vw - 33rem)))}
 .credit a{color:inherit}
 .btn{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.04);border-radius:999px;
   padding:.85rem 1.6rem;font-family:var(--mono);font-size:.78rem;letter-spacing:.24em;text-transform:uppercase;
@@ -186,6 +186,7 @@ a{color:inherit}
   #poleinfo{width:auto;right:6vw}
   #panel{top:auto;height:44vh;left:3vw;right:3vw;width:auto;bottom:2vh}
   #poleinfo{top:6vh} #rail{display:none}
+  .credit{max-width:calc(100vw - 48px);bottom:8px} #s-moon .credit{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
