@@ -60,11 +60,28 @@ a{color:inherit}
   animation:unfold .45s cubic-bezier(.16,1,.3,1) forwards;padding:.05rem .4rem;border-radius:5px;border:1px solid rgba(255,255,255,.14)}
 #formula .term b{font-weight:500} #formula .term .s{color:var(--sun)} #formula .term .e{color:var(--earth)}
 #formula .term.bad{border-color:rgba(255,138,107,.55)} #formula .term.ok{border-color:rgba(143,227,180,.45)}
-#f-res{margin-left:.45em;font-family:var(--mono);font-size:.82rem;color:var(--ink);opacity:0;transition:opacity .5s .9s}
+#f-res{margin-left:.45em;font-family:var(--mono);font-size:.82rem;color:var(--ink);opacity:0;transition:opacity .5s}
 #f-res.show{opacity:1} #f-res b{color:var(--good);font-weight:500} #f-res b.no{color:var(--bad)}
 #formula .term i.lbl{font-style:normal}
 @media (max-width:1280px){#formula .term i.lbl{display:none} #formula{font-size:1.2rem} #poleinfo{top:17vh} #panel{top:16vh}}
 @keyframes unfold{to{opacity:1;transform:none}}
+/* step highlight: the part of f being worked on glows and is captioned */
+#formula>*{animation:fin .7s cubic-bezier(.16,1,.3,1) both}
+#formula>*:nth-child(2){animation-delay:.08s}#formula>*:nth-child(3){animation-delay:.16s}#formula>*:nth-child(4){animation-delay:.24s}
+#formula>*:nth-child(5){animation-delay:.32s}#formula>*:nth-child(6){animation-delay:.4s}#formula>*:nth-child(7){animation-delay:.48s}#formula>*:nth-child(8){animation-delay:.56s}
+@keyframes fin{from{opacity:0;transform:translateY(-8px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+#formula .slot,#f-res{position:relative;border-radius:6px}
+#formula .active{color:#fff!important;box-shadow:0 0 0 1px var(--sun),0 0 18px rgba(242,178,92,.45);animation:glow 1.6s ease-in-out infinite!important;padding:.05rem .4rem}
+#formula .active::after{content:attr(data-hint);position:absolute;left:50%;top:calc(100% + 6px);transform:translateX(-50%);white-space:nowrap;
+  font:400 .58rem/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--sun);font-style:normal}
+#formula #f-others.active::after{left:10px;top:-6px;transform:none;background:#05070c;padding:0 5px}
+#formula .fn.breath{animation:breath 2.4s ease-in-out infinite!important}
+@keyframes glow{0%,100%{box-shadow:0 0 0 1px var(--sun),0 0 10px rgba(242,178,92,.25)}50%{box-shadow:0 0 0 1px var(--sun),0 0 24px rgba(242,178,92,.6)}}
+@keyframes breath{0%,100%{text-shadow:0 0 0 rgba(242,178,92,0)}50%{text-shadow:0 0 18px rgba(242,178,92,.8)}}
+#formula .slot.set{animation:flip .6s cubic-bezier(.16,1,.3,1) both}
+#formula #f-site.set{animation-delay:.35s}
+@keyframes flip{0%{transform:rotateX(90deg);opacity:0}100%{transform:none;opacity:1}}
+#f-res.show{opacity:1;transition-delay:1.6s}
 @keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:none;opacity:1}}
 #expert{position:fixed;top:18px;right:22px;z-index:20;font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;
   text-transform:uppercase;color:var(--muted);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:2px}
@@ -209,7 +226,7 @@ a{color:inherit}
 </head>
 <body>
 <canvas id="stars" aria-hidden="true"></canvas>
-<div id="formula" aria-live="polite"><i class="fn">f</i><span class="br">(</span><span class="slot" id="f-date">date</span><span class="cm">,</span><span class="slot" id="f-site">site</span><span class="cm">,</span><span class="slot others" id="f-others"><span class="dots">others</span></span><span class="br">)</span><span id="f-res"></span></div>
+<div id="formula" aria-live="polite"><i class="fn">f</i><span class="br">(</span><span class="slot" id="f-date" data-hint="pick a date">date</span><span class="cm">,</span><span class="slot" id="f-site" data-hint="pick a site">site</span><span class="cm">,</span><span class="slot others" id="f-others" data-hint="the factors"><span class="dots">others</span></span><span class="br">)</span><span id="f-res" data-hint="result"></span></div>
 <a id="expert" href="https://lunar-landing-navigator-team-of-aeers.streamlit.app/" target="_blank" rel="noopener">Expert mode ↗</a>
 
 <!-- I. Earth at night -->
@@ -479,9 +496,9 @@ function select(name){
 // f(date, site, others): fills in as the user chooses; "others" unfolds into the factors behind the ranking.
 function setFormula(r){
   const fd=$('#f-date'),fs=$('#f-site'),fo=$('#f-others'),res=$('#f-res');
-  if(!r||!state.data){fd.textContent='date';fs.textContent='site';fd.className=fs.className='slot';fo.innerHTML='<span class="dots">others</span>';res.className='';res.innerHTML='';fo.dataset.key='';return}
-  fd.textContent=fmtDay(state.dayIdx);fd.className='slot set';
-  fs.textContent=r.s.name;fs.className='slot set';
+  if(!r||!state.data){fd.textContent='date';fs.textContent='site';fd.classList.remove('set');fs.classList.remove('set');fo.innerHTML='<span class="dots">others</span>';res.classList.remove('show');res.innerHTML='';fo.dataset.key='';return}
+  const flip=(el,txt)=>{if(el.textContent===txt&&el.classList.contains('set'))return;el.textContent=txt;el.classList.remove('set');void el.offsetWidth;el.classList.add('set')};
+  flip(fd,fmtDay(state.dayIdx));flip(fs,r.s.name);
   const key=r.s.name+state.dayIdx+state.win+state.slope;if(fo.dataset.key===key)return;fo.dataset.key=key;
   const terms=[
     [`<span class="s">☉</span> <i class="lbl">sunlight </i><b>${pct(r.sun)}</b>`, r.sun>=.95],
@@ -490,16 +507,25 @@ function setFormula(r){
     [`⧗ <i class="lbl">if slipped </i><b>${pct(Math.min(r.sw,r.ew))}</b>`, r.stable],
     [`◷ <b>${state.win} d</b><i class="lbl"> on surface</i>`, true],
     [`⌖ <i class="lbl">lander </i><b>≤${state.slope}°</b>`, true]];
-  fo.innerHTML=terms.map(([t,ok],i)=>`<span class="term ${ok?'ok':'bad'}" style="animation-delay:${.15+i*.12}s">${t}</span>`).join('<span class="cm">,</span>');
-  res.className='';void res.offsetWidth;
-  res.innerHTML=`= ${r.score.toFixed(2)} · <b class="${r.pass?'':'no'}">${r.pass?'works':'not recommended'}</b>`;res.className='show';
+  fo.innerHTML=terms.map(([t,ok],i)=>`<span class="term ${ok?'ok':'bad'}" style="animation-delay:${.8+i*.14}s">${t}</span>`).join('<span class="cm">,</span>');
+  res.classList.remove('show');void res.offsetWidth;
+  res.innerHTML=`= ${r.score.toFixed(2)} · <b class="${r.pass?'':'no'}">${r.pass?'works':'not recommended'}</b>`;res.classList.add('show');
 }
 
 // ---------------------------------------------------------------- scene changes
 const scenes=['#s-earth','#s-pad','#s-moon','#s-site'].map(q=>$(q));
 function show(i){scenes.forEach((s,k)=>s.classList.toggle('on',k===i));state.scene=i;
-  $('#formula').style.opacity=$('#expert').style.opacity=i===3?0:1;$('#expert').style.pointerEvents=i===3?'none':'';
-  if(i<2)setFormula(null);}
+  $('#expert').style.opacity=i===3?0:1;$('#expert').style.pointerEvents=i===3?'none':'';
+  if(i<2)setFormula(null);
+  stageFormula(i);}
+function stageFormula(i){
+  ['#f-date','#f-site','#f-others','#f-res'].forEach(q=>$(q).classList.remove('active'));
+  $('#formula .fn').classList.toggle('breath',i===0);
+  if(i===1)$('#f-date').classList.add('active');
+  if(i===2)$('#f-others').classList.add('active');
+  if(i===3){$('#f-res').classList.add('active');$('#f-res').dataset.hint='3D view of this result'}
+  else $('#f-res').dataset.hint='result';
+}
 const anim=(el,kf,ms,ease='cubic-bezier(.65,0,.35,1)')=>reduce?Promise.resolve():el.animate(kf,{duration:ms,easing:ease,fill:'forwards'}).finished;
 const wait=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
 let busy=false;
@@ -577,6 +603,7 @@ $('#back3').onclick=()=>guardRun(async()=>{show(2);$('#panel').classList.add('sh
 $('#replan').onclick=()=>guardRun(async()=>{show(1);$('#plan').getAnimations().forEach(a=>a.cancel());scenes[1].querySelector('.intro').getAnimations().forEach(a=>a.cancel());scenes[1].querySelector('.cam').getAnimations().forEach(a=>a.cancel())});
 
 addEventListener('keydown',e=>{if(e.key==='Enter'&&state.scene===0)$('#start').click()});
+stageFormula(0);
 
 
 </script>

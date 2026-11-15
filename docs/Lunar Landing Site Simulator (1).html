@@ -256,6 +256,20 @@
       .view-btn.track.earth[aria-pressed=true]{background:rgba(118,182,255,.22)!important;border-color:#76b6ff!important;color:#fff!important}
       #gl-wrap.tracking #gl{cursor:default}
       .hud-bl{flex-wrap:wrap;max-width:calc(100% - 28px)}
+
+      /* site location card: real south-pole map */
+      .polemap{position:relative;width:100%;max-width:270px;aspect-ratio:1;border-radius:50%;overflow:hidden;margin:4px auto 8px;
+        box-shadow:0 0 0 1px rgba(255,255,255,.12),0 0 40px rgba(118,182,255,.08)}
+      .polemap img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(.9) contrast(1.05)}
+      .pm-dot{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;padding:0;border:0;background:none;cursor:pointer;min-height:0!important}
+      .pm-dot i{position:absolute;left:5px;top:5px;width:8px;height:8px;border-radius:50%;background:rgba(236,232,223,.75);box-shadow:0 0 0 1.5px rgba(2,3,8,.8)}
+      .pm-dot span{display:none}
+      .pm-dot.sel i{background:#f2b25c;box-shadow:0 0 0 2px rgba(2,3,8,.85),0 0 12px #f2b25c}
+      .pm-dot.sel::after{content:"";position:absolute;inset:-7px;border:1.5px solid #f2b25c;border-radius:50%;animation:pmring 1.8s ease-out infinite}
+      .pm-dot.sel span{display:block;position:absolute;left:50%;top:-22px;transform:translateX(-50%);white-space:nowrap;font:500 11px 'IBM Plex Mono',monospace;
+        color:#fff;background:rgba(2,3,8,.8);border:1px solid rgba(242,178,92,.6);border-radius:5px;padding:1px 6px}
+      @keyframes pmring{0%{transform:scale(.5);opacity:1}100%{transform:scale(1.6);opacity:0}}
+      html.embed .wrap{padding-top:92px!important}
 </style>
   </head>
   <body>
@@ -356,11 +370,14 @@
 
           <div>
             <div class="side-card">
-              <h3>Site location — Moon from Earth</h3>
+              <h3>Site location — lunar south pole</h3>
               <div class="moonbox">
-                <svg id="moonmap" viewBox="0 0 260 260" width="220" height="220" role="img" aria-label="Map of the Moon's near side showing the candidate landing sites"></svg>
+                <svg id="moonmap" style="display:none"></svg>
+                <div class="polemap" id="polemap" role="img" aria-label="Lunar south pole with the 13 candidate sites; the selected site is highlighted">
+                  <img src="lroc-south-pole.jpg" alt="" />
+                </div>
               </div>
-              <p style="font-size:12px; margin:0;">Gold dot = selected site. All 13 candidates sit near the south pole, at the bottom edge of the disc.</p>
+              <p style="font-size:12px; margin:0;">NASA LROC WAC mosaic, 84°S to the pole (top = 0° longitude, towards Earth). Ring = this site; dots = the other candidates. Click a dot to switch.</p>
             </div>
             <div class="side-card">
               <h3>Site file</h3>
@@ -1425,44 +1442,24 @@ if __name__ == "__main__":
         return n;
       }
       var moonRefs = {};
+      /* Site location card: the NASA LROC south-pole mosaic (±210 km, polar stereographic, as in the tour)
+         with every candidate at its true position. */
       function buildMoon() {
-        var svg = els.moonmap, cx = 130, cy = 130, R = 108;
-        mk("circle", { cx: cx, cy: cy, r: R, fill: "#39424d", stroke: "#5d6b7a", "stroke-width": 1.2 }, svg);
-        [-60, -30, 0, 30, 60].forEach(function (lon) {
-          var rx = Math.abs(R * Math.cos(lon * Math.PI/180));
-          mk("ellipse", { cx: cx, cy: cy, rx: Math.max(1.5, rx), ry: R, fill: "none", stroke: "#55626f", "stroke-width": 0.7, opacity: 0.8 }, svg);
-        });
-        [-60, -30, 0, 30, 60].forEach(function (lat) {
-          var y = cy - R * Math.sin(lat * Math.PI/180);
-          var hw = R * Math.cos(lat * Math.PI/180);
-          mk("line", { x1: cx - hw, x2: cx + hw, y1: y, y2: y, stroke: "#55626f", "stroke-width": 0.7, opacity: 0.8 }, svg);
-        });
-        [[28, 18, 26], [52, 12, 17], [30, -8, 20], [58, -20, 13], [-18, 22, 15], [-42, -2, 12]].forEach(function (m) {
-          var x = cx + R * Math.cos(m[1] * Math.PI/180) * Math.sin(m[0] * Math.PI/180);
-          var y = cy - R * Math.sin(m[1] * Math.PI/180);
-          mk("ellipse", { cx: x, cy: y, rx: m[2], ry: m[2] * 0.72, fill: "#242c35", opacity: 0.8 }, svg);
-        });
+        var box = document.getElementById("polemap"), R = 1737.4, E = 210;
         moonRefs.dots = {};
         SITES.forEach(function (s) {
-          var x = cx + R * Math.cos(s.lat * Math.PI/180) * Math.sin(s.lon * Math.PI/180);
-          var y = cy - R * Math.sin(s.lat * Math.PI/180);
-          var far = Math.cos(s.lat * Math.PI/180) * Math.cos(s.lon * Math.PI/180) < 0;
-          moonRefs.dots[s.id] = mk("circle", { cx: x, cy: y, r: 5, fill: "#aeb9c6", stroke: "#0b1017",
-                                               "stroke-width": 1.4, opacity: far ? 0.35 : 1 }, svg);
+          var r = 2 * R * Math.tan((90 + s.lat) * Math.PI / 360), a = s.lon * Math.PI / 180;
+          var x = r * Math.sin(a), y = r * Math.cos(a);
+          var d = document.createElement("button"); d.type = "button"; d.className = "pm-dot"; d.title = s.name;
+          d.style.left = (50 + x / (2 * E) * 100) + "%"; d.style.top = (50 - y / (2 * E) * 100) + "%";
+          d.innerHTML = "<i></i><span></span>"; d.querySelector("span").textContent = s.name;
+          d.addEventListener("click", function () { selectSite(s); });
+          box.appendChild(d); moonRefs.dots[s.id] = d;
         });
-        moonRefs.sunDot = mk("circle", { r: 6.5, fill: "#f59e0b", stroke: "#fff7e0", "stroke-width": 1.4 }, svg);
-        var cap = mk("text", { x: cx, y: cy + R + 18, "text-anchor": "middle", fill: "#5d7186", "font-size": 11,
-                               "font-family": "IBM Plex Mono, monospace" }, svg);
-        cap.textContent = "NEAR SIDE · CENTRED ON 0° / 0°";
       }
       function updateMoon(ms) {
-        var cx = 130, cy = 130, R = 108;
-        SITES.forEach(function (s) {
-          var d = moonRefs.dots[s.id];
-          if (s === state.site) { d.setAttribute("fill", "#ffb84d"); d.setAttribute("r", 7); }
-          else { d.setAttribute("fill", "#aeb9c6"); d.setAttribute("r", 5); }
-        });
-        moonRefs.sunDot.setAttribute("display", "none");
+        if (!moonRefs.dots) return;
+        SITES.forEach(function (s) { var d = moonRefs.dots[s.id]; if (d) d.classList.toggle("sel", s === state.site); });
       }
 
       /* ---------------- comparison ---------------- */
