@@ -1588,7 +1588,11 @@ if __name__ == "__main__":
         state.startMs = Math.max(Date.UTC(2027, 0, 1), Math.min(Date.UTC(2030, 11, 31), Date.UTC(+parts[0], +parts[1] - 1, +parts[2])));
         rebuildTrails(); render();
       });
+      /* touching the timeline pauses playback, so the user's choice of time is kept */
+      function pauseIfPlaying() { if (state.playing) els["play-btn"].click(); }
+      ["pointerdown", "keydown", "touchstart"].forEach(function (ev) { els["time-slider"].addEventListener(ev, pauseIfPlaying, { passive: true }); });
       els["time-slider"].addEventListener("input", function () {
+        pauseIfPlaying();
         state.offsetH = parseFloat(els["time-slider"].value);
         render();
       });
