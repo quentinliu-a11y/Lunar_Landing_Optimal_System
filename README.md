@@ -4,7 +4,9 @@ A planning tool that answers one question for lunar south-pole missions: **if we
 
 Team entry for the 2026 NASA Space Apps Challenge, challenge [Lunar Landing Site Navigator](https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/).
 
-> Status, 15 November 2026: the calculation engine and the interface are complete and tested. Text for the project page is in `docs/submission.md`.
+> **Live app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/**
+>
+> Status, 15 November 2026: the calculation engine and the interface are complete, tested and deployed. Text for the project page is in `docs/submission.md`.
 
 ## The problem
 
@@ -106,6 +108,8 @@ python tests/test_interface.py
 AI tools were used to write code and documents and to process the NASA data, under the team's direction. The concept, the date-first flow, the choice of factors and the limits are the team's. Every AI-assisted file says so at the top, and `PROGRESS.md` lists which tool did what.
 
 ## Team
+
+Team_of_AEers
 
 | Name | GitHub | Role |
 |---|---|---|

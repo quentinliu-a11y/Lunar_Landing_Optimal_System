@@ -18,7 +18,7 @@ At the lunar south pole the Sun and Earth stay within a few degrees of the horiz
 ## Link to project
 
 https://github.com/quentinliu-a11y/Lunar_Landing_Optimal_System
-[Public link to the running app, once deployed]
+Live app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 ## Detailed description
 
