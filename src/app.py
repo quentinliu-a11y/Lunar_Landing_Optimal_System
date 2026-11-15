@@ -17,6 +17,8 @@ Run with:  streamlit run src/app.py
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
+import importlib
 import math
 import base64
 from pathlib import Path
@@ -173,10 +175,21 @@ def lunar_imagery() -> str | None:
     return "data:image/jpeg;base64," + base64.b64encode(image_path.read_bytes()).decode("ascii")
 
 
+# The server keeps running across code updates. Make sure it uses the current planner, and key the
+# result cache on the planner's source so results computed by an older version are never reused.
+if not hasattr(planner, "_share_left"):
+    planner = importlib.reload(planner)
+ENGINE_VERSION = hashlib.sha1(Path(planner.__file__).read_bytes()).hexdigest()[:12]
+
+
 @st.cache_data(show_spinner=False, max_entries=96)
+def _query(engine_version: str, method: str, *args, **kwargs):
+    return getattr(planner, method)(get_lookup(), *args, **kwargs)
+
+
 def query(method: str, *args, **kwargs):
     """Cache planner results by their full input settings; never reimplement science here."""
-    return getattr(planner, method)(get_lookup(), *args, **kwargs)
+    return _query(ENGINE_VERSION, method, *args, **kwargs)
 
 
 @st.cache_data(show_spinner=False, max_entries=32)
