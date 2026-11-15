@@ -1,0 +1,494 @@
+<!doctype html>
+<!-- AI-generated: cinematic front end written by Claude (Anthropic), 2026-11-15, from the team's storyboard.
+     All site numbers come from docs/data/sites.json, exported by src/export_web_data.py from src/planner.py.
+     Background art is NASA imagery loaded from NASA servers (GIBS, images.nasa.gov; credits on each scene); the star field and gradients are drawn in code. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lunar Landing Navigator — Team_of_AEers</title>
+<meta name="description" content="Choose a lunar landing date, then see which south-pole sites keep sunlight and Earth contact for your mission. NASA Space Apps 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#ece8df; --muted:#a7afb8; --faint:#6f7a86;
+  --sun:#f2b25c; --earth:#76b6ff; --good:#8fe3b4; --bad:#ff8a6b; --pick:#ffd27a;
+  --glass:rgba(12,16,26,.46); --glass-line:rgba(255,255,255,.13);
+  --serif:'Cormorant Garamond','Times New Roman',Times,serif;
+  --sans:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  --mono:'IBM Plex Mono',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#020308;color:var(--ink);font-family:var(--sans);overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:inherit}
+#stars{position:fixed;inset:0;width:100%;height:100%;display:block}
+.scene{position:fixed;inset:0;opacity:0;visibility:hidden;transition:opacity .9s ease,visibility 0s linear .9s}
+.scene.on{opacity:1;visibility:visible;transition:opacity .9s ease,visibility 0s}
+.cam,.px{position:absolute;inset:0;will-change:transform}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;color:var(--muted)}
+.title{font-family:var(--serif);font-weight:300;letter-spacing:.02em;line-height:.95;margin:0}
+.glass{background:var(--glass);border:1px solid var(--glass-line);border-radius:16px;
+  backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.credit{position:absolute;left:24px;bottom:16px;font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;color:rgba(236,232,223,.55);max-width:60vw}
+.credit a{color:inherit}
+.btn{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.04);border-radius:999px;
+  padding:.85rem 1.6rem;font-family:var(--mono);font-size:.78rem;letter-spacing:.24em;text-transform:uppercase;
+  transition:background .3s,border-color .3s,transform .2s}
+.btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.5)}
+.btn:active{transform:scale(.98)}
+.btn.solid{background:var(--sun);color:#1a1206;border-color:var(--sun)}
+.btn.solid:hover{background:#f7c27a}
+.btn:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--pick);outline-offset:3px}
+/* progress rail */
+#rail{position:fixed;top:22px;left:50%;transform:translateX(-50%);display:flex;gap:1.6rem;z-index:20;
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.26em;text-transform:uppercase;color:var(--faint);transition:opacity .6s}
+#rail span.on{color:var(--ink)} #rail span b{font-weight:400;color:var(--sun);margin-right:.5em}
+#expert{position:fixed;top:18px;right:22px;z-index:20;font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:2px}
+#expert:hover{color:var(--ink)}
+
+/* ---------- scene 1: night Earth ---------- */
+#s-earth .map{position:absolute;left:50%;top:50%;width:max(100vw,200vh);height:max(50vw,100vh);transform:translate(-50%,-50%)}
+#s-earth .map img,#s-earth .map canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#s-earth .map img{object-fit:cover;filter:saturate(1.1) brightness(1.05)}
+#s-earth .map.noimg{background:radial-gradient(ellipse at 50% 60%,#0d1b33 0%,#050a16 55%,#020308 100%)}
+#s-earth .map.noimg img{display:none}
+#s-earth .map #dayimg{-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;opacity:0;transition:opacity 1.2s}
+#s-earth .map #dayimg.ready{opacity:.92}
+#s-earth .map.noimg #dayimg{display:none}
+#s-earth .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(2,3,8,0) 30%,rgba(2,3,8,.85) 100%)}
+#s-earth .hero{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1.4rem;padding:0 6vw}
+#s-earth .title{font-size:clamp(3.2rem,9vw,8.5rem)}
+#s-earth .tag{font-family:var(--serif);font-style:italic;font-weight:300;font-size:clamp(1.2rem,2.2vw,1.8rem);color:#d8d2c4;margin:0}
+#s-earth .start{margin-top:1.6rem}
+#s-earth .legend{position:absolute;right:24px;bottom:16px;font-family:var(--mono);font-size:.64rem;color:rgba(236,232,223,.55);text-align:right;line-height:1.6}
+.pulse{animation:pulse 2.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(242,178,92,.0)}50%{box-shadow:0 0 0 10px rgba(242,178,92,.12)}}
+
+/* ---------- scene 2: launch pad ---------- */
+#s-pad .bg{position:absolute;inset:-4%;background:linear-gradient(180deg,#0a0f22 0%,#1c1a33 45%,#4a2f2a 72%,#120d0b 100%)}
+#s-pad .bg img{width:100%;height:100%;object-fit:cover;object-position:38% 40%;display:block}
+#s-pad .bg.noimg img{display:none}
+#s-pad .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(2,3,8,.15) 0%,rgba(2,3,8,.25) 45%,rgba(2,3,8,.78) 100%)}
+#s-pad .intro{position:absolute;left:6vw;top:16vh;max-width:34rem}
+#s-pad .intro .title{font-size:clamp(2.6rem,5.4vw,5rem)}
+#s-pad .intro p{font-family:var(--serif);font-size:1.35rem;line-height:1.45;color:#d9d3c6;margin-top:1.2rem}
+#plan{position:absolute;right:5vw;top:50%;transform:translateY(-50%);width:min(30rem,92vw);padding:1.8rem 1.8rem 1.6rem;display:flex;flex-direction:column;gap:1.25rem}
+#plan h2{font-family:var(--serif);font-weight:400;font-size:2rem;margin:0}
+.field label,.field .lab{display:block;font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
+.field input[type=date]{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--glass-line);border-radius:10px;
+  color:var(--ink);font-family:var(--mono);font-size:1.05rem;padding:.7rem .8rem;color-scheme:dark}
+.field small{display:block;color:var(--faint);font-size:.74rem;margin-top:.4rem}
+.seg{display:flex;gap:.5rem}
+.seg button{flex:1;padding:.65rem .4rem;border-radius:10px;border:1px solid var(--glass-line);background:rgba(255,255,255,.04);font-family:var(--mono);font-size:.9rem}
+.seg button[aria-pressed=true]{background:rgba(242,178,92,.16);border-color:var(--sun);color:#fff}
+.landers{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.landers button{text-align:left;padding:.75rem .7rem;border-radius:12px;border:1px solid var(--glass-line);background:rgba(255,255,255,.04);display:flex;flex-direction:column;gap:.35rem;min-height:6.4rem}
+.landers button[aria-pressed=true]{background:rgba(242,178,92,.16);border-color:var(--sun)}
+.landers svg{width:34px;height:26px;stroke:currentColor;fill:none;stroke-width:1.4;opacity:.9}
+.landers b{font-weight:500;font-size:.92rem}
+.landers span{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+
+/* ---------- scene 3: Moon and south pole ---------- */
+#moonwrap{position:absolute;left:50%;top:50%;width:min(64vh,64vw);height:min(64vh,64vw);transform:translate(-50%,-50%)}
+#moon{position:absolute;inset:0;border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 38% 34%,#d9d6cf 0%,#a9a59d 38%,#5f5c57 72%,#24221f 100%);
+  box-shadow:0 0 80px rgba(200,210,230,.12),inset -30px -20px 60px rgba(0,0,0,.55)}
+#moon img{width:104%;height:104%;margin:-2%;object-fit:cover;display:block}
+#moon.noimg img{display:none}
+#pole{position:absolute;--w:min(84vh,calc(100vw - 4vw - 22rem - 3vw - 28rem - 2rem));left:calc(4vw + 22rem + (100vw - 4vw - 22rem - 3vw - 28rem - var(--w)) / 2);top:50%;width:var(--w);height:var(--w);transform:translateY(-50%);opacity:0}
+#pole .disc{position:absolute;inset:0;border-radius:50%;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.12),0 0 120px rgba(160,190,255,.10)}
+#pole .disc img{width:100%;height:100%;object-fit:cover;display:block;filter:contrast(1.05) brightness(.92)}
+#pole .ring{position:absolute;border:1px solid rgba(255,255,255,.12);border-radius:50%;pointer-events:none}
+#pole .axis{position:absolute;font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:rgba(236,232,223,.6);white-space:nowrap}
+.mk{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:0;background:transparent;padding:0}
+.mk i{position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--faint);
+  box-shadow:0 0 0 2px rgba(2,3,8,.8);transition:transform .25s}
+.mk.pass i{background:var(--good);box-shadow:0 0 0 2px rgba(2,3,8,.8),0 0 14px rgba(143,227,180,.8)}
+.mk em{position:absolute;left:24px;top:2px;font-style:normal;font-family:var(--mono);font-size:.7rem;color:#fff;background:rgba(2,3,8,.7);
+  border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:1px 6px}
+.mk:hover i,.mk.sel i{transform:scale(1.5)}
+.mk.sel::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--pick);animation:ring 1.8s ease-out infinite}
+@keyframes ring{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.5);opacity:0}}
+.mk .tip{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);white-space:nowrap;font-size:.78rem;background:rgba(2,3,8,.85);
+  border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px 8px;opacity:0;pointer-events:none;transition:opacity .2s}
+.mk:hover .tip,.mk:focus-visible .tip{opacity:1}
+#poleinfo{inset:auto;left:4vw;top:10vh;width:min(21rem,30vw)}
+#poleinfo .title{font-size:clamp(2rem,3.6vw,3.2rem)}
+#poleinfo .summary{font-family:var(--mono);font-size:.78rem;color:var(--muted);margin-top:.6rem;line-height:1.7}
+#poleinfo .summary b{color:var(--ink);font-weight:500}
+#poleinfo .back{margin-top:.9rem;padding:.55rem 1rem;font-size:.66rem}
+#panel{position:absolute;right:3vw;top:9vh;bottom:6vh;width:min(27rem,92vw);display:flex;flex-direction:column;opacity:0;transform:translateX(20px);transition:opacity .8s,transform .8s}
+#panel.show{opacity:1;transform:none}
+#panel .head{padding:1.3rem 1.4rem .8rem;border-bottom:1px solid var(--glass-line)}
+#panel .head .count{font-family:var(--serif);font-size:1.6rem}
+#panel .head .count b{color:var(--good);font-weight:500}
+#panel .head p{margin:.35rem 0 0;font-size:.82rem;color:var(--muted);line-height:1.5}
+#list{list-style:none;margin:0;padding:.4rem .6rem;overflow:auto;flex:0 0 auto;max-height:30%}
+#list li button{width:100%;display:grid;grid-template-columns:2rem 1fr auto;align-items:center;gap:.6rem;background:none;border:0;
+  border-radius:10px;padding:.5rem .6rem;text-align:left}
+#list li button:hover{background:rgba(255,255,255,.05)}
+#list li button[aria-current=true]{background:rgba(255,210,122,.1)}
+#list .n{font-family:var(--mono);font-size:.78rem;color:var(--faint)}
+#list .nm{font-size:.92rem}
+#list .dot{width:9px;height:9px;border-radius:50%;background:var(--faint)}
+#list .pass .dot{background:var(--good)}
+#detail{border-top:1px solid var(--glass-line);padding:1.1rem 1.4rem 1.2rem;overflow:auto;flex:1}
+#detail h3{font-family:var(--serif);font-weight:400;font-size:1.9rem;margin:0}
+#detail .coords{font-family:var(--mono);font-size:.7rem;color:var(--faint);margin:.25rem 0 .8rem}
+.verdict{display:inline-block;font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;padding:.35rem .7rem;border-radius:999px;border:1px solid}
+.verdict.ok{color:var(--good);border-color:rgba(143,227,180,.5);background:rgba(143,227,180,.08)}
+.verdict.no{color:var(--bad);border-color:rgba(255,138,107,.5);background:rgba(255,138,107,.08)}
+.row{display:grid;grid-template-columns:1.8rem 1fr;gap:.2rem .7rem;margin-top:.95rem}
+.row .ic{font-size:1.25rem;line-height:1.2;text-align:center}
+.row .k{font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.row .v{grid-column:2;font-size:.95rem;line-height:1.4}
+.row .v b{font-family:var(--mono);font-weight:500}
+.bar{grid-column:2;height:5px;border-radius:3px;background:rgba(255,255,255,.08);position:relative;margin-top:.3rem}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
+.bar u{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;opacity:.85}
+.warn{color:var(--bad)} .fine{color:var(--good)}
+#detail .actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.2rem}
+#detail .actions .btn{padding:.7rem 1.1rem;font-size:.68rem}
+#detail .fine-print{font-size:.72rem;color:var(--faint);line-height:1.5;margin-top:1rem}
+
+/* ---------- scene 4: 3D ---------- */
+#s-site iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#04060a}
+#s-site .bar4{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:1rem;align-items:center;padding:.6rem .7rem .6rem 1.1rem;z-index:2;max-width:94vw}
+#s-site .bar4 p{margin:0;font-size:.8rem;color:var(--muted);line-height:1.4}
+#s-site .bar4 p b{color:var(--ink);font-weight:500}
+#s-site .bar4 .btn{padding:.55rem 1rem;font-size:.64rem;white-space:nowrap}
+
+#flash{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(170,205,255,.9),rgba(40,70,140,.6) 60%,rgba(2,3,8,0));opacity:0;z-index:15}
+#loading{position:fixed;inset:auto 0 40% 0;text-align:center;font-family:var(--mono);font-size:.72rem;letter-spacing:.3em;color:var(--muted);text-transform:uppercase;z-index:16;display:none}
+@media (max-width:820px){
+  #s-pad .intro{top:9vh;left:6vw;right:6vw} #s-pad .intro p{display:none}
+  #plan{top:auto;bottom:3vh;transform:none;right:4vw;left:4vw;width:auto}
+  #pole{--w:88vw;left:6vw;width:88vw;height:88vw;transform:translateY(-78%)}
+  #poleinfo{width:auto;right:6vw}
+  #panel{top:auto;height:44vh;left:3vw;right:3vw;width:auto;bottom:2vh}
+  #poleinfo{top:6vh} #rail{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+<nav id="rail" aria-label="Progress"><span data-s="0" class="on"><b>I</b>Earth</span><span data-s="1"><b>II</b>Launch</span><span data-s="2"><b>III</b>Moon</span><span data-s="3"><b>IV</b>Site</span></nav>
+<a id="expert" href="https://lunar-landing-navigator-team-of-aeers.streamlit.app/" target="_blank" rel="noopener">Expert mode ↗</a>
+
+<!-- I. Earth at night -->
+<section class="scene on" id="s-earth" aria-label="Start">
+  <div class="cam"><div class="px" data-depth="14">
+    <div class="map" id="earthmap"><img id="earthimg" src="https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&amp;REQUEST=GetMap&amp;VERSION=1.3.0&amp;STYLES=&amp;CRS=EPSG:4326&amp;BBOX=-90,-180,90,180&amp;FORMAT=image/jpeg&amp;LAYERS=VIIRS_Black_Marble&amp;WIDTH=4096&amp;HEIGHT=2048" alt=""><img id="dayimg" src="https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&amp;REQUEST=GetMap&amp;VERSION=1.3.0&amp;STYLES=&amp;CRS=EPSG:4326&amp;BBOX=-90,-180,90,180&amp;FORMAT=image/jpeg&amp;LAYERS=BlueMarble_NextGeneration&amp;WIDTH=2048&amp;HEIGHT=1024" alt=""><canvas id="daylight" width="720" height="360" hidden></canvas></div>
+  </div></div>
+  <div class="vignette"></div>
+  <div class="hero">
+    <p class="eyebrow">NASA Space Apps Challenge 2026 · Team_of_AEers</p>
+    <h1 class="title">Lunar Landing<br>Navigator</h1>
+    <p class="tag">Where to land depends on when you land.</p>
+    <button class="btn start pulse" id="start">Click to start</button>
+  </div>
+  <p class="credit" id="cr-earth"></p>
+  <p class="legend">Daylit side: where the Sun is up on Earth right now<br><span id="nowutc"></span></p>
+</section>
+
+<!-- II. Launch site -->
+<section class="scene" id="s-pad" aria-label="Plan the landing">
+  <div class="cam"><div class="px" data-depth="18"><div class="bg" id="padbg"><img id="padimg" src="https://images-assets.nasa.gov/image/Artemis%20II%20at%20the%20pad%20Full%20Snow%20Moon%2002012026_3/Artemis%20II%20at%20the%20pad%20Full%20Snow%20Moon%2002012026_3~large.jpg" alt="Full Moon rising over the Artemis II rocket at Launch Pad 39B"></div></div></div>
+  <div class="shade"></div>
+  <div class="px" data-depth="6"><div class="intro">
+    <p class="eyebrow">II · Before launch</p>
+    <h2 class="title">When will you<br>touch down?</h2>
+    <p>At the Moon's south pole the Sun and Earth skim the horizon. A ridge can hide them for days, so the same site can be perfect one week and dark the next.</p>
+  </div></div>
+  <form id="plan" class="glass" onsubmit="return false">
+    <h2>Plan your landing</h2>
+    <div class="field"><label for="date">Landing date (UTC)</label>
+      <input type="date" id="date" min="2027-01-01" max="2030-12-31" value="2028-01-01" required>
+      <small>Any day in 2027–2030, landing at 00:00 UTC.</small></div>
+    <div class="field"><span class="lab">Time on the surface</span>
+      <div class="seg" id="win" role="group" aria-label="Mission length">
+        <button type="button" data-w="7" aria-pressed="false">7 days</button>
+        <button type="button" data-w="14" aria-pressed="true">14 days</button>
+        <button type="button" data-w="28" aria-pressed="false">28 days</button></div></div>
+    <div class="field"><span class="lab">Your lander</span>
+      <div class="landers" id="lander" role="group" aria-label="Lander type">
+        <button type="button" data-s="15" aria-pressed="false"><svg viewBox="0 0 34 26"><path d="M11 6h12l3 9H8z"/><path d="M8 15l-5 9M26 15l5 9M17 15v9"/></svg><b>Agile</b><span>takes slopes ≤ 15°</span></button>
+        <button type="button" data-s="10" aria-pressed="true"><svg viewBox="0 0 34 26"><path d="M9 4h16l3 11H6z"/><path d="M6 15l-4 9M28 15l4 9"/><path d="M12 9h10"/></svg><b>Standard</b><span>takes slopes ≤ 10°</span></button>
+        <button type="button" data-s="5" aria-pressed="false"><svg viewBox="0 0 34 26"><path d="M13 1h8v6h-8z"/><path d="M7 7h20l2 9H5z"/><path d="M5 16l-3 8M29 16l3 8M12 16l-2 8M22 16l2 8"/></svg><b>Heavy</b><span>takes slopes ≤ 5°</span></button>
+      </div><small>Team presets. The slope limit is compared with each site's mean slope over 120 m (NASA LOLA, 40 m pixels).</small></div>
+    <button type="submit" class="btn solid" id="go">Proceed to the Moon →</button>
+  </form>
+  <p class="credit" id="cr-pad"></p>
+</section>
+
+<!-- III. Moon and south pole -->
+<section class="scene" id="s-moon" aria-label="Recommended landing sites">
+  <div class="cam" id="moonCam"><div class="px" data-depth="10">
+    <div id="moonwrap"><div id="moon"><img id="moonimg" src="https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001861/GSFC_20171208_Archive_e001861~large.jpg" alt=""></div></div>
+    <div id="pole" aria-label="Map of the lunar south pole with candidate sites">
+      <div class="disc"><img src="lroc-south-pole.jpg" alt="LROC WAC mosaic of the lunar south pole, 84°S to the pole"></div>
+      <div id="rings"></div><div id="marks"></div>
+    </div>
+  </div></div>
+  <div id="poleinfo" class="px" data-depth="4" style="opacity:0">
+    <p class="eyebrow">III · Lunar south pole</p>
+    <h2 class="title">Where the light stays.</h2>
+    <p class="summary" id="plansum"></p>
+    <button class="btn back" id="back2">← Change plan</button>
+  </div>
+  <aside id="panel" class="glass" aria-live="polite">
+    <div class="head"><div class="count" id="count"></div><p id="countnote"></p></div>
+    <ol id="list"></ol>
+    <div id="detail"></div>
+  </aside>
+  <p class="credit">South-pole map: NASA/GSFC/Arizona State University, LROC WAC mosaic via NASA Moon Trek · Sites: NASA Artemis III candidate regions · Results: NASA LRO LOLA terrain, checked against JPL Horizons<span id="cr-moon"></span></p>
+</section>
+
+<!-- IV. 3D site -->
+<section class="scene" id="s-site" aria-label="3D site view">
+  <iframe id="sim" title="Illustrative 3D lunar site scene" loading="lazy"></iframe>
+  <div class="bar4 glass"><p><b id="simsite"></b> · Illustrative 3D scene built by our team: procedural terrain and its own simplified Sun model, not the computed results above.</p>
+    <button class="btn" id="back3">← Back to sites</button></div>
+</section>
+
+<div id="flash"></div>
+<div id="loading">Loading lunar data…</div>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------- setup
+const $ = s => document.querySelector(s);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const STREAMLIT = 'https://lunar-landing-navigator-team-of-aeers.streamlit.app/';
+// Image credits. Filled in by the team when the NASA images in docs/assets/ are added.
+const CREDITS = {
+  earth: 'Earth: NASA VIIRS Black Marble (night) and Blue Marble Next Generation (day), served by NASA GIBS, as in NASA Worldview',
+  pad: 'Photo: NASA — full Moon over Artemis II at Launch Pad 39B, Kennedy Space Center, 1 Feb 2026 (images.nasa.gov)',
+  moon: 'Moon: NASA Scientific Visualization Studio, rendered from LRO LOLA elevation data',
+};
+const state = { scene: 0, dayIdx: 365, win: 14, slope: 10, data: null, ranked: [], sel: null };
+
+// ---------------------------------------------------------------- star field (procedural)
+const sc = $('#stars'), sx = sc.getContext('2d');
+let W = 0, H = 0, DPR = Math.min(2, devicePixelRatio || 1);
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R = rng(20261115), STARS = Array.from({length:900},()=>({x:R(),y:R(),z:R(),b:.35+.65*R(),t:R()*6.28}));
+function resize(){W=innerWidth;H=innerHeight;sc.width=W*DPR;sc.height=H*DPR;sx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',resize);resize();
+let mx=0,my=0,tx=0,ty=0,warp=0,warpT=0;
+addEventListener('pointermove',e=>{tx=(e.clientX/W-.5)*2;ty=(e.clientY/H-.5)*2});
+function frame(ts){
+  mx+=(tx-mx)*.06;my+=(ty-my)*.06;warp+=(warpT-warp)*.05;
+  sx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2;
+  for(const s of STARS){
+    const d=.3+s.z*1.7;
+    let x=s.x*W-(reduce?0:mx*d*10), y=s.y*H-(reduce?0:my*d*10);
+    const a=s.b*(.75+.25*Math.sin(ts/900+s.t));
+    sx.globalAlpha=a;sx.fillStyle='#fff';
+    if(warp>.02){const k=warp*d*.12;sx.strokeStyle='rgba(220,230,255,'+a+')';sx.lineWidth=d*.6;sx.beginPath();sx.moveTo(x,y);sx.lineTo(x+(x-cx)*k,y+(y-cy)*k);sx.stroke()}
+    else{sx.fillRect(x,y,d*.7,d*.7)}
+  }
+  sx.globalAlpha=1;
+  if(!reduce){const act=document.querySelector('.scene.on');if(act)act.querySelectorAll('.px').forEach(p=>{const k=+p.dataset.depth||0;p.style.transform=`translate3d(${-mx*k}px,${-my*k}px,0)`})}
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---------------------------------------------------------------- images with fallbacks
+function guard(img, box, key, el){
+  const ok=()=>{if(el&&CREDITS[key])el.textContent=CREDITS[key]}, bad=()=>box.classList.add('noimg');
+  if(img.complete){img.naturalWidth?ok():bad()}else{img.addEventListener('load',ok);img.addEventListener('error',bad)}
+}
+guard($('#earthimg'),$('#earthmap'),'earth',$('#cr-earth'));
+guard($('#padimg'),$('#padbg'),'pad',$('#cr-pad'));
+guard($('#moonimg'),$('#moon'),'moon',null);
+$('#moonimg').addEventListener('load',()=>{$('#cr-moon').textContent=' · '+CREDITS.moon});
+if($('#moonimg').complete&&$('#moonimg').naturalWidth)$('#cr-moon').textContent=' · '+CREDITS.moon;
+
+// ---------------------------------------------------------------- Earth day/night (computed, not decorative)
+function subsolar(date){ // low-precision solar position (about 0.01 deg), Astronomical Almanac formula
+  const n=date.getTime()/864e5+2440587.5-2451545.0, rad=Math.PI/180;
+  const L=(280.460+0.9856474*n)%360, g=(357.528+0.9856003*n)%360*rad;
+  const lam=(L+1.915*Math.sin(g)+0.020*Math.sin(2*g))*rad, eps=(23.439-0.0000004*n)*rad;
+  const dec=Math.asin(Math.sin(eps)*Math.sin(lam)), ra=Math.atan2(Math.cos(eps)*Math.sin(lam),Math.cos(lam));
+  const gmst=(280.46061837+360.98564736629*n)%360;
+  let lon=ra/rad-gmst; lon=((lon+540)%360)-180; return {lat:dec/rad, lon};
+}
+function drawDaylight(date){
+  const c=$('#daylight'),g=c.getContext('2d'),w=c.width,h=c.height,img=g.createImageData(w,h),s=subsolar(date),rad=Math.PI/180;
+  const sd=Math.sin(s.lat*rad),cd=Math.cos(s.lat*rad);
+  for(let j=0;j<h;j++){const lat=(90-(j+.5)*180/h)*rad,sl=Math.sin(lat),cl=Math.cos(lat);
+    for(let i=0;i<w;i++){const lon=(-180+(i+.5)*360/w)*rad,cz=sl*sd+cl*cd*Math.cos(lon-s.lon*rad);
+      const a=Math.max(0,Math.min(1,(cz+.04)/.12)), p=(j*w+i)*4;
+      img.data[p]=255;img.data[p+1]=255;img.data[p+2]=255;img.data[p+3]=a*255;}}
+  g.putImageData(img,0,0);
+  const day=$('#dayimg'),m=`url(${c.toDataURL()})`;day.style.webkitMaskImage=m;day.style.maskImage=m;
+  const on=()=>day.classList.add('ready');day.complete&&day.naturalWidth?on():day.addEventListener('load',on);
+  $('#nowutc').textContent=date.toISOString().slice(0,16).replace('T',' ')+' UTC';
+}
+drawDaylight(new Date());
+
+// ---------------------------------------------------------------- data
+function decode(b64){const bin=atob(b64),n=bin.length/2,out=new Uint16Array(n);for(let i=0;i<n;i++)out[i]=bin.charCodeAt(2*i)|bin.charCodeAt(2*i+1)<<8;return out}
+const dataReady=fetch('data/sites.json').then(r=>r.json()).then(d=>{
+  d.first=Date.UTC(...d.first_date.split('-').map((v,i)=>i==1?v-1:+v));
+  for(const s of d.sites)for(const w in s.series)for(const k in s.series[w])s.series[w][k]=decode(s.series[w][k]);
+  state.data=d;buildMap();return d;
+});
+
+// Same rules as src/planner.py rank_for_date, at 00:00 UTC, equal weights.
+function evaluate(s,day,win,maxSlope){
+  const L=state.data.limits_default,S=s.series[win],H=state.data.hours_per_window[win];
+  const sun=S.sun[day]/H,earth=S.earth[day]/H,sw=S.sun_worst[day]/H,ew=S.earth_worst[day]/H;
+  const why=[];
+  if(s.sun_long_term<L.min_sun_long_term)why.push('too little sunlight over the years');
+  if(s.earth_long_term<L.min_earth_long_term)why.push('Earth too often hidden over the years');
+  if(sun<L.min_sun_window)why.push('not enough sunlight during your mission');
+  if(earth<L.min_earth_window)why.push('Earth hidden for part of your mission');
+  if(s.slope_mean_deg>maxSlope)why.push('too steep for your lander');
+  const flat=Math.max(0,1-s.slope_mean_deg/maxSlope);
+  return {s,sun,earth,sw,ew,why,pass:!why.length,stable:sw>=L.min_sun_window&&ew>=L.min_earth_window,score:(sun+earth+flat)/3};
+}
+function rank(){
+  const {dayIdx,win,slope}=state;
+  state.ranked=state.data.sites.map(s=>evaluate(s,dayIdx,win,slope)).sort((a,b)=>(b.pass-a.pass)||(b.score-a.score));
+  state.ranked.forEach((r,i)=>r.rank=i+1);
+}
+function nearestPass(s){
+  const n=state.data.n_days,out={};
+  for(let d=state.dayIdx-1;d>=0;d--)if(evaluate(s,d,state.win,state.slope).pass){out.prev=d;break}
+  for(let d=state.dayIdx+1;d<n;d++)if(evaluate(s,d,state.win,state.slope).pass){out.next=d;break}
+  return out;
+}
+const fmtDay=d=>new Date(state.data.first+d*864e5).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+const pct=v=>Math.round(v*100)+'%';
+
+// ---------------------------------------------------------------- polar map
+function buildMap(){
+  const E=state.data.map_extent_km,rings=$('#rings'),R=1737.4;
+  for(const lat of [89,88,87,86,85]){const r=2*R*Math.tan((90-lat)*Math.PI/360)/(2*E)*100;
+    const d=document.createElement('div');d.className='ring';Object.assign(d.style,{left:50-r+'%',top:50-r+'%',width:2*r+'%',height:2*r+'%'});rings.appendChild(d);
+    const t=document.createElement('div');t.className='axis';t.textContent=lat+'°S';Object.assign(t.style,{left:'50.6%',top:50+r+'%',transform:'translateY(-110%)'});rings.appendChild(t)}
+  for(const [txt,l,t] of [['0° · Earth side',50,1.5],['90°E',97,50],['90°W',3,50],['180°',50,97]]){const a=document.createElement('div');a.className='axis';a.textContent=txt;Object.assign(a.style,{left:l+'%',top:t+'%',transform:'translate(-50%,-50%)'});rings.appendChild(a)}
+  for(const s of state.data.sites){const b=document.createElement('button');b.className='mk';b.setAttribute('aria-label',s.name);
+    b.style.left=50+s.x_km/(2*E)*100+'%';b.style.top=50-s.y_km/(2*E)*100+'%';
+    b.innerHTML='<i></i><em></em><span class="tip"></span>';b.querySelector('.tip').textContent=s.name;
+    b.onclick=()=>select(s.name);s._mk=b;$('#marks').appendChild(b)}
+}
+function renderResults(){
+  rank();
+  const passing=state.ranked.filter(r=>r.pass).length;
+  $('#plansum').innerHTML=`Landing <b>${fmtDay(state.dayIdx)}</b> · <b>${state.win} days</b> on the surface · lander takes slopes up to <b>${state.slope}°</b>`;
+  $('#count').innerHTML=`<b>${passing}</b> of ${state.ranked.length} sites work for your plan`;
+  $('#countnote').textContent=passing?'Green sites keep the Sun and Earth in view for at least 95% of your mission and are flat enough. Ranked by sunlight, Earth contact and flatness.':
+    'No site meets every condition on this date. Pick a site to see the nearest dates that would work.';
+  const ol=$('#list');ol.innerHTML='';
+  for(const r of state.ranked){const s=r.s;s._mk.classList.toggle('pass',r.pass);s._mk.querySelector('em').textContent=r.rank;
+    const li=document.createElement('li');li.innerHTML=`<button class="${r.pass?'pass':''}"><span class="n">${String(r.rank).padStart(2,'0')}</span><span class="nm"></span><span class="dot"></span></button>`;
+    li.querySelector('.nm').textContent=s.name;li.firstChild.onclick=()=>select(s.name);s._li=li.firstChild;ol.appendChild(li)}
+  select(state.ranked[0].s.name);
+}
+function select(name){
+  const r=state.ranked.find(x=>x.s.name===name);state.sel=r;const s=r.s;
+  state.data.sites.forEach(o=>{o._mk.classList.toggle('sel',o===s);o._li&&o._li.setAttribute('aria-current',o===s)});
+  s._li.scrollIntoView({block:'nearest'});
+  const phrase=(v,body)=>v>=1?`${body} for the <b>whole mission</b>`:v>=.95?`${body} <b>${pct(v)}</b> of the mission`:`${body} only <b>${pct(v)}</b> of the mission`;
+  const bar=(v,c)=>`<div class="bar"><i style="width:${v*100}%;background:${c}"></i><u style="left:95%" title="Required 95%"></u></div>`;
+  let delay;
+  if(r.stable) delay=`<span class="fine">Still fine if the landing moves by up to two weeks</span> (worst case: sunlight ${pct(r.sw)}, Earth ${pct(r.ew)}).`;
+  else delay=`<span class="warn">At risk if the landing moves by up to two weeks:</span> sunlight could fall to <b>${pct(r.sw)}</b> and Earth contact to <b>${pct(r.ew)}</b>.`;
+  let alt='';
+  if(!r.pass){const n=nearestPass(s),opts=[n.prev,n.next].filter(v=>v!==undefined);
+    alt=`<div class="row"><span class="ic">◷</span><span class="k">Dates that would work here</span><span class="v">${opts.length?opts.map(fmtDay).join(' or '):'None in 2027–2030 with this lander and mission length.'}</span></div>`}
+  $('#detail').innerHTML=`
+    <h3></h3><p class="coords">${Math.abs(s.lat).toFixed(2)}°S, ${Math.abs(s.lon).toFixed(2)}°${s.lon>=0?'E':'W'} · ${s.height_m.toLocaleString('en')} m above the reference sphere · rank ${r.rank}</p>
+    <span class="verdict ${r.pass?'ok':'no'}">${r.pass?'Works for your plan':'Not recommended on this date'}</span>
+    ${r.pass?'':`<p class="v warn" style="margin:.6rem 0 0;font-size:.88rem">Why: ${r.why.join('; ')}.</p>`}
+    <div class="row"><span class="ic" style="color:var(--sun)">☉</span><span class="k">Power · sunlight</span><span class="v">${phrase(r.sun,'Solar panels in sunlight')}</span>${bar(r.sun,'var(--sun)')}</div>
+    <div class="row"><span class="ic" style="color:var(--earth)">⊕</span><span class="k">Radio · Earth in view</span><span class="v">${phrase(r.earth,'Earth above the horizon')}</span>${bar(r.earth,'var(--earth)')}</div>
+    <div class="row"><span class="ic">△</span><span class="k">Ground · slope</span><span class="v">Mean slope <b>${s.slope_mean_deg.toFixed(1)}°</b> — ${s.slope_mean_deg<=state.slope?`<span class="fine">within your lander's ${state.slope}°</span>`:`<span class="warn">steeper than your lander's ${state.slope}°</span>`} (steepest spot ${s.slope_max_deg.toFixed(1)}°)</span></div>
+    <div class="row"><span class="ic">⧗</span><span class="k">If the date slips</span><span class="v">${delay}</span></div>
+    ${alt}
+    <div class="actions"><button class="btn solid" id="to3d">Enter the site in 3D →</button><a class="btn" href="${STREAMLIT}" target="_blank" rel="noopener">Full analysis ↗</a></div>
+    <p class="fine-print">Share of the mission with any part of the Sun's or Earth's disc above this site's terrain skyline, from NASA LRO LOLA elevation models, each site calibrated to NASA's 18.6-year averages. Estimates; eclipses not subtracted. Earth in view does not guarantee a link to a particular ground station.</p>`;
+  $('#detail h3').textContent=s.name;
+  $('#to3d').onclick=()=>toSite();
+}
+
+// ---------------------------------------------------------------- scene changes
+const scenes=['#s-earth','#s-pad','#s-moon','#s-site'].map(q=>$(q));
+function show(i){scenes.forEach((s,k)=>s.classList.toggle('on',k===i));state.scene=i;
+  document.querySelectorAll('#rail span').forEach(r=>r.classList.toggle('on',+r.dataset.s===i));
+  $('#rail').style.opacity=$('#expert').style.opacity=i===3?0:1;$('#expert').style.pointerEvents=i===3?'none':'';}
+const anim=(el,kf,ms,ease='cubic-bezier(.65,0,.35,1)')=>reduce?Promise.resolve():el.animate(kf,{duration:ms,easing:ease,fill:'forwards'}).finished;
+const wait=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
+let busy=false;
+async function guardRun(fn){if(busy)return;busy=true;try{await fn()}finally{busy=false}}
+
+// I -> II : dive through the atmosphere
+$('#start').onclick=()=>guardRun(async()=>{
+  const cam=scenes[0].querySelector('.cam');
+  anim(scenes[0].querySelector('.hero'),[{opacity:1},{opacity:0,transform:'scale(1.08)'}],700);
+  const f=anim($('#flash'),[{opacity:0},{opacity:0,offset:.45},{opacity:1,offset:.8},{opacity:0}],2200,'ease-in');
+  await anim(cam,[{transform:'scale(1)',filter:'blur(0)'},{transform:'scale(7) translateY(-4%)',filter:'blur(6px)'}],1800,'cubic-bezier(.7,0,.84,0)');
+  show(1);
+  anim(scenes[1].querySelector('.cam'),[{transform:'scale(1.25)',filter:'blur(8px)'},{transform:'scale(1)',filter:'blur(0)'}],1600,'cubic-bezier(.16,1,.3,1)');
+  await f; cam.getAnimations().forEach(a=>a.cancel());
+});
+
+// form controls
+function pressGroup(id,key){$(id).querySelectorAll('button').forEach(b=>b.onclick=()=>{$(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));state[key]=+b.dataset[key==='win'?'w':'s']})}
+pressGroup('#win','win');pressGroup('#lander','slope');
+
+// II -> III : lift off, cross space, arrive at the Moon, descend to the pole
+$('#go').onclick=()=>guardRun(async()=>{
+  const v=$('#date').value; if(!v){$('#date').focus();return}
+  if(!state.data){$('#loading').style.display='block';await dataReady;$('#loading').style.display='none'}
+  const d=Math.round((Date.UTC(...v.split('-').map((x,i)=>i==1?x-1:+x))-state.data.first)/864e5);
+  state.dayIdx=Math.max(0,Math.min(state.data.n_days-1,d));
+  const padCam=scenes[1].querySelector('.cam');
+  anim($('#plan'),[{opacity:1},{opacity:0,transform:'translateY(-40%)'}],600);
+  warpT=1;
+  await anim(padCam,[{transform:'translateY(0) scale(1)',opacity:1},{transform:'translateY(60%) scale(.85)',opacity:0}],1500,'cubic-bezier(.7,0,.84,0)');
+  show(2); renderResults();
+  const moonwrap=$('#moonwrap'),pole=$('#pole');
+  pole.style.opacity=0;$('#panel').classList.remove('show');$('#poleinfo').style.opacity=0;moonwrap.style.opacity=1;
+  await anim(moonwrap,[{transform:'translate(-50%,-50%) scale(.08)',opacity:0},{transform:'translate(-50%,-50%) scale(1)',opacity:1}],2200,'cubic-bezier(.16,1,.3,1)');
+  warpT=0;
+  await wait(250);
+  // tilt down to the south pole: move the bottom of the disc to the centre while zooming in
+  const a1=anim(moonwrap,[{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:'translate(-50%,-120%) scale(3.2)',opacity:0}],1700,'cubic-bezier(.65,0,.35,1)');
+  await wait(900);
+  await anim(pole,[{opacity:0,transform:getComputedStyle(pole).transform+' scale(.6)'},{opacity:1,transform:getComputedStyle(pole).transform}],1100,'cubic-bezier(.16,1,.3,1)');
+  pole.style.opacity=1; await a1; moonwrap.style.opacity=0;
+  $('#poleinfo').style.opacity=1;$('#panel').classList.add('show');
+  pole.getAnimations().forEach(a=>a.cancel());
+  $('#plan').getAnimations().forEach(a=>a.cancel());padCam.getAnimations().forEach(a=>a.cancel());
+});
+
+// III -> II
+$('#back2').onclick=()=>guardRun(async()=>{show(1);$('#plan').getAnimations().forEach(a=>a.cancel())});
+
+// III -> IV : fall into the chosen site
+function toSite(){guardRun(async()=>{
+  const s=state.sel.s,mk=s._mk.getBoundingClientRect(),cam=$('#moonCam');
+  cam.style.transformOrigin=`${mk.left+mk.width/2}px ${mk.top+mk.height/2}px`;
+  $('#panel').classList.remove('show');
+  await anim(cam,[{transform:'scale(1)',opacity:1},{transform:'scale(9)',opacity:0}],1500,'cubic-bezier(.7,0,.84,0)');
+  const f=$('#sim'); if(!f.src)f.src='Lunar%20Landing%20Site%20Simulator%20(1).html';
+  $('#simsite').textContent=s.name; show(3);
+  cam.getAnimations().forEach(a=>a.cancel());
+})}
+$('#back3').onclick=()=>guardRun(async()=>{show(2);$('#panel').classList.add('show')});
+
+addEventListener('keydown',e=>{if(e.key==='Enter'&&state.scene===0)$('#start').click()});
+</script>
+</body>
+</html>

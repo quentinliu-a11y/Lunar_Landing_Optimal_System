@@ -72,7 +72,15 @@ List everything here as you use it. The submission form asks for all of it.
 - Python libraries: Streamlit, Plotly, pandas, NumPy, PyERFA (see `requirements.txt`). PyERFA supplies the Earth and Moon position routines `epv00` and `moon98`.
 - Moon rotation model: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report (Archinal et al., 2011, Celestial Mechanics and Dynamical Astronomy 109, 101).
 
+### Web front end resources (15 Nov)
+- NASA GIBS WMS (gibs.earthdata.nasa.gov), layers VIIRS_Black_Marble and BlueMarble_NextGeneration: Earth background, loaded by the visitor's browser.
+- NASA image "Full Moon Rising Over Full Artemis II Stack at Launch Pad 39B", 1 Feb 2026, images.nasa.gov (Artemis II at the pad Full Snow Moon 02012026_3).
+- NASA Scientific Visualization Studio "Full Moon" render from LRO LOLA data, images.nasa.gov (GSFC_20171208_Archive_e001861).
+- Fonts: Cormorant Garamond, IBM Plex Sans, IBM Plex Mono (Google Fonts, SIL Open Font License).
+- `docs/Lunar Landing Site Simulator (1).html`: teammate's 3D scene, labelled in it as an illustrative mock model; embedded as scene IV with that label.
+
 ### AI tools used and for what
+- Claude (Anthropic), 15 Nov: cinematic web front end `docs/index.html` (four scenes from the team's storyboard) and `src/export_web_data.py`, which exports the planner's results to `docs/data/sites.json`; checked that the page ranks exactly as `planner.rank_for_date` in 45 date/mission/slope cases. Star field and gradients are drawn in code; no AI-generated pictures.
 - Claude (Anthropic): visual redesign of the interface on 15 Nov (dark theme, Sun amber / Earth blue throughout, site read-out bars marking the worst case if the landing slips). Layout, flow and all numbers unchanged; fonts Space Grotesk and IBM Plex Mono (Google Fonts, SIL Open Font License).
 - Claude (Anthropic): reviewed and merged the OpenAI Codex interface (PR #1): confirmed the logic files were untouched, compared the basemap with a fresh NASA Moon Trek export (identical; flipped and 10 km shifted copies differ), ran it in headless Chrome, and adjusted label legibility, heat-map axes, map scrolling and the placement of the landing-slip result. Made the map test work with newer Plotly versions.
 - OpenAI Codex: redesigned `src/app.py` as an ivory/forest polar atlas; added map selection, zoom/pan, an hourly horizon explorer, cached planner queries and on-demand workspace views. Preserved Claude's slope/weight/slip/date/custom-coordinate results. Added the visual theme, UI regression tests and image provenance. Reviewed actual desktop/mobile screenshots; offset crowded map labels without moving site coordinates and corrected axis spacing. Three logic modules are byte-for-byte unchanged from main f778f41. Tested 8 UI regressions, 11 planner checks, JPL Horizons comparisons, real map click/zoom/reset and timeline keyboard interaction. One local timeline update measured 384 ms; no real-device frame-rate claim. Independent code review was interrupted by a reviewer usage limit; the observed cross-view state issue was fixed and regression-tested.
