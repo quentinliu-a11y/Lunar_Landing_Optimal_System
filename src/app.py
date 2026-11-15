@@ -181,7 +181,8 @@ def query(method: str, *args, **kwargs):
 
 @st.cache_data(show_spinner=False, max_entries=32)
 def custom_conditions(lat: float, lon: float, landing: dt.datetime, window: int):
-    return planner.custom_site(lat, lon, landing, window)
+    # v2 (15 Nov): terrain skyline from the LOLA grid near the south pole.
+    return planner.custom_site(lat, lon, landing, window, use_terrain=True)
 
 
 @st.cache_resource(show_spinner="Computing Sun and Earth positions for 2027-2030...")
