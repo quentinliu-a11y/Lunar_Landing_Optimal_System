@@ -125,3 +125,5 @@ Team_of_AEers
 |---|---|---|
 | Qiming | @quentinliu-a11y | |
 | Surani | @amansurani92 | Solar power & comms |
+| Ratnesh | | |
+| Zhehao | | |
