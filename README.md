@@ -150,7 +150,7 @@ Team_of_AEers
 
 | Name | GitHub | Role |
 |---|---|---|
-| Qiming | @quentinliu-a11y | |
+| Qiming | @quentinliu-a11y | System architecture and optimisation |
 | Surani | @amansurani92 | Solar power & comms |
-| Ratnesh | | |
-| Zhehao | | |
+| Ratnesh | | Computing resources; finding data and resources |
+| Zhehao | | Computing resources; finding data and resources |
