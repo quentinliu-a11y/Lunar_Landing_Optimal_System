@@ -48,6 +48,7 @@ Changing the date is instant: all Sun and Earth positions for 2027–2030 are co
 |---|---|
 | LOLA average Sun and Earth visibility maps, 60 m/pixel (LRO, PDS Geosciences Node) | Choosing the best point in each region; long-term limits; calibration |
 | LOLA elevation models LDEM_85S_40M and LDEM_75S_120M (LRO, PDS Geosciences Node) | Terrain skyline around each site; slope |
+| LROC WAC south-pole mosaic (LRO, NASA/GSFC/Arizona State University, via Moon Trek) | Background image of the map; display only |
 | Artemis III candidate region outlines (Moon Trek) | The list of candidate sites |
 | JPL Horizons (DE441) | Checking our Sun and Earth positions |
 
@@ -60,6 +61,7 @@ Exact files, links and other references are listed in `PROGRESS.md`.
 - **Sun visibility** differs from NASA's map by 6.5 points on average and 17 at worst. Near the pole the Sun grazes the skyline, so tens of metres of position or terrain change the answer. We therefore shift each site's skyline by one constant so that our long-term average equals NASA's figure, and use that calibrated skyline for specific dates.
 - **Lunar eclipses** found by the tool in 2027–2030 fall on the dates of the known eclipses in that period.
 - The ranking rules are covered by `tests/test_planner.py`.
+- **The map image** is byte-for-byte the NASA Moon Trek export for the stated area, and is placed on the map at that same area; flipped or shifted copies do not match.
 
 ## Limits of the tool
 
@@ -79,6 +81,7 @@ pip install -r requirements.txt
 streamlit run src/app.py
 python tests/test_ephemeris.py
 python tests/test_planner.py
+python tests/test_interface.py
 ```
 
 ## Repository layout
@@ -90,7 +93,7 @@ python tests/test_planner.py
 | `src/planner.py` | Date-specific conditions, limits, ranking, stability, nearest dates, custom coordinates |
 | `src/app.py` | The interface (Streamlit): date page, ranked map, sky panorama, date comparison, custom coordinates |
 | `data/` | Processed NASA data: skylines, calibration, slopes, visibility statistics |
-| `tests/` | Checks against JPL Horizons and of the ranking rules |
+| `tests/` | Checks against JPL Horizons, of the ranking rules, and of the interface |
 | `docs/design-principles.md` | Design decisions, limits and measured figures |
 | `docs/physics-and-coordinates.md` | Derivation of the geometry and how it maps to the code |
 | `docs/ui-interface.md` | Contract between the calculation engine and the interface |

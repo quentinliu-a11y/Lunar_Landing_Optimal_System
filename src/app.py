@@ -1,4 +1,5 @@
 # AI-generated interface redesign by OpenAI Codex, based on Claude's working interface.
+# Reviewed and adjusted by Claude (Anthropic), 2026-11-15: label legibility, heat-map margins, slip result shown directly.
 """Lunar Landing Optimal System - polar atlas interface.
 
 AI-assisted: written by Claude (Anthropic), 2026-11-14.
@@ -197,7 +198,7 @@ def page_date() -> None:
             window = st.slider("Mission length on the surface (days)", 1, 60, st.session_state.window_days,
                                help="Visibility is assessed over this period after landing.")
             st.caption("2027–2030 · UTC throughout · Hourly estimates")
-            submitted = st.form_submit_button("Find landing sites →", type="primary", use_container_width=True)
+            submitted = st.form_submit_button("Find landing sites →", type="primary", width="stretch")
             if submitted:
                 if date is None or time is None:
                     st.error("Enter a landing date and time to continue.")
@@ -211,7 +212,7 @@ def page_date() -> None:
         sites = overview_sites()
         st.markdown(f'<div class="atlas-heading"><span>POLAR ATLAS</span><span>{len(sites)} CANDIDATE REGIONS</span></div>',
                     unsafe_allow_html=True)
-        st.plotly_chart(polar_map(sites, "", overview=True), use_container_width=True,
+        st.plotly_chart(polar_map(sites, "", overview=True), width="stretch",
                         config={"displayModeBar": False, "scrollZoom": False}, theme=None)
         st.caption("Artemis III candidate regions · NASA LOLA coordinates. Mission rankings follow your date selection.")
         image_credit()
@@ -235,7 +236,7 @@ def polar_map(ranked: pd.DataFrame, selected: str, overview: bool = False) -> go
         fig.add_trace(go.Scatter(x=r * np.sin(ang), y=r * np.cos(ang), mode="lines",
                                  line=dict(color="rgba(211,225,219,.18)", width=1), hoverinfo="skip", showlegend=False))
         fig.add_annotation(x=0, y=-r, text=f"{-lat}°S", showarrow=False, yshift=-8,
-                           font=dict(color="#7b8794", size=10))
+                           font=dict(color="#dfe8e1", size=10), bgcolor="rgba(16,41,35,.72)", borderpad=1)
     for lon in range(0, 360, 30):
         a = math.radians(lon)
         fig.add_trace(go.Scatter(x=[0, max_r * math.sin(a)], y=[0, max_r * math.cos(a)], mode="lines",
@@ -243,7 +244,7 @@ def polar_map(ranked: pd.DataFrame, selected: str, overview: bool = False) -> go
     for text, x, y, xs, ys in (("0° (towards Earth)", 0, max_r, 0, 12), ("90°E", max_r, 0, 22, 0),
                                ("90°W", -max_r, 0, -22, 0), ("180°", 0, -max_r, 0, -22)):
         fig.add_annotation(x=x, y=y, text=text, showarrow=False, xshift=xs, yshift=ys,
-                           font=dict(color="#cbd5e1", size=11))
+                           font=dict(color="#f4f4e9", size=11), bgcolor="rgba(16,41,35,.72)", borderpad=2)
 
     colours = [PICK if r.site == selected else (PASS if r.passes else FAIL) for r in ranked.itertuples()]
     if overview:
@@ -353,7 +354,7 @@ def horizon_explorer(site: str, window: int, landing: dt.datetime) -> None:
         fig = margin_chart(tl)
         fig.add_vline(x=current.time_utc, line=dict(color=PICK, width=2))
         note = "Above zero, the top edge of the body clears its calibrated terrain limit; below zero it is hidden."
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, theme=None)
+    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False}, theme=None)
     st.caption(note)
     st.caption("Earth visible means any part of its disc; it does not guarantee a link to a specific ground station. "
                "Sun and Earth positions checked against NASA JPL Horizons: within 0.01°. "
@@ -388,6 +389,8 @@ def date_heatmap(scan: pd.DataFrame, order: list[str], landing_day: dt.date, col
         fig.add_vline(x=pd.Timestamp(landing_day), line=dict(color=PICK, width=2))
     dark_layout(fig, 430)
     fig.update_layout(title=dict(text=title, font=dict(color="#203631", size=15)), margin=dict(l=10, r=10, t=45, b=10))
+    fig.update_yaxes(automargin=True, tickfont=dict(size=11, color="#203631"))
+    fig.update_xaxes(tickformat="%b %Y", dtick="M2", tickfont=dict(size=11, color="#203631"), automargin=True)
     return fig
 
 
@@ -450,6 +453,11 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
     c2.metric("Earthset in", short(row.hours_to_earthset, row.earth_up_at_landing, "Earth"),
               help="Time from landing until Earth next goes behind terrain.")
     c3.metric("Sun height", f"{row.sun_el_at_landing:+.1f}°", help="Sun elevation at landing, relative to a level horizon.")
+    slip = limits["slip_days"]
+    if slip:
+        st.markdown(f"**If the landing slips by up to {slip} days:** sunlight could fall to "
+                    f"**{row.sun_window_worst:.0%}** and Earth contact to **{row.earth_window_worst:.0%}**. "
+                    + ("Still meets the mission limits." if row.stable else "Would no longer meet the mission limits."))
     with st.expander("Resilience, terrain & long-term record"):
         c1, c2, c3 = st.columns(3)
         c1.metric("Longest dark", f"{row.longest_dark_h:.0f}h")
@@ -460,11 +468,6 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
         st.write(f"Earth elevation at landing: **{row.earth_el_at_landing:+.2f}°**. "
                  f"Sun / Earth terrain margins: **{row.sun_margin_at_landing:+.2f}° / "
                  f"{row.earth_margin_at_landing:+.2f}°**.")
-        slip = limits["slip_days"]
-        if slip:
-            st.markdown(f"**Landing slip ±{slip} days:** sunlight could fall to **{row.sun_window_worst:.0%}** "
-                        f"and Earth contact to **{row.earth_window_worst:.0%}**. "
-                        + ("Still meets the mission limits." if row.stable else "Would no longer meet the mission limits."))
 
     near = query("nearest_passing_dates", landing_dt(), window, **limit_args(limits))
     near = near.set_index("site").loc[site]
@@ -510,7 +513,7 @@ def page_sites() -> None:
         if sum(limits["weights"].values()) == 0:
             st.warning("All weights are zero; using equal weights.")
             limits["weights"] = None
-        st.form_submit_button("Apply criteria", type="primary", use_container_width=True)
+        st.form_submit_button("Apply criteria", type="primary", width="stretch")
 
     ranked = query("rank_for_date", landing_dt(), window, **limits)
     if st.session_state.selected_site not in list(ranked.site):
@@ -544,14 +547,14 @@ def page_sites() -> None:
         with map_col:
             st.markdown('<div class="atlas-heading"><span>SOUTH POLAR STEREOGRAPHIC</span><span>84°S–90°S</span></div>',
                         unsafe_allow_html=True)
-            st.plotly_chart(polar_map(ranked, st.session_state.selected_site), use_container_width=True,
-                            config={"displayModeBar": True, "displaylogo": False, "scrollZoom": True,
+            st.plotly_chart(polar_map(ranked, st.session_state.selected_site), width="stretch",
+                            config={"displayModeBar": True, "displaylogo": False, "scrollZoom": False,
                                     "modeBarButtonsToRemove": ["select2d", "lasso2d", "toImage", "autoScale2d"]}, theme=None,
                             key="site_map", on_select=choose_from_map, selection_mode="points")
             st.markdown(f'<div class="legend"><span><b style="color:{PASS}">●</b>Meets limits</span>'
                         f'<span><b style="color:{FAIL}">●</b>Below a limit</span>'
                         f'<span><b style="color:{PICK}">◉</b>Selected</span></div>', unsafe_allow_html=True)
-            st.caption("Click a site · Scroll to zoom · Drag to pan · Double-click to reset. Numbers are ranks; "
+            st.caption("Click a site · Zoom with the buttons on the map · Drag to pan · Double-click to reset. Numbers are ranks; "
                        "labels connect to the true NASA LOLA positions.")
             image_credit()
 
@@ -566,7 +569,7 @@ def page_sites() -> None:
             "sun_window_worst": "Sunlight if slipped", "earth_window_worst": "Contact if slipped",
             "eclipse_hours": "Eclipse (h)", "passes": "Passes", "fail_reasons": "Why not"})
         bar = dict(format="percent", min_value=0, max_value=1)
-        st.dataframe(table, hide_index=True, use_container_width=True, column_config={
+        st.dataframe(table, hide_index=True, width="stretch", column_config={
             "Score": st.column_config.NumberColumn(format="%.2f"),
             "Sunlight": st.column_config.ProgressColumn(**bar),
             "Earth contact": st.column_config.ProgressColumn(**bar),
@@ -589,7 +592,7 @@ def page_sites() -> None:
         column = {"Lower of sunlight and Earth contact": "both", "Sunlight in mission": "sun_window",
                   "Earth contact in mission": "earth_window"}[metric]
         st.plotly_chart(date_heatmap(scan, order, landing_dt().date(), column, metric),
-                        use_container_width=True, theme=None)
+                        width="stretch", theme=None)
         st.caption("Visibility only, not a pass/fail map. Sunlight ratios do not subtract lunar eclipse hours; "
                    "inspect a mission in Sites for its eclipse duration. " + ESTIMATE_NOTE)
         best = query("best_dates", st.session_state.selected_site, window)
@@ -622,7 +625,7 @@ def page_sites() -> None:
         dark_layout(fig, 320)
         fig.update_xaxes(title="Time (UTC)", gridcolor="#dce1d8")
         fig.update_yaxes(title="Elevation above a level horizon (degrees)", gridcolor="#dce1d8")
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, theme=None)
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False}, theme=None)
 
     st.caption("Data: NASA LRO LOLA visibility maps and elevation models (PDS Geosciences Node), Artemis III "
                "candidate regions (Moon Trek). Sun and Earth positions checked against NASA JPL Horizons.")

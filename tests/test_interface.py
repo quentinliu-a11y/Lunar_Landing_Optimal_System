@@ -13,6 +13,16 @@ sys.path.insert(0, str(ROOT / "src"))
 from sites import load_sites
 
 
+def plotted(values):
+    """Chart coordinates as a list. Newer Plotly versions store arrays as base64 binary."""
+    if isinstance(values, dict) and "bdata" in values:
+        import base64
+
+        import numpy as np
+        return np.frombuffer(base64.b64decode(values["bdata"]), dtype=values["dtype"]).tolist()
+    return list(values)
+
+
 class InterfaceTests(unittest.TestCase):
     def start(self):
         app = AppTest.from_file(str(ROOT / "src/app.py"), default_timeout=25).run()
@@ -50,8 +60,9 @@ class InterfaceTests(unittest.TestCase):
         spec = json.loads(app.get("plotly_chart")[0].proto.spec)
         points = spec["data"][-1]
         actual = load_sites().set_index("site")
-        self.assertEqual(len(points["x"]), 13)
-        for x, y, fields in zip(points["x"], points["y"], points["customdata"]):
+        xs, ys = plotted(points["x"]), plotted(points["y"])
+        self.assertEqual(len(xs), 13)
+        for x, y, fields in zip(xs, ys, points["customdata"]):
             self.assertAlmostEqual(x, actual.loc[fields[0], "x_km"])
             self.assertAlmostEqual(y, actual.loc[fields[0], "y_km"])
         image = spec["layout"]["images"][0]
