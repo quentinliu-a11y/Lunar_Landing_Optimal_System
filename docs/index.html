@@ -272,10 +272,13 @@ a{color:inherit}
       <div class="landers" id="lander" role="group" aria-label="Lander type">
         <button type="button" data-v="10" data-name="Nova-C class" aria-pressed="true"><svg viewBox="0 0 34 26"><path d="M11 3h12l3 12H8z"/><path d="M8 15l-5 9M26 15l5 9M17 15v9"/></svg><b>Nova-C class</b><span>robotic · slopes ≤ 10°</span></button>
         <button type="button" data-v="8" data-name="Crewed lander" aria-pressed="false"><svg viewBox="0 0 34 26"><path d="M14 1h6v16h-6z"/><path d="M12 9h10M14 17l-6 7M20 17l6 7"/></svg><b>Crewed lander</b><span>Starship HLS · tilt ≤ 8°</span></button>
-        <button type="button" data-v="custom" data-name="Custom lander" aria-pressed="false"><svg viewBox="0 0 34 26"><path d="M17 3v20M7 13h20"/><circle cx="17" cy="13" r="8"/></svg><b>Custom</b><span>enter your limit</span></button>
+        <button type="button" data-v="custom" data-name="Custom lander" aria-pressed="false"><svg viewBox="0 0 34 26"><path d="M17 3v20M7 13h20"/><circle cx="17" cy="13" r="8"/></svg><b>Custom</b><span>enter your limits</span></button>
       </div>
-      <div class="custom" id="slopecustom" hidden><input type="number" id="slopeval" min="1" max="20" step="0.5" value="12" aria-label="Maximum slope in degrees"><span>° maximum slope (1–20)</span></div>
-      <small>Nova-C: built to stay upright on slopes of 10° or more (<a href="https://en.wikipedia.org/wiki/IM-1" target="_blank" rel="noopener">IM-1</a>). Crewed: NASA's tilt limit for its human landers (<a href="https://oig.nasa.gov/wp-content/uploads/2026/03/final-report-ig-26-004-nasas-management-of-the-human-landing-system-contracts.pdf" target="_blank" rel="noopener">NASA OIG IG-26-004</a>). Compared with each site's mean slope over 120 m (NASA LOLA, 40 m pixels).</small></div>
+      <div class="custom" id="slopecustom" hidden style="flex-direction:column;align-items:flex-start">
+        <label class="custom" style="margin:0"><input type="number" id="slopeval" min="1" max="20" step="0.5" value="12" aria-label="Maximum slope in degrees"><span>° maximum slope (1–20)</span></label>
+        <label class="custom" style="margin:0"><input type="number" id="sunval" min="50" max="100" step="1" value="95" aria-label="Sunlight needed during the mission, percent"><span>% sunlight needed (50–100)</span></label>
+        <label class="custom" style="margin:0"><input type="number" id="earthval" min="50" max="100" step="1" value="95" aria-label="Earth contact needed during the mission, percent"><span>% Earth contact (50–100)</span></label></div>
+      <small>Nova-C: built to stay upright on slopes of 10° or more (<a href="https://en.wikipedia.org/wiki/IM-1" target="_blank" rel="noopener">IM-1</a>). Crewed: NASA's tilt limit for its human landers (<a href="https://oig.nasa.gov/wp-content/uploads/2026/03/final-report-ig-26-004-nasas-management-of-the-human-landing-system-contracts.pdf" target="_blank" rel="noopener">NASA OIG IG-26-004</a>). Compared with each site's mean slope over 120 m (NASA LOLA, 40 m pixels). Both presets need sunlight and Earth in view for 95% of the mission (our default); a custom lander sets its own.</small></div>
     <p id="planerr" class="warn" role="alert" style="margin:0;font-size:.85rem"></p>
     <button type="submit" class="btn solid" id="go">Proceed to the Moon →</button>
   </form>
@@ -327,7 +330,7 @@ const CREDITS = {
   pad: 'Photo: NASA — full Moon over Artemis II at Launch Pad 39B, Kennedy Space Center, 1 Feb 2026 (images.nasa.gov)',
   moon: 'Moon: NASA Scientific Visualization Studio, rendered from LRO LOLA elevation data',
 };
-const state = { scene: 0, dayIdx: 365, win: 14, slope: 10, lander: 'Nova-C class', minEarth: .95, data: null, ranked: [], sel: null };
+const state = { scene: 0, dayIdx: 365, win: 14, slope: 10, lander: 'Nova-C class', minSun: .95, baseEarth: .95, minEarth: .95, data: null, ranked: [], sel: null };
 
 // ---------------------------------------------------------------- star field (procedural)
 const sc = $('#stars'), sx = sc.getContext('2d');
@@ -411,7 +414,9 @@ const dataReady=fetch('data/sites.json').then(r=>r.json()).then(d=>{
   state.data=d;buildMap();return d;
 });
 
-// Same rules as src/planner.py rank_for_date, at 00:00 UTC, equal weights.
+// Same rules as src/planner.py rank_for_date, at 00:00 UTC, equal base weights:
+// score = (sunlight margin x its slip stability + Earth margin x its slip stability + flatness) / 3.
+const margin=(v,lim)=>Math.max(0,Math.min(1,(v-lim)/Math.max(1-lim,1e-9)));
 function evaluate(s,day,win,maxSlope){
   const D=state.data,L=D.limits_default,H=D.hours_per_day*win,ps=s.P_sun,pe=s.P_earth;
   const sun=(ps[day+win]-ps[day])/H,earth=(pe[day+win]-pe[day])/H;
@@ -421,11 +426,13 @@ function evaluate(s,day,win,maxSlope){
   const why=[];
   if(s.sun_long_term<L.min_sun_long_term)why.push('too little sunlight over the years');
   if(s.earth_long_term<L.min_earth_long_term)why.push('Earth too often hidden over the years');
-  if(sun<L.min_sun_window)why.push('not enough sunlight during your mission');
+  if(sun<state.minSun)why.push('not enough sunlight during your mission');
   if(earth<state.minEarth)why.push('Earth hidden for part of your mission');
   if(s.slope_mean_deg>maxSlope)why.push('too steep for your lander');
   const flat=Math.max(0,1-s.slope_mean_deg/maxSlope);
-  return {s,sun,earth,sw,ew,why,pass:!why.length,stable:sw>=L.min_sun_window&&ew>=state.minEarth,score:(sun+earth+flat)/3};
+  const ks=sun>0?Math.min(1,sw/sun):0,ke=earth>0?Math.min(1,ew/earth):0; // share of today's value left in the worst case
+  return {s,sun,earth,sw,ew,ks,ke,why,pass:!why.length,stable:sw>=state.minSun&&ew>=state.minEarth,
+    score:(ks*margin(sun,state.minSun)+ke*margin(earth,state.minEarth)+flat)/3};
 }
 function rank(){
   const {dayIdx,win,slope}=state;
@@ -458,15 +465,15 @@ function renderResults(){
   const passing=state.ranked.filter(r=>r.pass).length;
   $('#plansum').innerHTML=`Landing <b>${fmtDay(state.dayIdx)}</b> · <b>${state.win} days</b> on the surface · <b>${state.lander}</b>, slopes up to <b>${state.slope}°</b>`;
   $('#count').innerHTML=`<b>${passing}</b> of ${state.ranked.length} sites work for your plan`;
-  const eReq=Math.round(state.minEarth*100);
-  const relaxed=state.minEarth<.95?` <span class="warn">Earth contact relaxed to ${eReq}%.</span> <button class="linkbtn" id="resetEarth">Back to 95%</button>`:'';
-  if(passing){$('#countnote').innerHTML=`Green sites keep the Sun in view for at least 95% and Earth for at least ${eReq}% of your mission, and are flat enough. Ranked by sunlight, Earth contact and flatness.`+relaxed}
+  const eReq=Math.round(state.minEarth*100),sReq=Math.round(state.minSun*100),bReq=Math.round(state.baseEarth*100);
+  const relaxed=state.minEarth<state.baseEarth?` <span class="warn">Earth contact relaxed to ${eReq}%.</span> <button class="linkbtn" id="resetEarth">Back to ${bReq}%</button>`:'';
+  if(passing){$('#countnote').innerHTML=`Green sites keep the Sun in view for at least ${sReq}% and Earth for at least ${eReq}% of your mission, and are flat enough for your lander. Ranked by their margin above those limits; a margin that would not survive a slip of the date counts for less.`+relaxed}
   else{
     // Why nothing passes, and the best this date allows. Long missions: Earth dips below the polar horizon in every ~27-day libration cycle.
     const best=[...state.ranked].sort((a,b)=>Math.min(b.sun,b.earth)-Math.min(a.sun,a.earth))[0];
-    const earthBest=Math.max(...state.ranked.filter(r=>r.sun>=.95&&r.s.slope_mean_deg<=state.slope).map(r=>r.earth),0);
+    const earthBest=Math.max(...state.ranked.filter(r=>r.sun>=state.minSun&&r.s.slope_mean_deg<=state.slope).map(r=>r.earth),0);
     const step=Math.floor(earthBest*100/5)*5;
-    let why=state.win>=21?`For missions longer than about three weeks no south-pole site keeps Earth in view 95% of the time: Earth's wobble in the lunar sky (libration, about 27 days) takes it below the horizon for part of every cycle.`
+    let why=state.win>=21&&state.baseEarth>=.95?`For missions longer than about three weeks no south-pole site keeps Earth in view 95% of the time: Earth's wobble in the lunar sky (libration, about 27 days) takes it below the horizon for part of every cycle.`
                           :`No site meets every condition on this date.`;
     why+=` Best here: <b>${best.s.name}</b> (sunlight ${pct(best.sun)}, Earth ${pct(best.earth)}).`;
     if(step>=50&&step<eReq)why+=` <button class="linkbtn" id="relaxEarth">Accept Earth contact ≥ ${step}%</button>`;
@@ -474,7 +481,7 @@ function renderResults(){
     $('#countnote').innerHTML=why+relaxed;
     const b=$('#relaxEarth');if(b)b.onclick=()=>{state.minEarth=step/100;renderResults()};
   }
-  {const b=$('#resetEarth');if(b)b.onclick=()=>{state.minEarth=.95;renderResults()};}
+  {const b=$('#resetEarth');if(b)b.onclick=()=>{state.minEarth=state.baseEarth;renderResults()};}
   const ol=$('#list');ol.innerHTML='';
   for(const r of state.ranked){const s=r.s;s._mk.classList.toggle('pass',r.pass);s._mk.querySelector('em').textContent=r.rank;
     const li=document.createElement('li');li.innerHTML=`<button class="${r.pass?'pass':''}"><span class="n">${String(r.rank).padStart(2,'0')}</span><span class="nm"></span><span class="dot"></span></button>`;
@@ -486,7 +493,7 @@ function select(name){
   state.data.sites.forEach(o=>{o._mk.classList.toggle('sel',o===s);o._li&&o._li.setAttribute('aria-current',o===s)});
   s._li.scrollIntoView({block:'nearest'});
   const phrase=(v,body)=>v>=1?`${body} for the <b>whole mission</b>`:v>=.95?`${body} <b>${pct(v)}</b> of the mission`:`${body} only <b>${pct(v)}</b> of the mission`;
-  const bar=(v,c,req=.95)=>`<div class="bar"><i style="width:${v*100}%;background:${c}"></i><u style="left:${req*100}%" title="Required ${Math.round(req*100)}%"></u></div>`;
+  const bar=(v,c,req=state.minSun)=>`<div class="bar"><i style="width:${v*100}%;background:${c}"></i><u style="left:${req*100}%" title="Required ${Math.round(req*100)}%"></u></div>`;
   let delay;
   if(r.stable) delay=`<span class="fine">Still fine if the landing moves by up to two weeks</span> (worst case: sunlight ${pct(r.sw)}, Earth ${pct(r.ew)}).`;
   else delay=`<span class="warn">At risk if the landing moves by up to two weeks:</span> sunlight could fall to <b>${pct(r.sw)}</b> and Earth contact to <b>${pct(r.ew)}</b>.`;
@@ -503,6 +510,7 @@ function select(name){
     <div class="row"><span class="ic">⧗</span><span class="k">If the date slips</span><span class="v">${delay}</span></div>
     ${alt}
     <div class="actions"><button class="btn solid" id="to3d">Enter the site in 3D →</button><a class="btn" href="${STREAMLIT}" target="_blank" rel="noopener">Full analysis ↗</a></div>
+    <p class="fine-print">Score ${r.score.toFixed(2)}: the margin above your lander's limits for sunlight, Earth contact and slope. The sunlight and Earth margins are weighted by the share that would be left if the date slips by up to two weeks (here ×${r.ks.toFixed(2)} and ×${r.ke.toFixed(2)}); slope does not change with the date.</p>
     <p class="fine-print">Share of the mission with any part of the Sun's or Earth's disc above this site's terrain skyline, from NASA LRO LOLA elevation models, each site calibrated to NASA's 18.6-year averages. Estimates; eclipses not subtracted. Earth in view does not guarantee a link to a particular ground station.</p>`;
   $('#detail h3').textContent=s.name;
   setFormula(r);
@@ -516,10 +524,10 @@ function setFormula(r){
   if(!r||!state.data){fd.textContent='date';fs.textContent='site';fd.classList.remove('set');fs.classList.remove('set');fo.innerHTML='<span class="dots">others</span>';res.classList.remove('show');res.innerHTML='';fo.dataset.key='';return}
   const flip=(el,txt)=>{if(el.textContent===txt&&el.classList.contains('set'))return;el.textContent=txt;el.classList.remove('set');void el.offsetWidth;el.classList.add('set')};
   flip(fd,fmtDay(state.dayIdx));flip(fs,r.s.name);
-  const key=r.s.name+state.dayIdx+state.win+state.slope+'/'+state.minEarth;if(fo.dataset.key===key)return;fo.dataset.key=key;
+  const key=r.s.name+state.dayIdx+state.win+state.slope+'/'+state.minSun+'/'+state.minEarth;if(fo.dataset.key===key)return;fo.dataset.key=key;
   const terms=[
-    [`<span class="s">☉</span> <i class="lbl">sunlight </i><b>${pct(r.sun)}</b>`, r.sun>=.95],
-    [`<span class="e">⊕</span> <i class="lbl">Earth </i><b>${pct(r.earth)}</b>`, r.earth>=.95],
+    [`<span class="s">☉</span> <i class="lbl">sunlight </i><b>${pct(r.sun)}</b>`, r.sun>=state.minSun],
+    [`<span class="e">⊕</span> <i class="lbl">Earth </i><b>${pct(r.earth)}</b>`, r.earth>=state.minEarth],
     [`△ <i class="lbl">slope </i><b>${r.s.slope_mean_deg.toFixed(1)}°</b>`, r.s.slope_mean_deg<=state.slope],
     [`⧗ <i class="lbl">if slipped </i><b>${pct(Math.min(r.sw,r.ew))}</b>`, r.stable],
     [`◷ <b>${state.win} d</b><i class="lbl"> on surface</i>`, true],
@@ -582,13 +590,16 @@ function readPlan(){ // returns an error message or '' and fills state
   let sl=lb.dataset.v==='custom'?Number($('#slopeval').value):Number(lb.dataset.v);
   if(!Number.isInteger(w)||w<1||w>60){$('#winval').focus();return 'Enter a whole number of days from 1 to 60.'}
   if(!(sl>=1&&sl<=20)){$('#slopeval').focus();return 'Enter a slope limit from 1 to 20 degrees.'}
-  state.win=w;state.slope=sl;state.lander=lb.dataset.name;return '';
+  const own=lb.dataset.v==='custom',ms=own?Number($('#sunval').value):95,me=own?Number($('#earthval').value):95;
+  if(!(ms>=50&&ms<=100)){$('#sunval').focus();return 'Enter the sunlight your lander needs, from 50 to 100 percent.'}
+  if(!(me>=50&&me<=100)){$('#earthval').focus();return 'Enter the Earth contact your lander needs, from 50 to 100 percent.'}
+  state.win=w;state.slope=sl;state.lander=lb.dataset.name;state.minSun=ms/100;state.baseEarth=me/100;return '';
 }
 
 // II -> III : lift off, cross space, arrive at the Moon, descend to the pole
 $('#go').onclick=()=>guardRun(async()=>{
   const v=$('#date').value; if(!v){$('#date').focus();$('#planerr').textContent='Pick a landing date in 2027–2030.';return}
-  const err=readPlan();$('#planerr').textContent=err;if(err)return;state.minEarth=.95;
+  const err=readPlan();$('#planerr').textContent=err;if(err)return;state.minEarth=state.baseEarth;
   if(!state.data){$('#loading').style.display='block';await dataReady;$('#loading').style.display='none'}
   const d=Math.round((Date.UTC(...v.split('-').map((x,i)=>i==1?x-1:+x))-state.data.first)/864e5);
   state.dayIdx=Math.max(0,Math.min(state.data.n_days-1,d));

@@ -14,7 +14,7 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 3 | Ephemeris pipeline: Sun and Earth elevation over time for one site (flat horizon) | Claude (for Qiming) | done | `src/ephemeris.py`; checked against JPL Horizons at 10 points, within 0.003° elevation |
 | 4 | Terrain horizon for preset sites, precomputed | Claude (for Qiming) | done | `data/terrain_horizons.txt` (13 sites), `data/horizon_calibration.json`. Before calibration: Earth visibility within 0.5 points of NASA at 9 of 13 sites; Sun differs 6.5 points on average, 17 at worst |
 | 5 | Metrics per scenario (sunlit %, longest darkness, Earth visible %, longest blackout) | Claude (for Qiming) | done | `src/planner.py`, terrain skyline included; ran for 2027–2030 |
-| 6 | Weighted score and ranking | Claude (for Qiming) | done | Done in `src/planner.py`: five limits, three-factor weighted score, slip stability columns, nearest passing dates, best dates per site, custom coordinates (no terrain), eclipse detection; 11 checks in `tests/test_planner.py` pass. Not done (dropped for time): Pareto set |
+| 6 | Weighted score and ranking | Claude (for Qiming) | done | Done in `src/planner.py`: five limits, three-factor score (dynamic weights since task 24), slip stability columns, nearest passing dates, best dates per site, custom coordinates (no terrain), eclipse detection; 11 checks in `tests/test_planner.py` pass. Not done (dropped for time): Pareto set |
 | 7 | App: scenario comparison view and timelines | Claude (for Qiming) | done | `src/app.py`: two-step flow, ranked map, site panel, sky panorama, visibility timeline, custom coordinates. Deployed: https://lunar-landing-navigator-team-of-aeers.streamlit.app/ |
 | 8 | Site × date heatmap (robustness to delay) | Claude (for Qiming) | done | "Compare dates" tab in `src/app.py`; slip worst case shown per site |
 | 9 | Demo: 7 slides or 30-second video, in English | Claude (for Qiming) | done | `docs/demo/` (PowerPoint and PDF), public at https://quentinliu-a11y.github.io/Lunar_Landing_Optimal_System/demo/Lunar_Landing_Navigator_TeamOfAEers.pdf |
@@ -34,6 +34,7 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 21 | Realistic 3D: airless lighting and shadows, regolith texture, NASA Blue Marble Earth turned for the hour, Face Sun / Face Earth views, Play and Re-plan buttons, smooth sunrise/sunset | Claude (for Qiming) | done | Earth orientation checked against the almanac subsolar point (0.2°) |
 | 22 | Analysis app: links to tour/3D/code, lander picker, long-mission (libration) explanation with "accept best Earth contact", 3D button per site, data-scale strip, 18-column site table with CSV download, DSN ground stations and weather (`src/groundlink.py`) | Claude (for Qiming) | done | DSN Moon elevations match astropy within 0.001° (3 complexes, 48 hours, Jan 2028); 20 tests pass; pages checked in headless Chromium. Ground link is an extra indicator, not part of the score |
 | 23 | Terrain for custom coordinates (`src/terrain.py`, `data/lola_spole_500m.npz`); Earth-rotation explanation in the app | Claude (for Qiming) | done | Grid heights within 41 m of the 13 sites; skyline mean RMS 0.83° vs the 40/120 m skylines; custom-site visibility vs planner: about 10 percentage points mean difference on three test dates; 21 tests pass |
+| 24 | Dynamic-weight score, lander limits in the tour, review fixes, document refresh | Claude (for Qiming) | done | `planner.rank_for_date` and `docs/index.html` give identical order, pass/fail and score in 432 cases; 21 automated checks pass; unused helpers removed from `src/sites.py` and `src/ephemeris.py` |
 | 18 | Lander presets with sources | team (helper research) | done | Nova-C 10° (IM-1, Wikipedia), crewed lander tilt 8° (NASA OIG IG-26-004); Blue Ghost slope not published |
 
 ## Proposed split for three people
@@ -53,12 +54,14 @@ Tasks 1, 11 and 12 are shared. First step for everyone: agree the file formats a
 | Date | Decision | Why |
 |---|---|---|
 | 14 Nov | Tool is date-first: pick a landing date, see conditions, go to a map of recommended sites | Team lead's concept |
-| 15 Nov | Recorded for the AI-use statement (README, `docs/submission.md`): the three-level menu (date and time, then site, then that site's detailed views) and the factors of slip stability, flatness and the Sun and Earth coinciding were settled in the team's discussions; the whole design concept of the web pages is Qiming's | Stated by Qiming |
 | 14 Nov | Rank a fixed list of named sites instead of scoring every pixel | Achievable by the deadline; scores are explainable |
 | 14 Nov | Top three factors: sunlight ratio, Earth communication availability, flatness | Team lead's choice |
 | 14 Nov | Logic code and visual interface are built separately; the interface only calls the logic (`docs/ui-interface.md`) | Team lead's choice |
 | 14 Nov | Date-specific results come from a table precomputed once, so date changes are lookups | Team lead: transitions must be smooth |
 | 14 Nov | Some factors act as hard limits before scoring | Team lead's choice; default values in `docs/design-principles.md` |
+| 15 Nov | Score uses dynamic weights: margin above the lander's limits, sunlight and Earth weights scaled by stability if the landing slips | Qiming's idea (dynamic weights driven by stability); formula worked out by Claude after a review showed the old score followed slope almost alone |
+| 15 Nov | Limits describe the lander; the tour's custom lander sets slope, sunlight and Earth-contact needs | Qiming: the thresholds depend on the lander's design |
+| 15 Nov | AI-use statement records who decided what: three-level menu, factors (slip stability, flatness, Sun and Earth coinciding) and the web design concept from the team; extent of brainstorming with AI; third-party sources | Stated by Qiming |
 
 | 14 Nov | Physics derivation records explicit parameters without adopting mission-window, disc-visibility, observer-height or weighting defaults | Documentation scope only; open team decisions remain open |
 
@@ -96,6 +99,7 @@ List everything here as you use it. The submission form asks for all of it.
 - `docs/site-3d.html`: teammate's 3D scene (three.js, MIT license, embedded in the file). On 15 Nov Claude replaced its mock sites, Sun/Earth model and horizon with the team's data, switched to airless lighting, and restyled it.
 
 ### AI tools used and for what
+- Claude (Anthropic), 15 Nov 21:30: reviewed the whole project and scored it from three viewpoints; designed and implemented the dynamic-weight score from Qiming's description (`src/planner.py`, `docs/index.html`, `src/app.py`), added sunlight and Earth-contact needs to the tour's custom lander, removed unused helpers, and brought README, `docs/design-principles.md`, `docs/ui-interface.md`, `docs/submission.md` and `AGENTS.md` up to date.
 - Claude (Anthropic), 15 Nov 20:40: consistency fixes after a review of the project: Horizons agreement stated as within 0.003° (measured 0.0023°), 21 automated checks on demo slide 6, README limits for custom coordinates, date-range wording in the analysis app, 3D page renamed to `docs/site-3d.html` (the old address redirects), and the AI-use statement rewritten from Qiming's account of who decided what.
 - Claude (Anthropic), 15 Nov night: analysis-app update (task 22) and `src/groundlink.py` (DSN visibility of the Moon and rain climatology for Ka-band links).
 - Claude (Anthropic), 15 Nov evening: tour heading animation, real star field, 3D realism and camera views, the 7-slide demo deck (`docs/demo/`, built with pptxgenjs from screenshots of our own tool; slide backgrounds from the NASA ISS photograph ISS027-E-012224 (Earth limb at sunset over South America, 12 Apr 2011, images.nasa.gov; cropped and darkened, lens flare faded); no AI-generated images), and this documentation update.

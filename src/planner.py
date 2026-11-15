@@ -194,6 +194,16 @@ def conditions(lookup: Lookup, landing_utc: dt.datetime, window_days: int, slip_
 DEFAULT_WEIGHTS = {"sunlight": 1.0, "earth": 1.0, "flatness": 1.0}
 
 
+def _margin(value: pd.Series, limit: float) -> pd.Series:
+    """Share of the room between a limit and 100% that a value uses (0 at or below the limit)."""
+    return ((value - limit) / max(1.0 - limit, 1e-9)).clip(0.0, 1.0)
+
+
+def _share_left(worst: pd.Series, today: pd.Series) -> pd.Series:
+    """worst / today, 0-1 (0 when today's value is 0)."""
+    return (worst / today.where(today > 0)).fillna(0.0).clip(0.0, 1.0)
+
+
 def rank_for_date(
     lookup: Lookup,
     landing_utc: dt.datetime,
@@ -206,23 +216,28 @@ def rank_for_date(
     weights: dict | None = None,
     slip_days: int = 14,
 ) -> pd.DataFrame:
-    """Apply the limits and rank the sites for a landing date.
+    """Apply the lander's limits and rank the sites for a landing date.
 
     Limits (a site failing any of them is listed after all passing sites):
     long-term Sun and Earth visibility, mission-window Sun and Earth
-    visibility, and mean slope within 120 m of the site.
+    visibility, and mean slope within 120 m of the site. The mission-window
+    and slope limits describe the lander: what its power, radio and legs need.
 
-    Score (0-1) = weighted average of three factor scores, each 0-1:
-      sunlight = mission-window Sun ratio
-      earth    = mission-window Earth ratio
-      flatness = 1 - mean slope / max_slope_deg (0 when the slope is at or over the limit)
-    `weights` maps "sunlight", "earth", "flatness" to non-negative numbers;
-    equal weights by default. The weighting scheme is provisional.
+    Score (0-1) = sum of weight x margin over three factors, divided by the sum of the base weights.
+      Margin (0-1): how much of the room above the lander's limit the site uses.
+        sun_score   = (mission-window Sun ratio - min_sun_window) / (1 - min_sun_window)
+        earth_score = same for Earth
+        flatness    = 1 - mean slope / max_slope_deg
+      Dynamic weight = base weight x stability, per site and date.
+        sun_stability   = sun_window_worst / sun_window: the share of today's sunlight that is left
+                          in the worst case if the landing moves by up to `slip_days` days either way
+        earth_stability = same for Earth
+        flatness does not change with the date, so its stability is 1.
+    A margin that would not survive a slip therefore counts for less. `weights` maps "sunlight",
+    "earth", "flatness" to non-negative base weights (equal by default). Columns w_sun, w_earth and
+    w_flat are the dynamic weights as shares of the base total; score = w_sun * sun_score + ...
 
-    Stability columns (not part of the score): sun_window_worst and
-    earth_window_worst are the lowest window ratios if the landing moves by up
-    to `slip_days` days either way; stable is True when the site would still
-    meet the two mission-window limits in that worst case.
+    stable is True when the site would still meet the two mission-window limits in the worst case.
     """
     w = {**DEFAULT_WEIGHTS, **(weights or {})}
     total = sum(w.values())
@@ -248,9 +263,14 @@ def rank_for_date(
         reasons.append("; ".join(why))
     out["fail_reasons"] = reasons
     out["passes"] = out["fail_reasons"] == ""
-    out["score"] = (
-        w["sunlight"] * out["sun_window"] + w["earth"] * out["earth_window"] + w["flatness"] * out["flatness"]
-    ) / total
+    out["sun_score"] = _margin(out["sun_window"], min_sun_window)
+    out["earth_score"] = _margin(out["earth_window"], min_earth_window)
+    out["sun_stability"] = _share_left(out["sun_window_worst"], out["sun_window"])
+    out["earth_stability"] = _share_left(out["earth_window_worst"], out["earth_window"])
+    out["w_sun"] = w["sunlight"] * out["sun_stability"] / total
+    out["w_earth"] = w["earth"] * out["earth_stability"] / total
+    out["w_flat"] = w["flatness"] / total
+    out["score"] = out["w_sun"] * out["sun_score"] + out["w_earth"] * out["earth_score"] + out["w_flat"] * out["flatness"]
     out = out.sort_values(["passes", "score"], ascending=[False, False]).reset_index(drop=True)
     out["rank"] = out.index + 1
     return out

@@ -509,8 +509,12 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
                f"surface height {row.height_m:,.0f} m")
     slip = limits["slip_days"]
     if row.passes:
-        st.markdown(f'<div class="verdict">Meets all five limits · provisional score {row.score:.2f}</div>',
+        st.markdown(f'<div class="verdict">Meets all five limits · score {row.score:.2f}</div>',
                     unsafe_allow_html=True)
+        st.caption(f"Score: margin above your lander's limits × dynamic weight. Weights here: sunlight {row.w_sun:.2f}, "
+                   f"Earth contact {row.w_earth:.2f}, flatness {row.w_flat:.2f}. The sunlight and Earth weights are their "
+                   f"base share × the share of today's value left if the landing slips ±{slip} days; "
+                   "flatness does not change with the date.")
     else:
         st.markdown('<div class="verdict no">Not recommended on this date</div>', unsafe_allow_html=True)
         st.caption("Why: " + row.fail_reasons + ".")
@@ -590,8 +594,8 @@ def page_sites() -> None:
         st.rerun()
 
     with st.sidebar:
-        st.subheader("Mission criteria")
-        st.caption("Set your limits, then apply them together.")
+        st.subheader("Lander requirements")
+        st.caption("The limits describe your lander: what its power, radio and legs need. Set them, then apply together.")
     with st.sidebar.form("criteria"):
         st.markdown("**Visibility & terrain**")
         limits = dict(
@@ -602,7 +606,7 @@ def page_sites() -> None:
             min_earth_long_term=st.slider("Minimum long-term Earth visibility", 0, 100, 50, 5, format="%d%%", key="criterion_long_earth") / 100,
             slip_days=st.slider("Possible landing slip (days either way)", 0, 30, 14, key="criterion_slip"),
         )
-        st.markdown("**Score weights**")
+        st.markdown("**Base weights** (scaled per site by slip stability)")
         limits["weights"] = {
             "sunlight": st.slider("Sunlight", 0.0, 3.0, 1.0, 0.5, key="criterion_weight_sun"),
             "earth": st.slider("Earth contact", 0.0, 3.0, 1.0, 0.5, key="criterion_weight_earth"),
@@ -653,8 +657,10 @@ def page_sites() -> None:
                "(Sun and Earth elevation and azimuth per site and hour, for landings in 2027–2030 and missions of up to 60 days), checked against NASA JPL Horizons, "
                "with terrain skylines from NASA LOLA elevation models.")
     weights = limits["weights"] or dict(sunlight=1, earth=1, flatness=1)
-    st.caption(f"Score weights · Sunlight {weights['sunlight']:g} · Earth contact {weights['earth']:g} · "
-               f"Flatness {weights['flatness']:g}. Provisional weighted score. Edit in the criteria sidebar (top left).")
+    st.caption(f"Base weights · Sunlight {weights['sunlight']:g} · Earth contact {weights['earth']:g} · "
+               f"Flatness {weights['flatness']:g}. Score = margin above the lander's limits × dynamic weight: each site's "
+               "sunlight and Earth weights shrink with the share lost if the landing slips. "
+               "Edit limits and weights in the sidebar (top left).")
     view = st.radio("Workspace", ["Sites", "Compare dates", "Custom coordinates"], horizontal=True,
                     label_visibility="collapsed", key="workspace")
 

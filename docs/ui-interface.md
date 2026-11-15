@@ -92,7 +92,10 @@ scan   = planner.date_scan(lookup, window_days=14)                    # about 0.
 | `eclipse_hours` | hours | Hours in the window during which Earth covers part or all of the Sun (lunar eclipse). Sunlight ratios do not subtract these |
 | `passes` | true/false | Meets all five limits (two long-term, two mission-window, slope) |
 | `fail_reasons` | text | Which limits failed; empty when the site passes |
-| `score` | 0–1 | Weighted average of three factor scores: `sun_window`, `earth_window`, `flatness`. Equal weights by default; provisional |
+| `sun_score`, `earth_score` | 0–1 | Margin above the lander's limit: (ratio − limit) ÷ (1 − limit), 0 at or below the limit |
+| `sun_stability`, `earth_stability` | 0–1 | Worst-case ratio ÷ ratio on the chosen date |
+| `w_sun`, `w_earth`, `w_flat` | 0–1 | Dynamic weights: base weight × stability (flatness: × 1), as shares of the base total |
+| `score` | 0–1 | `w_sun` × `sun_score` + `w_earth` × `earth_score` + `w_flat` × `flatness`. See `docs/design-principles.md` section 5 |
 
 `timeline` returns hourly rows: `time_utc`, `sun_el`, `sun_az`, `earth_el`, `earth_az`, `sun_margin`, `earth_margin`, `sun_up`, `earth_up`. Use it for the elevation chart and to draw the Sun's and Earth's paths on the panorama.
 
@@ -115,7 +118,7 @@ The limit arguments shown below can be passed to `nearest_passing_dates` and `pa
 
 Limits are arguments of `rank_for_date`: `min_sun_long_term`, `min_earth_long_term` (default 0.5), `min_sun_window`, `min_earth_window` (default 0.95) and `max_slope_deg` (default 10, applied to `slope_mean_deg`).
 
-Weights are the `weights` argument, for example `weights={"sunlight": 2, "earth": 1, "flatness": 1}`. Give the user sliders for the limits and the three weights, and always show the weights in use.
+Weights are the `weights` argument, for example `weights={"sunlight": 2, "earth": 1, "flatness": 1}`. These are base weights; the dynamic weights actually used are in `w_sun`, `w_earth` and `w_flat`. Give the user sliders for the limits and the three base weights, and always show the weights in use.
 
 ### Must be shown with these values
 

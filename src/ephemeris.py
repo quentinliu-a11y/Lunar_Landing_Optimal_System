@@ -20,8 +20,6 @@ south-pole sites, Jan-Feb 2028; see tests/test_ephemeris.py for the result.
 
 from __future__ import annotations
 
-import datetime as dt
-
 import erfa
 import numpy as np
 
@@ -139,8 +137,3 @@ def sky_positions(lat_deg: float, lon_deg: float, times_utc, height_km: float = 
         "earth_radius_deg": np.degrees(np.arcsin(EARTH_RADIUS_KM / earth_dist)),
     }
 
-
-def hourly_times(start_utc: dt.datetime, days: float, step_hours: float = 1.0) -> np.ndarray:
-    n = int(round(days * 24 / step_hours)) + 1
-    start = np.datetime64(start_utc.replace(tzinfo=None), "ms")
-    return start + (np.arange(n) * step_hours * 3_600_000).astype("timedelta64[ms]")

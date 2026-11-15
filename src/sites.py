@@ -78,17 +78,3 @@ def rank_sites(sites: pd.DataFrame, min_sun: float, min_earth: float) -> pd.Data
     out["rank"] = out.index + 1
     return out
 
-
-def sites_as_records(min_sun: float = 0.5, min_earth: float = 0.5) -> list[dict]:
-    """Ranked sites as plain dictionaries, for interfaces not written in Python."""
-    ranked = rank_sites(load_sites(), min_sun, min_earth)
-    ranked["skyline"] = ranked["skyline"].apply(lambda a: [round(float(v), 2) for v in a])
-    return json.loads(ranked.to_json(orient="records"))
-
-
-if __name__ == "__main__":
-    # python src/sites.py > sites.json   (optional: min_sun min_earth, e.g. 0.6 0.5)
-    import sys
-
-    limits = [float(a) for a in sys.argv[1:3]]
-    print(json.dumps(sites_as_records(*limits), indent=2))

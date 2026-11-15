@@ -40,10 +40,11 @@ Scoring factors:
 Decided since (15 Nov):
 
 - Stack: Python calculation engine (`src/`), Streamlit analysis app (`src/app.py`, deployed on Streamlit Community Cloud) and a static guided tour (`docs/index.html`, GitHub Pages) that reads `docs/data/sites.json` exported by `src/export_web_data.py`. Re-run the export after any change to `src/planner.py` or `data/`.
-- Score: equal weights by default; users can change them in the analysis app.
+- Score: margin above the lander's limits with dynamic weights (base weight × stability if the landing slips); formula in `docs/design-principles.md` section 5. Equal base weights by default; users can change them in the analysis app. The tour computes the same score in JavaScript: change both together.
 - Mission window: chosen by the user, 1–60 days from the landing time.
 - Sites: the 13 Artemis III candidate regions.
-- Factors: sunlight, Earth contact and flatness as limits and score; slip stability (±14 days) shown separately.
+- Factors: sunlight, Earth contact and flatness as limits and score; slip stability (±14 days) is shown and also scales the sunlight and Earth weights.
+- Limits describe the lander. The tour's custom lander sets slope, sunlight and Earth-contact needs.
 
 ## 3. Domain facts you must get right
 

@@ -29,17 +29,17 @@ Full analysis app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 **Why Earth's rotation does not change the results.** Where Earth appears in the lunar sky depends on the Moon's orbit and orientation, both modelled hourly; Earth's spin only changes which side of Earth faces the Moon. That matters for which ground antenna is in view, which is why the Deep Space Network view above models Earth's rotation (IAU 2006/2000A).
 
-**How it works.** For each site we computed the terrain skyline in 360 directions from NASA LOLA elevation models (40 m per pixel within 25 km, 120 m per pixel out to 300 km), for a mast 2 m above the surface. Sun and Earth directions are computed for every hour of 2027–2030 with the ERFA library and the IAU lunar rotation model. A body counts as visible when the top edge of its disc is above the skyline. Results are stored in a lookup table with running totals, so any mission window is answered immediately. Sites must pass hard limits (by default at least 95% sunlight and 95% Earth contact during the mission, at least 50% of each in the long term, and a mean slope of at most 10°); sites that pass are ordered by a weighted score of sunlight, Earth contact and flatness. The user can change every limit and weight.
+**How it works.** For each site we computed the terrain skyline in 360 directions from NASA LOLA elevation models (40 m per pixel within 25 km, 120 m per pixel out to 300 km), for a mast 2 m above the surface. Sun and Earth directions are computed for every hour of 2027–2030 with the ERFA library and the IAU lunar rotation model. A body counts as visible when the top edge of its disc is above the skyline. Results are stored in a lookup table with running totals, so any mission window is answered immediately. Sites must pass hard limits that describe the lander (by default at least 95% sunlight and 95% Earth contact during the mission, a mean slope of at most 10°, and at least 50% sunlight and Earth visibility in the long term). Sites that pass are ordered by a score with dynamic weights: each factor scores its margin above the lander's limit, and the sunlight and Earth weights are scaled, for each site and date, by the share of that day's value that would be left if the landing slips by up to 14 days. Flatness does not change with the date, so it keeps its full weight. A margin that would not survive a schedule slip therefore counts for less. The user can change every limit, the base weights and the slip window.
 
 **Why it matters.** Long-term average maps hide large date-to-date changes. Example from the tool: Nobile Rim 1 has 100% sunlight and 100% Earth contact for a 14-day mission landing on 1 January 2028, but if that landing slips by up to 14 days the worst case is 41% sunlight and 46% Earth contact. On that date only 2 of the 13 sites meet the default limits.
 
 **How we checked it.** Sun and Earth positions agree with NASA JPL Horizons (DE441) within 0.003° in elevation and 0.008° in azimuth at 10 reference points. The map image is identical to the NASA Moon Trek export for the stated area. Deep Space Network Moon elevations agree with the astropy library within 0.001°. The terrain grid used for custom coordinates reproduces the 13 sites' heights within 41 m and their high-resolution skylines with a mean RMS difference of 0.83°. The ranking rules and the interface are covered by automated tests in the repository (21 checks).
 
-**Limits we want judges to know.** Results are estimates. Our uncalibrated terrain result differed from NASA's long-term Sun visibility by 6.5 percentage points on average, so each site's skyline is adjusted by one constant so that its 18.6-year average equals NASA's published value. Eclipse hours are reported but not subtracted from the sunlight share. "Earth visible" means any part of Earth's disc is above the terrain; it does not guarantee a link to a particular ground station. Custom coordinates use a coarser (500 m), uncalibrated terrain grid: for the 13 named sites it differs from our calibrated results by about 10 percentage points on average, more when the Sun or Earth grazes a ridge; outside about 80°S they fall back to a flat horizon. The 10° slope limit is a default chosen by the team, not a NASA requirement.
+**Limits we want judges to know.** Results are estimates. Our uncalibrated terrain result differed from NASA's long-term Sun visibility by 6.5 percentage points on average, so each site's skyline is adjusted by one constant so that its 18.6-year average equals NASA's published value. Eclipse hours are reported but not subtracted from the sunlight share. "Earth visible" means any part of Earth's disc is above the terrain; it does not guarantee a link to a particular ground station. Custom coordinates use a coarser (500 m), uncalibrated terrain grid: for the 13 named sites it differs from our calibrated results by about 10 percentage points on average, more when the Sun or Earth grazes a ridge; outside about 80°S they fall back to a flat horizon. The default limits (95% sunlight, 95% Earth contact, 10° slope) are the team's stand-ins for a lander's real requirements, not NASA requirements; with them a 14-day mission has a passing site on 18.6% of landing dates in 2027–2030.
 
 **3D site view.** From the tour, the chosen site opens in 3D for the chosen date and mission. The Sun and Earth move along their computed hourly paths, the ridge around the lander follows the site's NASA LOLA skyline, real stars (HYG catalogue) and a NASA Blue Marble Earth are placed for the exact hour, and sunlight casts long shadows with no atmosphere to soften them. Users can play the mission, follow the Sun or Earth from the lander, and watch the Sun drop behind the terrain when the data says it does. The ground near the lander and the lander model are illustrative and labelled as such.
 
-**Two ways in.** A guided tour for non-specialists (a web page that flies from Earth to the lunar south pole, with plain-language verdicts) and a full analysis app with every chart and setting. Both use the same results; the tour's ranking was checked to match the analysis app in 162 date, mission-length and slope cases.
+**Two ways in.** A guided tour for non-specialists (a web page that flies from Earth to the lunar south pole, with plain-language verdicts) and a full analysis app with every chart and setting. Both use the same results; the tour's ranking and scores were checked to match the calculation engine in 432 cases of date, mission length, slope limit and sunlight/Earth limits.
 
 **Tools.** Python, Streamlit, Plotly, NumPy, pandas, pyerfa; HTML, CSS and JavaScript for the tour.
 
@@ -68,17 +68,39 @@ Full analysis app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 ## Use of artificial intelligence
 
-We used AI tools and disclose them here and in the repository (`PROGRESS.md`, "AI tools used and for what"; AI-written files carry a comment saying so).
+We used AI tools and disclose them here and in the repository (`PROGRESS.md`, "AI tools used and for what"; AI-written files carry a comment saying so). This section separates what the team thought of, how far AI took part in the brainstorming, what AI produced, and what came from third parties.
 
-What the team decided:
+**1. Ideas and decisions that came from the team** (proposed by Qiming and settled in the team's discussions):
 
-- The structure was settled in the team's discussions: a three-level menu. The user first chooses the landing date and time, then the landing site, then opens the detailed views for that site.
-- The factors were settled in the same discussions: how stable a result is if the date slips, the flatness of the ground, and how to treat the Sun and Earth coinciding in the lunar sky (Earth covering the Sun), alongside sunlight and Earth contact.
-- The whole design concept of the web pages is Qiming's: the date-first flow and the continuous tour from Earth at night to the launch pad, the lunar south pole and the 3D site.
+- Treating the choice of a landing site as a multi-factor optimisation, written as f(date, site, others), which became the heading of the guided tour.
+- The structure: a three-level menu. First the landing date and time, then the landing site, then the detailed views for that site.
+- The three main factors: sunlight, Earth contact and flatness of the ground.
+- Hard limits applied before any scoring, with default values taken from the real data, and the view that the limits depend on the lander's design.
+- Stability as a factor: what happens to a site if the date slips. From it, dynamic weights: a factor counts for less at a site where it would not survive a slip.
+- How to treat the Sun and Earth coinciding in the lunar sky (Earth covering the Sun).
+- A table computed once, read date first and then site, so that changing the date is a lookup and the animations stay smooth.
+- Keeping the calculation engine and the interface separate.
+- Lander presets with sourced slope figures (researched by the team).
+- The whole design concept of the web pages is Qiming's: one continuous journey for non-specialists, from Earth at night to the launch pad, to the lunar south pole with the recommended sites, to standing at the site in 3D, with translucent panels and a calm, mysterious look.
 
-What AI did, directed and reviewed by the team:
+**2. Brainstorming with AI: how far AI took part.** The team discussed the design with Claude (Anthropic) and OpenAI Codex throughout the two days. In those discussions AI:
 
-- Claude (Anthropic): wrote and tested the calculation code, implemented the interface and the guided-tour web page to Qiming's design (choosing details such as fonts and colours within that brief), drafted the documentation, this text and the demo slides.
+- Checked the team's ideas against the challenge text and the NASA data. Example: the LOLA maps show that no place reaches 90% sunlight in the long run, so a single 95% limit was replaced by separate long-term and mission-window limits.
+- Proposed options, which the team accepted or turned down. Accepted: time to sunset and Earthset, a timeline chart, custom coordinates, the nearest workable dates, ranking a fixed list of named sites, and calibrating each skyline to NASA's long-term maps. Turned down: Claude advised keeping fixed equal weights; the team chose dynamic weights. The team's idea of a repeating (cyclic) table was dropped after Claude showed that the lunar cycles do not repeat exactly; a table for the full date range is used.
+- Pointed out gaps. A Codex review noted that eclipses were not modelled; eclipse hours are now detected and reported.
+- Turned ideas the team stated in words into formulas. The dynamic-weight score (margin above the lander's limits, weights scaled by stability) was worked out by Claude from Qiming's description, after Claude's own review showed that the earlier score followed slope almost alone.
+
+**3. What AI produced**, directed and reviewed by the team:
+
+- Claude (Anthropic): wrote and tested the calculation code, implemented the interface and the guided-tour web page to Qiming's design (choosing details such as fonts and colours within that brief), reviewed the finished project, drafted the documentation, this text and the demo slides.
 - OpenAI Codex: built the first version of the interface and wrote the derivations in `docs/physics-and-coordinates.md`.
 - The illustrative 3D scene (scene IV of the tour) was built by a team member with AI assistance; it is labelled in the page as an illustrative model.
 - No AI-generated images, video or audio are used. NASA imagery is shown unaltered and no NASA logos are used.
+
+**4. Third-party data and resources** (neither the team's nor AI's; NASA data is listed under "NASA data", full links in `PROGRESS.md`):
+
+- Star positions: HYG database (Hipparcos, Yale Bright Star and Gliese catalogues), as packaged in the open-source d3-celestial project.
+- Earth and Moon positions: ERFA routines through the pyerfa package. Moon orientation: IAU Working Group on Cartographic Coordinates and Rotational Elements, 2009 report.
+- Rain climatology near the Deep Space Network complexes: NOAA (Barstow, California), AEMET (Madrid Cuatro Vientos) and the Australian Bureau of Meteorology (Canberra Airport).
+- Nova-C slope figure: Intuitive Machines, as quoted on Wikipedia's IM-1 page.
+- Software: Streamlit, Plotly, NumPy, pandas, three.js; astropy for an independent check. Fonts: Cormorant Garamond, IBM Plex Sans, IBM Plex Mono and Space Grotesk (SIL Open Font License).

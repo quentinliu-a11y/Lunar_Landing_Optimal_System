@@ -36,6 +36,10 @@ def test_ranking_rules():
     # the worst case over a slip window can never beat the chosen date
     assert (r["sun_window_worst"] <= r["sun_window"] + 1e-12).all()
     assert (r["earth_window_worst"] <= r["earth_window"] + 1e-12).all()
+    # score = dynamic weights x margins; a dynamic weight is its base share x stability
+    assert np.allclose(r["score"], r["w_sun"] * r["sun_score"] + r["w_earth"] * r["earth_score"] + r["w_flat"] * r["flatness"])
+    assert np.allclose(r["w_sun"] * 3 * r["sun_window"], r["sun_window_worst"]) and np.allclose(r["w_flat"], 1 / 3)
+    assert np.allclose(r.loc[r["passes"], "sun_score"], (r.loc[r["passes"], "sun_window"] - 0.95) / 0.05)
 
 
 def test_limits_and_weights():
@@ -44,7 +48,8 @@ def test_limits_and_weights():
     steep = planner.rank_for_date(LOOKUP, LANDING, 14, 0, 0, 0, 0, max_slope_deg=3.0)
     assert (steep.loc[~steep["passes"], "slope_mean_deg"] > 3.0).all()
     sun_only = planner.rank_for_date(LOOKUP, LANDING, 14, 0, 0, 0, 0, 90, weights={"earth": 0, "flatness": 0})
-    assert np.allclose(sun_only["score"], sun_only["sun_window"])
+    # With no limits the margin is the ratio itself, so the score is ratio x stability = the worst-case ratio.
+    assert np.allclose(sun_only["score"], sun_only["sun_window_worst"])
     try:
         planner.rank_for_date(LOOKUP, LANDING, 14, weights={"sunlight": -1})
         raise AssertionError("negative weight accepted")

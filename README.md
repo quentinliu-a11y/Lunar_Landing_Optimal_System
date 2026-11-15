@@ -24,7 +24,7 @@ There are two ways in, built on the same results.
 
 **Guided tour** (`docs/index.html`, for anyone): a four-scene web page. The heading reads *f*(date, site, others) and fills in as you go.
 1. **Earth at night**, with today's day/night line computed for the current time.
-2. **Plan the landing**: date, 1–60 days on the surface, and the lander's slope limit (Nova-C class 10°, crewed lander 8°, or your own).
+2. **Plan the landing**: date, 1–60 days on the surface, and the lander (Nova-C class, slopes up to 10°; crewed lander, 8°; or your own slope limit and sunlight and Earth-contact needs).
 3. **The south pole**: the 13 sites ranked for that plan, with plain-language verdicts for power, radio contact, ground slope and what happens if the date slips, and the nearest dates that work when a site fails. "Others" in the heading unfolds into these factors.
 4. **Stand at the site in 3D**: the Sun and Earth move along their real hourly paths for that site, the ridge follows its NASA LOLA skyline, the sky shows real stars and a NASA Blue Marble Earth turned for the hour, and sunlight casts long airless shadows. Buttons play the mission, follow the Sun or Earth from the lander, or go back and re-plan.
 
@@ -43,7 +43,7 @@ For each of the 13 Artemis III candidate regions it reports:
 | Nearest workable date | The closest landing date on which the site passes every limit |
 | Eclipse hours | Hours when Earth blocks the Sun |
 
-Sites must pass limits the user can change (defaults: long-term sunlight and Earth visibility at least 50%, mission sunlight and contact at least 95%, slope at most 10°). Passing sites are ranked by a weighted score of sunlight, Earth contact and flatness, with the weights shown and adjustable. Any latitude and longitude can also be entered: from about 80°S to the pole the terrain skyline comes from a NASA LOLA elevation grid (500 m, not calibrated); elsewhere the estimate uses a flat horizon.
+Sites must pass limits that describe the lander (defaults: mission sunlight and Earth contact at least 95%, mean slope at most 10°; plus long-term sunlight and Earth visibility at least 50%). Every limit can be changed. Passing sites are ranked by a score with dynamic weights: each factor scores its margin above the lander's limit, and the sunlight and Earth weights are scaled, per site and date, by the share of today's value that would be left if the landing slips (flatness does not change with the date, so it keeps its full weight). A margin that would not survive a schedule slip therefore counts for less. Any latitude and longitude can also be entered: from about 80°S to the pole the terrain skyline comes from a NASA LOLA elevation grid (500 m, not calibrated); elsewhere the estimate uses a flat horizon.
 
 Changing the date is instant: all Sun and Earth positions for 2027–2030 are computed once at start-up (about 1.5 seconds) and looked up afterwards.
 
@@ -83,7 +83,7 @@ Exact files, links and other references are listed in `PROGRESS.md`.
 - **Sun visibility** differs from NASA's map by 6.5 points on average and 17 at worst. Near the pole the Sun grazes the skyline, so tens of metres of position or terrain change the answer. We therefore shift each site's skyline by one constant so that our long-term average equals NASA's figure, and use that calibrated skyline for specific dates.
 - **Lunar eclipses** found by the tool in 2027–2030 fall on the dates of the known eclipses in that period.
 - The ranking rules are covered by `tests/test_planner.py`.
-- **The guided tour** reproduces the analysis app's ranking, pass/fail and slip worst case exactly in 162 checked combinations of date, mission length (1–60 days) and slope limit.
+- **The guided tour** reproduces the planner's ranking, pass/fail, score and slip worst case exactly in 432 checked combinations of date, mission length (1–60 days), slope limit and sunlight/Earth limits.
 - **The 3D view** uses the planner's hourly Sun/Earth directions and visibility directly; its readouts match `planner.timeline` hour by hour in the tested cases. Its star positions match our lunar rotation model to 0.0001°, and the Earth globe's subsolar point agrees with the standard almanac formula within 0.2°.
 - **The map image** is byte-for-byte the NASA Moon Trek export for the stated area, and is placed on the map at that same area; flipped or shifted copies do not match.
 
@@ -96,6 +96,7 @@ Exact files, links and other references are listed in `PROGRESS.md`.
 - Custom coordinates use a coarser (500 m), uncalibrated terrain grid from about 80°S to the pole and a flat horizon elsewhere, and have no slope figure.
 - In the 3D view the ground near the lander, the rocks, the lander model and the power figure are illustrative; the Sun, Earth, stars, skyline angles and visibility are computed.
 - Each region is represented by a single point, its best 60 m pixel for combined sunlight and Earth visibility.
+- The default 95% sunlight and Earth-contact limits stand in for a real lander's power and radio requirements. With them, a 14-day mission has at least one passing site on 18.6% of landing dates in 2027–2030, and a 28-day mission on none; set the limits to your lander.
 
 ## Run it
 
@@ -142,13 +143,11 @@ cd src && python export_web_data.py && python export_sim_data.py
 
 ## Use of AI
 
-AI tools were used to write code and documents and to process the NASA data, under the team's direction. Every AI-assisted file says so at the top, and `PROGRESS.md` lists which tool did what.
+AI tools were used to write code and documents and to process the NASA data, under the team's direction. Every AI-assisted file says so at the top, and `PROGRESS.md` lists which tool did what. The full statement, as submitted, is in `docs/submission.md`. In short:
 
-What the team decided:
-
-- **Structure**, settled in the team's discussions: a three-level menu. First the landing date and time, then the landing site, then the detailed views for that site.
-- **Factors**, settled in the same discussions: how stable a result is if the date slips, the flatness of the ground, and how to treat the Sun and Earth coinciding in the lunar sky (Earth covering the Sun), alongside sunlight and Earth contact.
-- **Web design**: the whole design concept of the pages is Qiming's, including the date-first flow and the continuous tour from Earth at night to the launch pad, the lunar south pole and the 3D site. AI implemented it in code.
+- **The team's ideas** (Qiming, in the team's discussions): treating site choice as a multi-factor optimisation, f(date, site, others); the three-level menu (date and time, then site, then that site's details); sunlight, Earth contact and flatness as the main factors; hard limits that describe the lander; stability if the date slips, and dynamic weights driven by it; how to treat the Sun and Earth coinciding; a precomputed lookup table so date changes are instant; and the whole design concept of the web pages.
+- **Brainstorming with AI**: the team discussed the design with Claude and Codex throughout. AI checked ideas against the challenge and the NASA data, proposed options the team accepted or turned down, pointed out gaps, and turned ideas stated in words into formulas.
+- **What AI produced**: the code, the pages built to Qiming's design, the documents and the slides, all directed and reviewed by the team. No AI-generated images, video or audio.
 
 ## Team
 

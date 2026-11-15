@@ -67,7 +67,9 @@ What this means:
 
 ## 4. Hard limits
 
-Sites that fail a limit are shown greyed out with the reason, and are not ranked. Every limit is a user setting with a default. **Decided in principle; default numbers Proposed**
+Sites that fail a limit are shown greyed out with the reason, and are ranked after every passing site. **Decided**
+
+The mission-window and slope limits describe the lander: how much sunlight its power system needs, how much Earth contact its radio plan needs, and the slope its legs tolerate. Every limit is a user setting; the defaults below are the team's, not a NASA requirement. The tour's Nova-C and crewed presets set the slope limit from sourced figures; a custom lander sets all three. **Decided (15 Nov)**
 
 Two kinds of limit, because the data in section 3 rules out a single 95% rule:
 
@@ -83,16 +85,33 @@ Two kinds of limit, because the data in section 3 rules out a single 95% rule:
 - When no site passes on a date, the tool says so and points to the nearest date on which one does. **Decided, implemented**
 - Date-specific check (terrain included, calibrated to the NASA long-term values): every one of the 13 sites reaches 95%/95% on some dates, from 14 dates (Faustini Rim A) to 155 (Nobile Rim 1) out of 1,461. Lowering both limits to 90% gives 1,436 combinations, 80% gives 2,644.
 
-## 5. Scoring
+## 5. Scoring: dynamic weights from stability
 
-Applied to sites that pass the limits. **Proposed**
+Applied to every site; passing sites are listed first. **Decided and implemented (15 Nov)** in `planner.rank_for_date` and, identically, in the guided tour.
 
-- Each factor is scaled to 0–1, multiplied by its weight and summed.
-- Implemented so far (`planner.rank_for_date`): three factors, sunlight (mission-window ratio), Earth (mission-window ratio) and flatness (1 − mean slope ÷ slope limit), with equal weights by default and user-set weights accepted. The weight ingredients and the stability adjustment below are not implemented yet.
-- A factor's weight combines: mission importance (set by mission type), separating power (whether the factor differs between sites), and data confidence (how trustworthy our number is).
-- Stability over time adjusts each site's values, not the factor weights: for factors that change with date, the value used is pulled toward its worst case within a slip window around the chosen date (default ±14 days). A site that stays good when the date slips scores higher than one that is good only on the chosen day.
-- Weights are always shown, and the user can override them.
-- Exact formulas are not written yet.
+What goes in, what comes out, what it is for:
+
+- **In**: for one site and landing date, the mission-window sunlight and Earth ratios, the same ratios in the worst case if the landing moves by up to the slip window (default ±14 days), the mean slope, the lander's three limits, and three base weights (equal by default).
+- **Out**: a score from 0 to 1 and the three dynamic weights used.
+- **For**: ordering the sites that pass, so that a site whose good figures would not survive a schedule slip is ranked below one that keeps them.
+
+How it is computed:
+
+1. **Margin** (0–1): how much of the room above the lander's limit the site uses.
+   - sunlight margin = (sunlight ratio − sunlight limit) ÷ (1 − sunlight limit)
+   - Earth margin = the same for Earth contact
+   - flatness = 1 − mean slope ÷ slope limit
+2. **Stability** (0–1): worst-case ratio ÷ ratio on the chosen date, for sunlight and for Earth. Flatness does not change with the date, so its stability is 1.
+3. **Dynamic weight** = base weight × stability, per site and date.
+4. **Score** = (sunlight weight × sunlight margin + Earth weight × Earth margin + flatness weight × flatness) ÷ sum of the base weights.
+
+Example, landing 1 January 2028, 14 days, default limits: Nobile Rim 1 has 100% sunlight and 100% Earth contact (both margins 1.00) and a 2.9° slope (flatness 0.71). If the landing slips by up to 14 days its sunlight can fall to 41% and its contact to 46%, so the dynamic weights are 0.41 and 0.46 of a base weight of 1. Score = (0.41 × 1.00 + 0.46 × 1.00 + 1 × 0.71) ÷ 3 = 0.52.
+
+Why this form:
+
+- With the earlier score (plain average of the two ratios and flatness), sites that passed the 95% limits differed by at most 0.05 in sunlight and Earth contact but by up to 0.5 in flatness, so the order followed slope alone on 163 of the 193 dates in 2027–2030 with two or more passing sites. With margins and dynamic weights that happens on 49 of them.
+- Weights are always shown, and the user can change the base weights and the slip window.
+- Not implemented: weight ingredients for mission importance, separating power and data confidence, which were proposed earlier.
 
 ## 6. Interface
 
