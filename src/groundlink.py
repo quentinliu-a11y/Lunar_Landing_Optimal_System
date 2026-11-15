@@ -1,3 +1,4 @@
+# AI-assisted: written by Claude (Anthropic), 2026-11-15.
 """Earth-side link: which NASA Deep Space Network (DSN) complex can see the Moon, and how often local
 rain may degrade a Ka-band link.
 

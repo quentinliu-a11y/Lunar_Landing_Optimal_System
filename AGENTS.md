@@ -1,3 +1,4 @@
+<!-- AI-assisted: written by Claude (Anthropic), 2026-11-14, from the team's decisions. -->
 # Instructions for AI agents
 
 Read this file before doing anything in this repository. It tells you what the project is, what has been decided, what is still open, and the rules you must follow. Human team members make the decisions; where this file says "not decided", ask instead of choosing.

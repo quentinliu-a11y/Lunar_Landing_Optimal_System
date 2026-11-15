@@ -1,3 +1,4 @@
+<!-- AI-assisted: collected and written by Claude (Anthropic), 2026-11-14. -->
 # NASA Space Apps Challenge 2026 — reference notes
 
 Collected from spaceappschallenge.org on 14 Nov 2026 (Singapore time). Paraphrased notes, not the official wording; check the linked pages before relying on a rule.
