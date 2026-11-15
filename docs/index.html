@@ -623,7 +623,7 @@ function toSite(){guardRun(async()=>{
   $('#panel').classList.remove('show');
   await anim(cam,[{transform:'scale(1)',opacity:1},{transform:'scale(9)',opacity:0}],1000,'cubic-bezier(.7,0,.84,0)');
   const f=$('#sim'),day=new Date(state.data.first+state.dayIdx*864e5).toISOString().slice(0,10);
-  const url='Lunar%20Landing%20Site%20Simulator%20(1).html?embed=1&site='+encodeURIComponent(s.name)+'&start='+day+'&days='+state.win;
+  const url='site-3d.html?embed=1&site='+encodeURIComponent(s.name)+'&start='+day+'&days='+state.win;
   if(f.dataset.url!==url){f.dataset.url=url;f.src=url}
   $('#simsite').textContent=s.name; show(3);
   cam.getAnimations().forEach(a=>a.cancel());

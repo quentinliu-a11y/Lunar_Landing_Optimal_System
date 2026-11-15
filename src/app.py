@@ -136,7 +136,7 @@ def gauge(label: str, colour: str, value: float, worst: float | None, slip: int,
 
 
 PAGES = "https://quentinliu-a11y.github.io/Lunar_Landing_Optimal_System/"
-SIM_PAGE = PAGES + "Lunar%20Landing%20Site%20Simulator%20(1).html"
+SIM_PAGE = PAGES + "site-3d.html"
 REPO = "https://github.com/quentinliu-a11y/Lunar_Landing_Optimal_System"
 LANDERS = {"Nova-C class · robotic, slopes ≤ 10°": 10, "Crewed lander · Starship HLS, tilt ≤ 8°": 8, "Custom limit": None}
 
@@ -541,7 +541,7 @@ def site_panel(lookup: planner.Lookup, ranked: pd.DataFrame, limits: dict) -> No
     with st.expander("Why Earth's rotation does not change these results"):
         st.write("Earth spinning on its axis does not move Earth in the lunar sky: where Earth appears from the site depends "
                  "only on where the Moon is in its orbit and how the Moon is oriented, and both are modelled hour by hour "
-                 "(ERFA ephemeris and the IAU lunar rotation model, checked against NASA JPL Horizons within 0.002°). "
+                 "(ERFA ephemeris and the IAU lunar rotation model, checked against NASA JPL Horizons within 0.003°). "
                  "Earth is visible as a whole disc whichever side faces the Moon. What Earth's rotation does change is which "
                  "antenna on Earth faces the Moon. That is shown above: NASA's three DSN complexes, about 120° apart in "
                  "longitude, are modelled with Earth's rotation (IAU 2006/2000A), and between them the Moon is almost always in view.")
@@ -650,7 +650,7 @@ def page_sites() -> None:
         f'<div><small>Landing dates × lengths you can test</small><span>{(LAST_DAY - FIRST_DAY).days + 1:,} × 60</span></div>'
         '</div>', unsafe_allow_html=True)
     st.caption(f"Every result on this page is read from {n_sites * n_hours * 4:,} precomputed angles "
-               "(Sun and Earth elevation and azimuth per site and hour, 2027-2031), checked against NASA JPL Horizons, "
+               "(Sun and Earth elevation and azimuth per site and hour, for landings in 2027–2030 and missions of up to 60 days), checked against NASA JPL Horizons, "
                "with terrain skylines from NASA LOLA elevation models.")
     weights = limits["weights"] or dict(sunlight=1, earth=1, flatness=1)
     st.caption(f"Score weights · Sunlight {weights['sunlight']:g} · Earth contact {weights['earth']:g} · "

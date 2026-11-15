@@ -33,7 +33,7 @@ Full analysis app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 **Why it matters.** Long-term average maps hide large date-to-date changes. Example from the tool: Nobile Rim 1 has 100% sunlight and 100% Earth contact for a 14-day mission landing on 1 January 2028, but if that landing slips by up to 14 days the worst case is 41% sunlight and 46% Earth contact. On that date only 2 of the 13 sites meet the default limits.
 
-**How we checked it.** Sun and Earth positions agree with NASA JPL Horizons (DE441) within 0.002° in elevation and 0.008° in azimuth at 10 reference points. The map image is identical to the NASA Moon Trek export for the stated area. Deep Space Network Moon elevations agree with the astropy library within 0.001°. The terrain grid used for custom coordinates reproduces the 13 sites' heights within 41 m and their high-resolution skylines with a mean RMS difference of 0.83°. The ranking rules and the interface are covered by automated tests in the repository (21 checks).
+**How we checked it.** Sun and Earth positions agree with NASA JPL Horizons (DE441) within 0.003° in elevation and 0.008° in azimuth at 10 reference points. The map image is identical to the NASA Moon Trek export for the stated area. Deep Space Network Moon elevations agree with the astropy library within 0.001°. The terrain grid used for custom coordinates reproduces the 13 sites' heights within 41 m and their high-resolution skylines with a mean RMS difference of 0.83°. The ranking rules and the interface are covered by automated tests in the repository (21 checks).
 
 **Limits we want judges to know.** Results are estimates. Our uncalibrated terrain result differed from NASA's long-term Sun visibility by 6.5 percentage points on average, so each site's skyline is adjusted by one constant so that its 18.6-year average equals NASA's published value. Eclipse hours are reported but not subtracted from the sunlight share. "Earth visible" means any part of Earth's disc is above the terrain; it does not guarantee a link to a particular ground station. Custom coordinates use a coarser (500 m), uncalibrated terrain grid: for the 13 named sites it differs from our calibrated results by about 10 percentage points on average, more when the Sun or Earth grazes a ridge; outside about 80°S they fall back to a flat horizon. The 10° slope limit is a default chosen by the team, not a NASA requirement.
 
@@ -70,8 +70,15 @@ Full analysis app: https://lunar-landing-navigator-team-of-aeers.streamlit.app/
 
 We used AI tools and disclose them here and in the repository (`PROGRESS.md`, "AI tools used and for what"; AI-written files carry a comment saying so).
 
-- Claude (Anthropic): wrote and tested the calculation code, reviewed the interface, redesigned its visual style, built the guided-tour web page from the team's storyboard, drafted the documentation, this text and the demo slides.
+What the team decided:
+
+- The structure was settled in the team's discussions: a three-level menu. The user first chooses the landing date and time, then the landing site, then opens the detailed views for that site.
+- The factors were settled in the same discussions: how stable a result is if the date slips, the flatness of the ground, and how to treat the Sun and Earth coinciding in the lunar sky (Earth covering the Sun), alongside sunlight and Earth contact.
+- The whole design concept of the web pages is Qiming's: the date-first flow and the continuous tour from Earth at night to the launch pad, the lunar south pole and the 3D site.
+
+What AI did, directed and reviewed by the team:
+
+- Claude (Anthropic): wrote and tested the calculation code, implemented the interface and the guided-tour web page to Qiming's design (choosing details such as fonts and colours within that brief), drafted the documentation, this text and the demo slides.
 - OpenAI Codex: built the first version of the interface and wrote the derivations in `docs/physics-and-coordinates.md`.
 - The illustrative 3D scene (scene IV of the tour) was built by a team member with AI assistance; it is labelled in the page as an illustrative model.
-- The concept, the choice of factors and limits, and all decisions were made by the team, who directed and reviewed the AI work.
 - No AI-generated images, video or audio are used. NASA imagery is shown unaltered and no NASA logos are used.

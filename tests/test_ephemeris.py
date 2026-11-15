@@ -6,7 +6,7 @@ Reference values were fetched on 2026-11-14 from the JPL Horizons API
 (DE441, observer on the Moon, airless apparent azimuth/elevation, QUANTITIES=4,
 CENTER='coord@301', geodetic site at 0 km altitude).
 
-Result when last run: all 10 points agree within 0.002 deg in elevation and
+Result when last run: all 10 points agree within 0.003 deg in elevation (worst 0.0023) and
 0.008 deg in azimuth.
 
 Run:  python tests/test_ephemeris.py

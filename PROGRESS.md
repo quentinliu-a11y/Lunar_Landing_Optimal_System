@@ -11,7 +11,7 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 |---|---|---|---|---|
 | 1 | Agree on concept and scope (sites, date range, factors) | Qiming | done | Date-first tool; 2027–2030; sunlight, Earth contact, flatness, plus slip stability |
 | 2 | Choose preset south-pole sites | Qiming | done | The 13 NASA Artemis III candidate regions |
-| 3 | Ephemeris pipeline: Sun and Earth elevation over time for one site (flat horizon) | Claude (for Qiming) | done | `src/ephemeris.py`; checked against JPL Horizons at 10 points, within 0.002° elevation |
+| 3 | Ephemeris pipeline: Sun and Earth elevation over time for one site (flat horizon) | Claude (for Qiming) | done | `src/ephemeris.py`; checked against JPL Horizons at 10 points, within 0.003° elevation |
 | 4 | Terrain horizon for preset sites, precomputed | Claude (for Qiming) | done | `data/terrain_horizons.txt` (13 sites), `data/horizon_calibration.json`. Before calibration: Earth visibility within 0.5 points of NASA at 9 of 13 sites; Sun differs 6.5 points on average, 17 at worst |
 | 5 | Metrics per scenario (sunlit %, longest darkness, Earth visible %, longest blackout) | Claude (for Qiming) | done | `src/planner.py`, terrain skyline included; ran for 2027–2030 |
 | 6 | Weighted score and ranking | Claude (for Qiming) | done | Done in `src/planner.py`: five limits, three-factor weighted score, slip stability columns, nearest passing dates, best dates per site, custom coordinates (no terrain), eclipse detection; 11 checks in `tests/test_planner.py` pass. Not done (dropped for time): Pareto set |
@@ -28,7 +28,7 @@ Status values: `todo`, `doing`, `done`, `blocked`.
 | 15 | Interactive polar atlas visual redesign | OpenAI Codex | done | Based on main f778f41; authentic NASA LROC mosaic, true-position clickable map, zoom/pan, hourly horizon explorer, lazy views and cached planner calls. 8 UI checks, 11 planner checks and Horizons checks passed; desktop and 390px browser layouts inspected. Merged and deployed 15 Nov. |
 
 | 16 | Guided tour web page (four scenes from the team's storyboard) | Claude (for Qiming) | done | `docs/index.html` on GitHub Pages; ranking matches `planner.rank_for_date` in 162 checked cases; NASA imagery from GIBS and images.nasa.gov |
-| 17 | 3D site scene | team member (JamieLEO), Claude | done | `docs/Lunar Landing Site Simulator (1).html`: now uses the team's 13 sites, hourly Sun/Earth directions and visibility from the planner (`src/export_sim_data.py`, `docs/data/sky/`), and each site's LOLA skyline; readouts match `planner.timeline` hour by hour in tested cases; ground surface and lander illustrative |
+| 17 | 3D site scene | team member (JamieLEO), Claude | done | `docs/site-3d.html`: now uses the team's 13 sites, hourly Sun/Earth directions and visibility from the planner (`src/export_sim_data.py`, `docs/data/sky/`), and each site's LOLA skyline; readouts match `planner.timeline` hour by hour in tested cases; ground surface and lander illustrative |
 | 19 | Tour heading f(date, site, others) with step highlight and unfolding factors | Claude (for Qiming) | done | Team storyboard idea |
 | 20 | Real star field (HYG catalogue) in the tour and the 3D view | Claude (for Qiming) | done | 3D star positions checked against `src/ephemeris.py` (0.0001°) |
 | 21 | Realistic 3D: airless lighting and shadows, regolith texture, NASA Blue Marble Earth turned for the hour, Face Sun / Face Earth views, Play and Re-plan buttons, smooth sunrise/sunset | Claude (for Qiming) | done | Earth orientation checked against the almanac subsolar point (0.2°) |
@@ -53,6 +53,7 @@ Tasks 1, 11 and 12 are shared. First step for everyone: agree the file formats a
 | Date | Decision | Why |
 |---|---|---|
 | 14 Nov | Tool is date-first: pick a landing date, see conditions, go to a map of recommended sites | Team lead's concept |
+| 15 Nov | Recorded for the AI-use statement (README, `docs/submission.md`): the three-level menu (date and time, then site, then that site's detailed views) and the factors of slip stability, flatness and the Sun and Earth coinciding were settled in the team's discussions; the whole design concept of the web pages is Qiming's | Stated by Qiming |
 | 14 Nov | Rank a fixed list of named sites instead of scoring every pixel | Achievable by the deadline; scores are explainable |
 | 14 Nov | Top three factors: sunlight ratio, Earth communication availability, flatness | Team lead's choice |
 | 14 Nov | Logic code and visual interface are built separately; the interface only calls the logic (`docs/ui-interface.md`) | Team lead's choice |
@@ -92,9 +93,10 @@ List everything here as you use it. The submission form asks for all of it.
 - `assets/icons/*.svg`: Lucide icons (ISC license), added by a team member; not used by the pages yet.
 - NASA GIBS layer BlueMarble_NextGeneration also textures the Earth globe in the 3D scene; the globe is turned for the UTC time with the IERS Earth rotation angle (checked: subsolar point within 0.2° of the almanac formula).
 - Star catalogue: HYG database (David Nash; Hipparcos, Yale Bright Star and Gliese catalogues; CC BY-SA 2.5) as packaged in d3-celestial `data/stars.6.json` (Olaf Frohn, BSD-3-Clause), converted to `docs/data/stars.json` (5,044 stars to magnitude 6). Used in the 3D sky (oriented with the IAU lunar rotation model; checked against `src/ephemeris.py`) and in the tour's star field.
-- `docs/Lunar Landing Site Simulator (1).html`: teammate's 3D scene (three.js, MIT license, embedded in the file). On 15 Nov Claude replaced its mock sites, Sun/Earth model and horizon with the team's data, switched to airless lighting, and restyled it.
+- `docs/site-3d.html`: teammate's 3D scene (three.js, MIT license, embedded in the file). On 15 Nov Claude replaced its mock sites, Sun/Earth model and horizon with the team's data, switched to airless lighting, and restyled it.
 
 ### AI tools used and for what
+- Claude (Anthropic), 15 Nov 20:40: consistency fixes after a review of the project: Horizons agreement stated as within 0.003° (measured 0.0023°), 21 automated checks on demo slide 6, README limits for custom coordinates, date-range wording in the analysis app, 3D page renamed to `docs/site-3d.html` (the old address redirects), and the AI-use statement rewritten from Qiming's account of who decided what.
 - Claude (Anthropic), 15 Nov night: analysis-app update (task 22) and `src/groundlink.py` (DSN visibility of the Moon and rain climatology for Ka-band links).
 - Claude (Anthropic), 15 Nov evening: tour heading animation, real star field, 3D realism and camera views, the 7-slide demo deck (`docs/demo/`, built with pptxgenjs from screenshots of our own tool; slide backgrounds from the NASA ISS photograph ISS027-E-012224 (Earth limb at sunset over South America, 12 Apr 2011, images.nasa.gov; cropped and darkened, lens flare faded); no AI-generated images), and this documentation update.
 - Claude (Anthropic), 15 Nov: cinematic web front end `docs/index.html` (four scenes from the team's storyboard) and `src/export_web_data.py`, which exports the planner's results to `docs/data/sites.json`; checked that the page ranks exactly as `planner.rank_for_date` in 45 date/mission/slope cases. Star field and gradients are drawn in code; no AI-generated pictures.

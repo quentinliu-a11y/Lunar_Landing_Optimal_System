@@ -64,7 +64,7 @@ Use NASA data as the core of every calculation; the judging criteria require it.
 
 | Need | Source | Verified? |
 |---|---|---|
-| Sun and Earth positions over time | Computed offline in `src/ephemeris.py`; validated against JPL Horizons (https://ssd.jpl.nasa.gov/api/horizons.api) | Tested: agrees within 0.002° elevation at 10 reference points |
+| Sun and Earth positions over time | Computed offline in `src/ephemeris.py`; validated against JPL Horizons (https://ssd.jpl.nasa.gov/api/horizons.api) | Tested: agrees within 0.003° elevation at 10 reference points |
 | Terrain skyline per site | LOLA elevation models LDEM_85S_40M and LDEM_75S_120M (PDS Geosciences), processed into `data/terrain_horizons.txt` and calibrated in `data/horizon_calibration.json` | Tested against NASA long-term visibility; see `src/planner.py` docstring for the agreement |
 | South-pole elevation, 100 m/px (alternative) | Moon Trek ImageServer `LRO_LOLA_DEM_SPole45_100mp_v04` | Point query tested; not used |
 | Candidate sites | Moon Trek `CLPS_sites` and `A3_Named_regions` services | Tested |
@@ -99,7 +99,7 @@ Exact URLs and request formats are in `docs/space-apps-2026-reference.md`, secti
 | `PROGRESS.md` | Task board, decisions log, references and AI-use log |
 | `docs/space-apps-2026-reference.md` | Challenge, rules and data-source notes |
 | `src/` | Code: engine (`ephemeris.py`, `sites.py`, `planner.py`), analysis app (`app.py`), exports for the web pages (`export_web_data.py`, `export_sim_data.py`) |
-| `docs/index.html`, `docs/Lunar Landing Site Simulator (1).html`, `docs/data/` | Guided tour and 3D view (GitHub Pages) and the data they read. Never put calculations here that are not exported from `src/planner.py`; re-run both export scripts after changing the planner or `data/` |
+| `docs/index.html`, `docs/site-3d.html`, `docs/data/` | Guided tour and 3D view (GitHub Pages) and the data they read. Never put calculations here that are not exported from `src/planner.py`; re-run both export scripts after changing the planner or `data/` |
 | `docs/demo/` | Demo slides |
 | `data/` | Small processed data; `data/raw/` is ignored by git |
 

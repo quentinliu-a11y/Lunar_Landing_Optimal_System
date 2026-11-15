@@ -107,7 +107,7 @@ More functions, all table lookups:
 | `planner.nearest_passing_dates(lookup, landing, 14)` | Per site: `passes_on_date`, `previous_date`, `next_date`, `days_to_nearest` | When few or no sites pass: "nearest date this site works" |
 | `planner.best_dates(lookup, site, 14, top=5)` | The best landing dates for one site, at least 7 days apart | "Best dates for this site" |
 | `planner.passing_calendar(lookup, 14)` | `date`, `site`, `sun_window`, `earth_window`, `passes` for every date | Calendar or heat map of feasible dates |
-| `planner.custom_site(lat, lon, landing, 14)` | `(summary, timeline)` for any coordinates | Custom coordinates. **No terrain**: label as "flat-horizon estimate, terrain not included" |
+| `planner.custom_site(lat, lon, landing, 14)` | `(summary, timeline)` for any coordinates | Custom coordinates. From about 80°S to the pole the skyline comes from the 500 m LOLA grid (`summary["terrain_included"]` is True; uncalibrated). Elsewhere **no terrain**: label as "flat-horizon estimate, terrain not included" |
 
 `timeline` also has an `eclipse` column: 0 none, 1 Earth covers part of the Sun, 2 all of it.
 

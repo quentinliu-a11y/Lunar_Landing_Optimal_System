@@ -43,7 +43,7 @@ For each of the 13 Artemis III candidate regions it reports:
 | Nearest workable date | The closest landing date on which the site passes every limit |
 | Eclipse hours | Hours when Earth blocks the Sun |
 
-Sites must pass limits the user can change (defaults: long-term sunlight and Earth visibility at least 50%, mission sunlight and contact at least 95%, slope at most 10°). Passing sites are ranked by a weighted score of sunlight, Earth contact and flatness, with the weights shown and adjustable. Any latitude and longitude can also be entered, as a rougher estimate without terrain.
+Sites must pass limits the user can change (defaults: long-term sunlight and Earth visibility at least 50%, mission sunlight and contact at least 95%, slope at most 10°). Passing sites are ranked by a weighted score of sunlight, Earth contact and flatness, with the weights shown and adjustable. Any latitude and longitude can also be entered: from about 80°S to the pole the terrain skyline comes from a NASA LOLA elevation grid (500 m, not calibrated); elsewhere the estimate uses a flat horizon.
 
 Changing the date is instant: all Sun and Earth positions for 2027–2030 are computed once at start-up (about 1.5 seconds) and looked up afterwards.
 
@@ -78,7 +78,7 @@ Exact files, links and other references are listed in `PROGRESS.md`.
 
 ## How we know it is right
 
-- **Sun and Earth positions** agree with JPL Horizons to within 0.002° in elevation and 0.008° in azimuth at 10 test points (`tests/test_ephemeris.py`).
+- **Sun and Earth positions** agree with JPL Horizons to within 0.003° in elevation and 0.008° in azimuth at 10 test points (`tests/test_ephemeris.py`).
 - **Earth visibility**, averaged over 18.6 years with our terrain skylines, is within 0.5 percentage points of NASA's long-term map at 9 of the 13 sites; the largest difference is 12.9 points.
 - **Sun visibility** differs from NASA's map by 6.5 points on average and 17 at worst. Near the pole the Sun grazes the skyline, so tens of metres of position or terrain change the answer. We therefore shift each site's skyline by one constant so that our long-term average equals NASA's figure, and use that calibrated skyline for specific dates.
 - **Lunar eclipses** found by the tool in 2027–2030 fall on the dates of the known eclipses in that period.
@@ -93,7 +93,7 @@ Exact files, links and other references are listed in `PROGRESS.md`.
 - "Earth visible" means some part of Earth's disc is above the terrain. A particular ground station can still be out of view.
 - Sunlight is counted as yes or no; received power is not computed, and eclipse hours are reported but not subtracted.
 - Slope comes from a 40 m elevation model and says nothing about boulders or lander-leg-scale hazards.
-- Custom coordinates have no terrain and no slope.
+- Custom coordinates use a coarser (500 m), uncalibrated terrain grid from about 80°S to the pole and a flat horizon elsewhere, and have no slope figure.
 - In the 3D view the ground near the lander, the rocks, the lander model and the power figure are illustrative; the Sun, Earth, stars, skyline angles and visibility are computed.
 - Each region is represented by a single point, its best 60 m pixel for combined sunlight and Earth visibility.
 
@@ -127,7 +127,7 @@ cd src && python export_web_data.py && python export_sim_data.py
 | `src/export_web_data.py` | Exports daily Sun/Earth visibility per site to `docs/data/sites.json` for the guided tour |
 | `src/export_sim_data.py` | Exports hourly Sun/Earth directions, visibility and skylines to `docs/data/sky/` and `docs/data/sim_sites.json` for the 3D view |
 | `docs/index.html` | Guided tour (GitHub Pages) |
-| `docs/Lunar Landing Site Simulator (1).html` | 3D site view, opened from the tour |
+| `docs/site-3d.html` | 3D site view, opened from the tour |
 | `docs/data/` | Data files read by the web pages, including `stars.json` (HYG star catalogue) |
 | `docs/demo/` | Demo slides (PowerPoint and PDF) |
 | `docs/submission.md` | Text for the Space Apps project page |
@@ -142,7 +142,13 @@ cd src && python export_web_data.py && python export_sim_data.py
 
 ## Use of AI
 
-AI tools were used to write code and documents and to process the NASA data, under the team's direction. The concept, the date-first flow, the choice of factors and the limits are the team's. Every AI-assisted file says so at the top, and `PROGRESS.md` lists which tool did what.
+AI tools were used to write code and documents and to process the NASA data, under the team's direction. Every AI-assisted file says so at the top, and `PROGRESS.md` lists which tool did what.
+
+What the team decided:
+
+- **Structure**, settled in the team's discussions: a three-level menu. First the landing date and time, then the landing site, then the detailed views for that site.
+- **Factors**, settled in the same discussions: how stable a result is if the date slips, the flatness of the ground, and how to treat the Sun and Earth coinciding in the lunar sky (Earth covering the Sun), alongside sunlight and Earth contact.
+- **Web design**: the whole design concept of the pages is Qiming's, including the date-first flow and the continuous tour from Earth at night to the launch pad, the lunar south pole and the 3D site. AI implemented it in code.
 
 ## Team
 

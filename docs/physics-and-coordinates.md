@@ -217,7 +217,7 @@ Added by Claude (Anthropic), 2026-11-14, after reviewing this note against the c
 | Polar stereographic equations (section 4) | Same equations in `src/sites.py`. |
 | Pixel-centre discrepancy (section 4) | Confirmed and fixed. Site positions were recomputed from the raw rasters with NASA's convention and stored in `data/terrain_horizons.txt`. The older JSON file is marked as superseded for positions. |
 | East/north/up vectors and azimuth (section 5) | `src/ephemeris.py` builds north from the pole direction and east as north x up. Checked numerically at three sites: identical to the E, N, U above to 1e-15. |
-| Geometric versus apparent directions (section 5) | The code uses geometric positions without light-time or aberration. Compared with JPL Horizons apparent airless azimuth/elevation at 10 points: within 0.002 deg elevation and 0.008 deg azimuth (`tests/test_ephemeris.py`). |
+| Geometric versus apparent directions (section 5) | The code uses geometric positions without light-time or aberration. Compared with JPL Horizons apparent airless azimuth/elevation at 10 points: within 0.003 deg elevation and 0.008 deg azimuth (`tests/test_ephemeris.py`). |
 | Skyline from 3D positions, no extra curvature term, negative horizons kept (section 6) | Done this way. Terrain was searched to 300 km; LDEM_75S_120M covers that range for every site, so no direction is unmodelled. |
 | Visibility definition (section 7) | "Any part of the disc visible" for both Sun and Earth, using the scalar test with a time-dependent angular radius. The Earth product label was read during the analysis and states the same any-fraction convention as the Sun label. |
 | Window ratio (section 8) | Hourly samples, start included and end excluded, equal durations. |
